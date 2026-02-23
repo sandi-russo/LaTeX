@@ -1,0 +1,855 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{fontawesome5}
+\usepackage{colortbl}
+\usepackage{comment}
+\usetikzlibrary{arrows.meta,shadows,shapes.geometric,positioning}
+
+\usetheme{metropolis}
+\usecolortheme{default}
+
+\definecolor{primaryDark}{RGB}{45,55,72}
+\definecolor{accentBlue}{RGB}{66,153,225}
+\definecolor{darkGray}{RGB}{74,85,104}
+\definecolor{lightGray}{RGB}{247,250,252}
+\definecolor{mediumGray}{RGB}{160,174,192}
+\definecolor{successGreen}{RGB}{72,187,120}
+\definecolor{warningRed}{RGB}{245,101,101}
+
+\setbeamercolor{palette primary}{bg=primaryDark,fg=white}
+\setbeamercolor{palette secondary}{bg=accentBlue,fg=white}
+\setbeamercolor{palette tertiary}{bg=darkGray,fg=white}
+\setbeamercolor{frametitle}{bg=primaryDark,fg=white}
+\setbeamercolor{title}{bg=primaryDark,fg=white}
+\setbeamercolor{block title}{bg=primaryDark,fg=white}
+\setbeamercolor{block body}{bg=lightGray,fg=darkGray}
+\setbeamercolor{alerted text}{fg=warningRed}
+\setbeamercolor{example text}{fg=successGreen}
+
+\setbeamertemplate{frame numbering}[fraction]
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1ex,left,leftskip=1em]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\textbf{Sandi Russo} \hspace{0.3cm} | \hspace{0.3cm} \textit{UniME - Scienze Informatiche}
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1ex,right,rightskip=1em]{date in head/foot}%
+    \usebeamerfont{date in head/foot}
+    \insertframenumber{} / \inserttotalframenumber
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\setbeamertemplate{navigation symbols}{}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{accentBlue}\bfseries,
+    commentstyle=\color{successGreen}\itshape,
+    stringstyle=\color{warningRed},
+    breaklines=true,
+    backgroundcolor=\color{lightGray},
+    frame=none,
+    numbers=left,
+    numberstyle=\tiny\color{mediumGray},
+    xleftmargin=1.5em,
+    framexleftmargin=1em,
+    rulecolor=\color{primaryDark},
+    showstringspaces=false,
+    tabsize=2
+}
+
+\tikzset{
+    modernbox/.style={
+        rectangle, rounded corners=2pt, 
+        draw=primaryDark, thick, 
+        fill=lightGray,
+        drop shadow={shadow xshift=1.5pt, shadow yshift=-1.5pt, opacity=0.25}
+    },
+    technode/.style={
+        circle, draw=primaryDark, thick,
+        minimum size=1.1cm,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1pt, opacity=0.3}
+    },
+    modernArrow/.style={
+        ->, thick, >=stealth, 
+        color=primaryDark
+    }
+}
+
+\title[Graph ML con Oracle]{Knowledge Graph e Graph Machine Learning}
+\subtitle{Analisi Comparativa e Implementazione con Oracle}
+\author{Sandi Russo}
+\institute{Università degli Studi di Messina\\Corso di Laurea in Scienze Informatiche}
+\date{}
+
+\begin{document}
+
+{
+\setbeamertemplate{footline}{}
+\begin{frame}
+    \vspace{1cm}
+    \begin{center}
+        {\Large\textbf{Knowledge Graph e Graph Machine Learning}}
+        
+        \vspace{0.3cm}
+        
+        {\large Analisi Comparativa e Implementazione con Oracle}
+        
+        \vspace{1cm}
+        
+        \begin{tikzpicture}
+            \node[draw=primaryDark, thick, rounded corners=3pt, fill=lightGray!30, 
+                  text width=9cm, align=center, inner sep=0.5cm] {
+                \small
+                \begin{tabular}{cl}
+                    \faUser & \textbf{Sandi Russo} \\[0.15cm]
+                    \faUniversity & Università degli Studi di Messina \\[0.15cm]
+                    \faGraduationCap & Scienze Informatiche \\[0.15cm]
+                    \faCalendar & Anno Accademico 2024/2025 \\[0.15cm]
+                    \faChalkboardTeacher & Relatore: docente Antonio Celesti \\
+                \end{tabular}
+            };
+        \end{tikzpicture}
+    \end{center}
+\end{frame}
+}
+
+\begin{frame}{Agenda}
+    \tableofcontents
+\end{frame}
+
+\section{Introduzione al Machine Learning e ai Grafi}
+
+\begin{frame}{Programmazione Tradizionale vs Machine Learning}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{\faCode \hspace{0.2cm} Programmazione Tradizionale}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[node distance=1.4cm]
+                \node (input) [modernbox, fill=accentBlue!20, minimum height=0.8cm] {\small \textbf{Dati}};
+                \node (rules) [modernbox, fill=successGreen!20, below of=input, minimum height=0.8cm] {\small \textbf{Regole}};
+                \node (output) [modernbox, fill=warningRed!20, below of=rules, minimum height=0.8cm] {\small \textbf{Output}};
+                \draw[modernArrow] (input) -- (rules);
+                \draw[modernArrow] (rules) -- (output);
+            \end{tikzpicture}
+            
+            \vspace{0.2cm}
+            \small
+            \begin{itemize}
+                \item[\faCogs] Logica esplicita
+                \item[\faFileCode] Regole hard-coded
+                \item[\faLock] Poco flessibile
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{\faBrain \hspace{0.2cm} Machine Learning}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[node distance=1.2cm]
+                \node (input) [modernbox, fill=accentBlue!20, minimum height=0.8cm] {\small \textbf{Dati}};
+                \node (labels) [modernbox, fill=warningRed!20, right of=input, xshift=0.5cm, minimum height=0.8cm] {\small \textbf{Labels}};
+                \node (model) [modernbox, fill=successGreen!20, below of=input, xshift=0.75cm, yshift=-0.2cm, minimum height=0.8cm] {\small \textbf{Modello}};
+                \draw[modernArrow] (input) -- (model);
+                \draw[modernArrow] (labels) -- (model);
+            \end{tikzpicture}
+            
+            \vspace{0.2cm}
+            \small
+            \begin{itemize}
+                \item[\faRobot] Apprendimento automatico
+                \item[\faChartLine] Pattern discovery
+                \item[\faUnlock] Adattivo
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{La Gerarchia dell'Intelligenza Artificiale}
+    \centering
+    \begin{tikzpicture}[scale=0.95]
+        \draw[fill=accentBlue!10, thick, draw=accentBlue] (0,0) ellipse (4.2cm and 3.2cm);
+        \node at (0,2.3) {\large \faLightbulb \hspace{0.2cm} \textbf{Intelligenza Artificiale}};
+        
+        \draw[fill=successGreen!10, thick, draw=successGreen] (0,-0.35) ellipse (3.3cm and 2.3cm);
+        \node at (0,1.1) {\normalsize \faBrain \hspace{0.2cm} \textbf{Machine Learning}};
+        
+        \draw[fill=warningRed!10, thick, draw=warningRed] (0,-0.75) ellipse (2.4cm and 1.4cm);
+        \node at (0,-0.2) {\small \faLayerGroup \hspace{0.2cm} \textbf{Deep Learning}};
+        
+        \draw[fill=primaryDark!20, thick, draw=primaryDark] (0,-1.4) ellipse (1.7cm and 0.75cm);
+        \node at (0,-1.4) {\footnotesize \faProjectDiagram \hspace{0.2cm} \textbf{Graph ML}};
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Tipologie di Apprendimento}
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.4}
+    \begin{tabular}{|l|p{10cm}|}
+        \hline
+        \rowcolor{primaryDark!15}
+        \textbf{Tipo} & \textbf{Descrizione} \\
+        \hline
+        \textbf{Supervised} & Dati + etichette $\rightarrow$ Es: riconoscimento immagini \\
+        \hline
+        \rowcolor{lightGray!50}
+        \textbf{Unsupervised} & Solo dati, senza etichette $\rightarrow$ Es: clustering utenti \\
+        \hline
+        \textbf{Semi-supervised} & Mix di dati etichettati e non etichettati \\
+        \hline
+    \end{tabular}
+\end{frame}
+
+
+\section{Knowledge Graph e Graph Data Science}
+
+\begin{frame}{Dal Grafo al Knowledge Graph}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{\faCircle \hspace{0.2cm} Grafo Tradizionale}
+            \small
+            \begin{itemize}
+                \item[\faCircle] Nodi omogenei
+                \item[\faArrowRight] Archi omogenei
+                \item[\faList] Struttura semplice
+            \end{itemize}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{\faProjectDiagram \hspace{0.2cm} Knowledge Graph}
+            \small
+            \begin{itemize}
+                \item[\faUsers] Nodi eterogenei
+                \item[\faLink] Relazioni con proprietà
+                \item[\faDatabase] Modellazione ricca
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.4cm}
+    
+    \begin{exampleblock}{Esempio Pratico}
+        \centering
+        \begin{tikzpicture}[
+            node/.style={technode},
+            rel/.style={modernArrow}
+        ]
+            \node[node, fill=accentBlue!30] (cane) at (0,0) {\faDog};
+            \node[node, fill=successGreen!30] (uomo) at (3,1) {\faUser};
+            \node[node, fill=warningRed!30] (gatti) at (3,-1) {\faCat};
+            \node[node, fill=mediumGray!30] (cibo) at (6,0) {\faUtensils};
+            
+            \draw[rel] (cane) -- node[above, sloped, font=\tiny] {\textit{amico\_di}} (uomo);
+            \draw[rel] (cane) -- node[below, sloped, font=\tiny] {\textit{odia}} (gatti);
+            \draw[rel] (cane) -- node[above, sloped, font=\tiny] {\textit{mangia}} (cibo);
+        \end{tikzpicture}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Graph Data Science: Capacità di Analisi}
+    \begin{block}{\faProjectDiagram \hspace{0.2cm} Cosa Analizza la Graph Data Science}
+        \small
+        \begin{itemize}
+            \item[\faChartLine] Evoluzione temporale di nodi e relazioni
+            \item[\faStar] Identificazione dei nodi più influenti
+            \item[\faNetworkWired] Interazioni e dinamiche tra gruppi
+            \item[\faLightbulb] Pattern significativi emergenti
+        \end{itemize}
+    \end{block}
+    
+    \vspace{0.3cm}
+    
+    \begin{alertblock}{\faCheckCircle \hspace{0.2cm} Vantaggio Chiave}
+        Il Graph Machine Learning \textbf{non è una black box}: la struttura dei grafi permette \textit{interpretabilità} dei risultati.
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Knowledge Graph Embedding}
+    \textbf{Obiettivo}: Trasformare nodi e relazioni in vettori numerici
+    
+    $$\theta : V \rightarrow \mathbb{R}^d$$
+    
+    \vspace{0.15cm}
+    
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faRandom \hspace{0.2cm} Random Walk}
+                \small
+                \begin{itemize}
+                    \item Ispirato a Word2Vec
+                    \item Percorsi casuali
+                    \item Embedding \textit{generici}
+                \end{itemize}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faBrain \hspace{0.2cm} Neural Networks}
+                \small
+                \begin{itemize}
+                    \item Comunicazione tra nodi
+                    \item Scambio proprietà (hop)
+                    \item Embedding \textit{task-specific}
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.25cm}
+    
+    \begin{exampleblock}{Applicazioni}
+        \centering
+        \small
+        \faCheck \hspace{0.15cm} Classificazione \hspace{0.4cm} 
+        \faLink \hspace{0.15cm} Link Prediction \hspace{0.4cm}
+        \faChartLine \hspace{0.15cm} Regressione
+    \end{exampleblock}
+\end{frame}
+\section{Analisi Comparativa dei Database a Grafo}
+
+\begin{frame}{Database a Grafo: Panoramica}
+    \centering
+    \scriptsize
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \rowcolor{primaryDark!15}
+        \textbf{Caratteristica} & \textbf{Neo4j} & \textbf{Oracle} & \textbf{ArangoDB} & \textbf{Neptune} \\
+        \hline
+        Versione gratuita & Community & Always Free & Community & Trial 30gg \\
+        \hline
+        \rowcolor{lightGray!50}
+        GDS integrata & Sì (vasta) & Sì (PGX) & No & No \\
+        \hline
+        Linguaggi query & Cypher & PGQL/SQL & AQL & Gremlin \\
+        \hline
+        \rowcolor{lightGray!50}
+        Multi-modello & No & No & Sì & No \\
+        \hline
+        ML Integration & Python & OML4Py & Python & SageMaker \\
+        \hline
+        \rowcolor{lightGray!50}
+        Scalabilità & Alta & Altissima & Alta & Altissima \\
+        \hline
+        Curva & Media & Alta & Bassa & Alta \\
+        \hline
+    \end{tabular}
+\end{frame}
+
+\begin{frame}{Neo4j: Lo Standard di Riferimento}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faThumbsUp \hspace{0.2cm} PRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Community completa
+                    \item[\textcolor{successGreen}{\faCheckCircle}] GDS vastissima
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Comunità enorme
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Docs eccellenti
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Cypher intuitivo
+                \end{itemize}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faExclamationTriangle \hspace{0.2cm} CONTRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Limitazioni free
+                    \item[\textcolor{warningRed}{\faTimesCircle}] No multi-modello
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Costi Enterprise
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.4cm}
+    
+    \begin{exampleblock}{\faLightbulb \hspace{0.2cm} Caso d'uso ideale}
+        \small
+        Progetti con budget e supporto commerciale
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{ArangoDB: Flessibilità Multi-Modello}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faThumbsUp \hspace{0.2cm} PRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{successGreen}{\faCheckCircle}] 100\% open-source
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Multi-modello
+                    \item[\textcolor{successGreen}{\faCheckCircle}] AQL flessibile
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Leggero
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Python fluido
+                \end{itemize}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faExclamationTriangle \hspace{0.2cm} CONTRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{warningRed}{\faTimesCircle}] No GDS integrata
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Comunità piccola
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Librerie esterne
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.4cm}
+    
+    \begin{exampleblock}{\faLightbulb \hspace{0.2cm} Caso d'uso ideale}
+        \small
+        Prototipazione rapida e flessibilità
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Amazon Neptune: Cloud-Native}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faThumbsUp \hspace{0.2cm} PRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Scalabilità estrema
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Fully managed
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Gremlin + SPARQL
+                    \item[\textcolor{successGreen}{\faCheckCircle}] AWS/SageMaker
+                \end{itemize}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faExclamationTriangle \hspace{0.2cm} CONTRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Trial 30 giorni
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Costi elevati
+                    \item[\textcolor{warningRed}{\faTimesCircle}] No GDS integrata
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Lock-in AWS
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.4cm}
+    
+    \begin{alertblock}{\faBan \hspace{0.2cm} Limitazione critica}
+        \small
+        \textbf{Inadatto per progetti universitari} (pay-per-use)
+    \end{alertblock}
+\end{frame}
+
+\section{Oracle Graph: La Scelta Motivata}
+
+\begin{frame}{Oracle Graph Server and Client: Panoramica}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faThumbsUp \hspace{0.2cm} PRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{successGreen}{\faCheckCircle}] Always Free Tier
+                    \item[\textcolor{successGreen}{\faCheckCircle}] PGX potentissimo
+                    \item[\textcolor{successGreen}{\faCheckCircle}] 60+ algoritmi
+                    \item[\textcolor{successGreen}{\faCheckCircle}] PGQL SQL-like
+                    \item[\textcolor{successGreen}{\faCheckCircle}] OML4Py nativo
+                \end{itemize}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faExclamationTriangle \hspace{0.2cm} CONTRO}
+                \small
+                \begin{itemize}
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Più risorse
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Curva ripida
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Meno agile
+                    \item[\textcolor{warningRed}{\faTimesCircle}] Setup complesso
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.3cm}
+    
+    \begin{block}{\faCogs \hspace{0.2cm} Componenti Chiave}
+        \centering
+        \small
+        \faDatabase \hspace{0.1cm} Oracle DB \hspace{0.5cm}
+        \faServer \hspace{0.1cm} PGX Server \hspace{0.5cm}
+        \faCode \hspace{0.1cm} PGQL \hspace{0.5cm}
+        \faPython \hspace{0.1cm} OML4Py
+    \end{block}
+\end{frame}
+
+\begin{frame}{Architettura Oracle Graph}
+    \centering
+    \begin{tikzpicture}[
+        box/.style={modernbox, minimum width=2.8cm, minimum height=1cm, align=center, font=\small},
+        arrow/.style={modernArrow}
+    ]
+        \node[box, fill=accentBlue!20] (db) at (0,0) {\faDatabase \\ \textbf{Oracle DB}};
+        
+        \node[box, fill=successGreen!20] (pgx) at (0,1.8) {\faServer \\ \textbf{PGX Server}};
+        
+        \node[box, fill=warningRed!20] (pgql) at (-3,3.6) {\faCode \\ \textbf{PGQL}};
+        \node[box, fill=mediumGray!20] (oml4py) at (0,3.6) {\faPython \\ \textbf{OML4Py}};
+        \node[box, fill=primaryDark!20] (studio) at (3,3.6) {\faChartBar \\ \textbf{Studio}};
+        
+        \draw[arrow] (db) -- (pgx);
+        \draw[arrow] (pgx) -- (pgql);
+        \draw[arrow] (pgx) -- (oml4py);
+        \draw[arrow] (pgx) -- (studio);
+    \end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Perché Oracle per questo Progetto?}
+    \small
+    \begin{enumerate}
+        \item[\faDollarSign] \textbf{Costo Zero per Ricerca/Didattica}
+        \begin{itemize}
+            \item Always Free Tier su Oracle Cloud
+            \item Download gratuito per uso accademico
+        \end{itemize}
+        
+        \item[\faRocket] \textbf{Potenza Analitica Superiore}
+        \begin{itemize}
+            \item PGX ottimizzato per grafi massivi
+            \item Performance comparabili a Neo4j Enterprise
+        \end{itemize}
+        
+        \item[\faPython] \textbf{Integrazione ML Nativa}
+        \begin{itemize}
+            \item OML4Py: ML direttamente su grafi
+            \item PyPGX: embedding e GNN out-of-the-box
+        \end{itemize}
+        
+        \item[\faGraduationCap] \textbf{Competenze Trasferibili}
+        \begin{itemize}
+            \item PGQL simile a SQL
+            \item Esperienza enterprise-ready
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Oracle vs Neo4j: Confronto Tecnico}
+    \centering
+    \scriptsize
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{2.8cm}|p{4.2cm}|p{4.2cm}|}
+        \hline
+        \rowcolor{primaryDark!15}
+        \textbf{Aspetto} & \textbf{Neo4j Community} & \textbf{Oracle (Free)} \\
+        \hline
+        Costo & Gratis (limitato) & Gratis (completo) \\
+        \hline
+        \rowcolor{lightGray!50}
+        Algoritmi GDS & 65+ (50 Enterprise) & 60+ (tutti) \\
+        \hline
+        Query & Cypher & PGQL (SQL-like) \\
+        \hline
+        \rowcolor{lightGray!50}
+        ML & Python (esterno) & OML4Py (nativo) \\
+        \hline
+        Performance & Grafi medi & Grafi massivi \\
+        \hline
+        \rowcolor{lightGray!50}
+        Deploy & Docker/Cloud & Docker/OCI \\
+        \hline
+        Docs & Vastissima & Ottima \\
+        \hline
+        \rowcolor{lightGray!50}
+        Curva & Media & Alta \\
+        \hline
+        \rowcolor{successGreen!15}
+        \textbf{Vantaggio} & Ecosistema & \textbf{Potenza} \\
+        \hline
+    \end{tabular}
+\end{frame}
+
+\begin{frame}{Oracle vs ArangoDB: Confronto Tecnico}
+    \centering
+    \scriptsize
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{|p{2.8cm}|p{4.2cm}|p{4.2cm}|}
+        \hline
+        \rowcolor{primaryDark!15}
+        \textbf{Aspetto} & \textbf{ArangoDB} & \textbf{Oracle} \\
+        \hline
+        Multi-Modello & Sì (docs+grafi) & No (solo grafi) \\
+        \hline
+        \rowcolor{lightGray!50}
+        GDS & No & Sì (PGX) \\
+        \hline
+        Peso & \textasciitilde500MB & \textasciitilde2GB \\
+        \hline
+        \rowcolor{lightGray!50}
+        Query & AQL & PGQL \\
+        \hline
+        Algoritmi & 0 (Python) & 60+ (nativi) \\
+        \hline
+        \rowcolor{lightGray!50}
+        Embedding & Esterni & PyPGX \\
+        \hline
+        Setup & Rapido & Complesso \\
+        \hline
+        \rowcolor{lightGray!50}
+        Community & Crescente & Enterprise \\
+        \hline
+        \rowcolor{successGreen!15}
+        \textbf{Vantaggio} & Agilità & \textbf{Analisi} \\
+        \hline
+    \end{tabular}
+\end{frame}
+
+\section{Implementazione e Setup}
+
+\begin{frame}[fragile]{Setup Oracle: Docker Quick Start}
+    \small
+    \textbf{\faDocker \hspace{0.2cm} Passo 1}: Pull immagine
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+docker pull container-registry.oracle.com/database/graph-quickstart:latest
+\end{lstlisting}
+    
+    \vspace{0.2cm}
+    
+    \textbf{\faPlay \hspace{0.2cm} Passo 2}: Avvio container
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+docker run -d --name oracle-graph-ml \
+  -p 1521:1521 -p 7007:7007 \
+  -e ORACLE_PWD=Password234 \
+  container-registry.oracle.com/database/graph-quickstart:latest
+\end{lstlisting}
+    
+    \vspace{0.2cm}
+    
+    \begin{alertblock}{\faNetworkWired \hspace{0.2cm} Porte Esposte}
+        \small
+        \textbf{1521}: Oracle Database \hspace{0.5cm}
+        \textbf{7007}: Graph Studio
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]{Connessione al Database}
+    \small
+    \textbf{\faKey \hspace{0.2cm} Credenziali}:
+    
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+# Graph Studio (https://localhost:7007/ui)
+Username: GRAPHUSER
+Password: Password234
+
+# SQL Developer
+Username: SYSTEM
+Password: Password234
+Hostname: localhost
+Port: 1521
+Service Name: FREEPDB1
+\end{lstlisting}
+    
+    \vspace{0.2cm}
+    
+    \textbf{\faPython \hspace{0.2cm} Librerie Python}:
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+pip install oracledb oml4py pypgx
+\end{lstlisting}
+\end{frame}
+
+\begin{comment}
+\begin{frame}[fragile]{Esempio: Creazione Property Graph}
+    \begin{lstlisting}[language=SQL, basicstyle=\ttfamily\tiny]
+CREATE PROPERTY GRAPH social_network
+  VERTEX TABLES (
+    users KEY (user_id)
+      PROPERTIES (user_id, name, age)
+  )
+  EDGE TABLES (
+    friendships KEY (from_user, to_user)
+      SOURCE KEY (from_user) REFERENCES users
+      DESTINATION KEY (to_user) REFERENCES users
+      PROPERTIES (since_date, strength)
+  );
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Esempio: Query PGQL}
+    \begin{lstlisting}[language=SQL, basicstyle=\ttfamily\tiny]
+-- Trova gli amici degli amici (2-hop)
+SELECT u1.name AS person, u3.name AS friend_of_friend
+FROM MATCH (u1)-[:friendships]->(u2)-[:friendships]->(u3)
+WHERE u1.user_id = 123 AND u3.user_id <> u1.user_id;
+
+-- Calcola PageRank
+SELECT user_id, name, 
+       GRAPH_ALGORITHM.pagerank(social_network) AS rank
+FROM users ORDER BY rank DESC LIMIT 10;
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Esempio: Python + OML4Py}
+    \begin{lstlisting}[language=Python, basicstyle=\ttfamily\tiny]
+import oracledb
+from oml import sync
+from pypgx import get_instance
+
+conn = oracledb.connect(user="GRAPHUSER", password="Password234",
+                        dsn="localhost:1521/FREEPDB1")
+
+sync(conn, table="USERS", schema="GRAPHUSER")
+
+session = get_instance().create_session("my_session")
+graph = session.read_graph_by_name("social_network")
+
+model = graph.create_deepwalk_model(
+    walks_per_node=10, walk_length=5, embedding_dim=128
+)
+embeddings = model.get_node_embeddings()
+\end{lstlisting}
+\end{frame}
+\end{comment}
+
+\section{Conclusioni e Sviluppi Futuri}
+
+\begin{frame}{Sintesi della Scelta}
+    \begin{block}{\faCheckCircle \hspace{0.2cm} Perché Oracle Graph?}
+        \vspace{0.2cm}
+        \small
+        \begin{columns}[T]
+            \begin{column}{0.48\textwidth}
+                \begin{itemize}
+                    \item[\hspace{0.1em}\faDollarSign\hspace{0.1em}] \textbf{Gratuità}: Always Free Tier
+                    \item[\hspace{0.1em}\faRocket\hspace{0.1em}] \textbf{Potenza}: PGX supera Neo4j Community
+                \end{itemize}
+            \end{column}
+            \begin{column}{0.48\textwidth}
+                \begin{itemize}
+                    \item[\hspace{0.1em}\faPuzzlePiece\hspace{0.1em}] \textbf{Completezza}: ML nativo
+                    \item[\hspace{0.1em}\faGraduationCap\hspace{0.1em}] \textbf{Formazione}: Esperienza enterprise
+                \end{itemize}
+            \end{column}
+        \end{columns}
+    \end{block}
+    
+    \vspace{0.3cm}
+    
+    \begin{alertblock}{\faBalanceScale \hspace{0.2cm} Trade-off Accettato}
+        \vspace{0.2cm}
+        \small
+        Complessità iniziale compensata da:
+        \begin{columns}[T]
+            \begin{column}{0.48\textwidth}
+                \begin{itemize}
+                    \item[\hspace{0.1em}\faChartLine\hspace{0.1em}] Capacità analitiche superiori
+                    \item[\hspace{0.1em}\faDollarSign\hspace{0.1em}] Nessun costo (vs Neptune)
+                \end{itemize}
+            \end{column}
+            \begin{column}{0.48\textwidth}
+                \begin{itemize}
+                    \item[\hspace{0.1em}\faCogs\hspace{0.1em}] GDS integrata (vs ArangoDB)
+                    \item[\hspace{0.1em}\faUnlock\hspace{0.1em}] Funzionalità complete (vs Neo4j)
+                \end{itemize}
+            \end{column}
+        \end{columns}
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}{Limitazioni e Considerazioni}
+    \small
+    \textbf{\faExclamationTriangle \hspace{0.2cm} Punti di attenzione}:
+    \begin{itemize}
+        \item[\faMemory] \textbf{Risorse}: 4GB RAM vs 2GB
+        \item[\faCogs] \textbf{Setup}: DB + PGX separati
+        \item[\faBook] \textbf{Docs}: Meno beginner-friendly
+        \item[\faUsers] \textbf{Community}: Più enterprise
+    \end{itemize}
+    
+    \vspace{0.3cm}
+    
+    \textbf{\faLightbulb \hspace{0.2cm} Alternative}:
+    \begin{itemize}
+        \item[\faCircle] \textbf{Neo4j}: Ecosistema maturo
+        \item[\faCircle] \textbf{ArangoDB}: Setup minimale
+        \item[\faCircle] \textbf{Neptune}: Ambiente AWS
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Sviluppi Futuri}
+    \small
+    \textbf{\faRoad \hspace{0.2cm} Estensioni possibili}:
+    \begin{enumerate}
+        \item[\faChartBar] \textbf{Benchmark}
+        \begin{itemize}
+            \item Performance su dataset reali
+            \item Analisi tempi/memoria
+        \end{itemize}
+        
+        \item[\faBrain] \textbf{ML Avanzato}
+        \begin{itemize}
+            \item GNN con PyPGX
+            \item Link prediction complessa
+        \end{itemize}
+        
+        \item[\faGlobe] \textbf{Web Semantico}
+        \begin{itemize}
+            \item Import RDF/OWL
+            \item Reasoning ontologie
+        \end{itemize}
+        
+        \item[\faCloud] \textbf{Produzione}
+        \begin{itemize}
+            \item Deploy su OCI
+            \item API REST
+        \end{itemize}
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Risorse e Riferimenti}
+    \footnotesize
+    \setlength{\itemsep}{2pt}
+    \setlength{\parskip}{0pt}
+    
+    \textbf{\faBook \hspace{0.2cm} Oracle}:
+    \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item Property Graph: \texttt{docs.oracle.com/.../property-graph/}
+        \item OML4Py: \texttt{docs.oracle.com/.../oml4py/}
+        \item Graph Studio: \texttt{docs.oracle.com/.../graph-studio...}
+    \end{itemize}
+    
+    \textbf{\faDatabase \hspace{0.2cm} Alternative}:
+    \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item Neo4j: \texttt{graphacademy.neo4j.com}
+        \item ArangoDB: \texttt{arangodb.com/docs/}
+        \item Neptune: \texttt{aws.amazon.com/neptune/}
+    \end{itemize}
+    
+    \textbf{\faPython \hspace{0.2cm} ML}:
+    \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item PyTorch Geometric: \texttt{pytorch-geometric.readthedocs.io}
+        \item DGL: \texttt{dgl.ai}
+    \end{itemize}
+\end{frame}
+
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[standout]
+    \Huge Grazie per l'attenzione!
+\end{frame}
+}
+
+\end{document}

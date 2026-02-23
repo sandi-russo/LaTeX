@@ -1,0 +1,159 @@
+\chapter{Fondamenti di Sicurezza}
+
+\section{Introduzione alla Sicurezza Informatica}
+
+Per sicurezza informatica si intendono una serie di misure e controlli che assicurano la confidenzialità, l'integrità e la disponibilità delle risorse del sistema informativo, compresi l'hardware, il software, il firmware e le informazioni elaborate, memorizzate e trasmesse.
+
+\subsection{La Triade CIA}
+
+I tre obiettivi chiave al centro della sicurezza informatica, noti anche come triade CIA, sono:
+
+\begin{description}
+    \item[Confidentiality (Confidenzialità)] Ossia preservare le autorizzazioni riguardo l'accesso e la divulgazione delle informazioni. Comprende:
+    \begin{itemize}
+        \item \textbf{Confidenzialità dei dati:} assicura che le informazioni confidenziali non siano rese disponibili a individui non autorizzati.
+        \item \textbf{Privacy:} assicura che gli individui controllino quali informazioni che li riguardano possano essere raccolte e conservate e da chi e a chi tali informazioni possano essere divulgate.
+    \end{itemize}
+    
+    \item[Integrity (Integrità)] Ossia la protezione contro la modifica impropria delle informazioni. Racchiude:
+    \begin{itemize}
+        \item \textbf{Integrità dei dati:} assicura che le informazioni e i programmi siano modificati solo in un modo specificato e autorizzato.
+        \item \textbf{Integrità del sistema:} assicura che un sistema esegua il suo compito prestabilito in modo ineccepibile.
+    \end{itemize}
+    
+    \item[Availability (Disponibilità)] Assicura che il servizio non sia negato agli utenti autorizzati.
+\end{description}
+
+\subsection{Livelli di Impatto}
+
+La sicurezza informatica definisce tre livelli di impatto per valutare le conseguenze potenziali di una violazione:
+
+\begin{description}
+    \item[Basso] La perdita potrebbe avere un effetto limitato.
+    \item[Moderato] La perdita potrebbe avere un serio effetto negativo.
+    \item[Alto] La perdita potrebbe avere un effetto negativo grave.
+\end{description}
+
+\section{Terminologia della Sicurezza}
+
+Le vulnerabilità rappresentano delle minacce per il sistema e rappresentano un potenziale danno per quest'ultimo. Una minaccia che si concretizza rappresenta un attacco.
+
+\begin{description}
+    \item[Asset] La risorsa che si vuole difendere, che sia essa un sistema o dei dati.
+    
+    \item[Minaccia] Qualsiasi evento con il potenziale di avere un impatto negativo sulle attività organizzative.
+    
+    \item[Vulnerabilità] Debolezza che potrebbe essere sfruttata per effettuare un attacco.
+    
+    \item[Avversario (agente che minaccia)] Individuo con l'intenzione di condurre attività dannose.
+    
+    \item[Attacco] Qualsiasi tipo di attività malevola che tenta di raccogliere, interrompere o distruggere le risorse del sistema informativo o le informazioni stesse.
+    
+    \item[Contromisura] Ha come obiettivo quello di compromettere l'efficacia di un attacco.
+    
+    \item[Rischio] Indica la gravità di una minaccia e le probabilità che essa si verifichi.
+    
+    \item[Politica di sicurezza] Un insieme di regole per garantire la sicurezza. Definisce e vincola le attività al fine di mantenere una condizione di sicurezza per i sistemi e i dati.
+\end{description}
+
+\section{Tipologie di Attacco e di Minacce}
+
+\subsection{Classificazione degli Attacchi}
+
+Gli attacchi possono essere classificati secondo diverse dimensioni:
+
+\begin{description}
+    \item[Attacco passivo] Il cui obiettivo è quello di apprendere informazioni del sistema senza alterarne il funzionamento.
+    
+    \item[Attacco attivo] Che altera le risorse del sistema o ne influenza il funzionamento.
+    
+    \item[Attacco interno] Effettuato da un insider, utente autorizzato ad accedere alle risorse ma utilizzate in modo non autorizzato.
+    
+    \item[Attacco esterno] Effettuato da un outsider, ossia un utente non autorizzato del sistema.
+\end{description}
+
+\subsection{Le Minacce}
+
+\subsubsection{Divulgazione Non Autorizzata}
+
+La divulgazione non autorizzata (unauthorized disclosure) è una minaccia alla confidenzialità. I seguenti tipi di attacchi possono portare a conseguenze da questa minaccia:
+
+\begin{description}
+    \item[Esposizione (exposure)] Può essere intenzionale (provocato da un insider) o essere il risultato di un errore umano, hardware o software, che si concretizza nella conoscenza non autorizzata di dati sensibili da parte di un'entità.
+    
+    \item[Intercettazione (interception)] Attacco comune nelle comunicazioni e consiste nella ricezione di una copia di informazioni destinate a un altro dispositivo.
+    
+    \item[Inferenza (inference)] È noto come analisi del traffico, in cui un avversario è in grado di ottenere informazioni dall'osservazione del pattern del traffico su una rete, o, nell'ambito dei database, informazioni riguardo la sua struttura.
+    
+    \item[Intrusione (intrusion)] Consiste nell'ottenimento di un accesso non autorizzato a dati sensibili superando le protezioni di controllo di accesso al sistema.
+\end{description}
+
+\subsubsection{Inganno}
+
+L'inganno (deception) è una minaccia all'integrità del sistema o dei dati. Questa conseguenza può scaturire dai seguenti tipi di attacchi:
+
+\begin{description}
+    \item[Mascheramento (masquerade)] Tentativo da parte di un utente non autorizzato di ottenere l'accesso a un sistema fingendosi un utente autorizzato.
+    
+    \item[Falsificazione (falsification)] Alterazione o sostituzione di dati validi con dati falsi.
+    
+    \item[Ripudio (repudiation)] Un utente rinnega di aver inviato dei dati, o un utente rinnega di averli ricevuti o posseduti.
+\end{description}
+
+\subsubsection{Interruzione}
+
+L'interruzione (disruption) è una minaccia alla disponibilità o all'integrità del sistema. Questa conseguenza può scaturire dai seguenti tipi di attacchi:
+
+\begin{description}
+    \item[Interdizione (incapacitation)] È un attacco alla disponibilità del sistema. Potrebbe verificarsi come risultato di danneggiamento dell'hardware del sistema o della disattivazione, tramite software malevolo, di servizi di sistema.
+    
+    \item[Corruzione (corruption)] È un attacco all'integrità del sistema. Il software malevolo potrebbe operare in modo tale che le risorse o i servizi del sistema funzionino in modo non voluto.
+    
+    \item[Ostruzione (obstruction)] Interferisce con le comunicazioni del sistema disabilitandone i collegamenti o alterando le informazioni di controllo delle comunicazioni.
+\end{description}
+
+\subsubsection{Usurpazione}
+
+L'usurpazione (usurpation) è una minaccia all'integrità del sistema. Questa conseguenza può scaturire dai seguenti tipi di attacchi:
+
+\begin{description}
+    \item[Appropriazione indebita (misappropriation)] Può includere la sottrazione di servizio. Un esempio è un attacco denial of service distribuito, ovvero quando un software malevolo viene installato su un certo numero di host per essere usato come piattaforma per lanciare del traffico verso un host bersaglio.
+    
+    \item[Uso improprio (misuse)] L'uso improprio può verificarsi per mezzo di programmi malevoli. Le funzioni di sicurezza potrebbero essere disabilitate o ostacolate.
+\end{description}
+
+\section{Minacce alle Risorse del Sistema}
+
+Le minacce possono colpire diverse categorie di risorse:
+
+\subsection{Hardware}
+
+\begin{description}
+    \item[Disponibilità] L'attrezzatura viene rubata o disabilitata, impedendo così l'erogazione del servizio.
+    \item[Confidenzialità] Viene rubata una chiavetta USB non cifrata.
+    \item[Integrità] Dispositivi hardware vengono modificati o danneggiati.
+\end{description}
+
+\subsection{Software}
+
+\begin{description}
+    \item[Disponibilità] Vengono cancellati dei programmi, negando l'accesso agli utenti.
+    \item[Confidenzialità] Viene fatta una copia non autorizzata del software.
+    \item[Integrità] Un programma funzionante viene modificato, sia per farlo fallire durante l'esecuzione, sia per fargli eseguire qualche operazione non desiderata.
+\end{description}
+
+\subsection{Dati}
+
+\begin{description}
+    \item[Disponibilità] Vengono cancellati i file, negando l'accesso agli utenti.
+    \item[Confidenzialità] Viene eseguita una lettura non autorizzata di dati. Un'analisi statistica dei dati rivela informazioni sottese.
+    \item[Integrità] I file esistenti vengono modificati o vengono creati nuovi file.
+\end{description}
+
+\subsection{Linee di Comunicazione e Reti}
+
+\begin{description}
+    \item[Disponibilità] I messaggi vengono distrutti o cancellati. Le linee di comunicazione o le reti sono rese non disponibili.
+    \item[Confidenzialità] Vengono letti i messaggi. Viene osservato il modello di traffico dei messaggi.
+    \item[Integrità] I messaggi vengono modificati, ritardati, riordinati o duplicati. Vengono fabbricati falsi messaggi.
+\end{description}

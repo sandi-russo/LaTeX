@@ -1,0 +1,261 @@
+\chapter{Autenticazione Digitale degli Utenti}
+
+\section{Introduzione}
+
+L'autenticazione digitale rappresenta il processo con cui si stabilisce la fiducia nelle identità presentate elettronicamente a un sistema informatico. Questa fiducia è fondamentale per consentire a un sistema di determinare se l'individuo autenticato è autorizzato a compiere specifiche operazioni, come accedere a dati sensibili o a risorse del sistema.
+
+\section{Modello di Autenticazione Digitale}
+
+La prima fase richiede la registrazione dell'utente, durante la quale un richiedente si rivolge a una Registration Authority (RA) per diventare sottoscrittore presso un Credential Service Provider (CSP). La RA, come entità fidata, garantisce l'identità del richiedente al CSP, il quale emette una credenziale elettronica collegata a un token, come una chiave crittografica o una password cifrata, che identifica univocamente il sottoscrittore.
+
+L'autenticazione vera e propria avviene tra il sottoscrittore e un sistema verificatore, dove il richiedente dimostra il possesso e il controllo del token. Il verificatore, dopo aver accertato l'identità, trasmette un'asserzione alla relying party (RP), che utilizza tali informazioni per prendere decisioni di autorizzazione. Questo modello illustra le principali entità e funzioni essenziali per un sistema di autenticazione sicuro, sebbene nella pratica possano esistere varianti o complessità aggiuntive.
+
+\section{Mezzi di Autenticazione}
+
+L'identità di un utente può essere autenticata tramite quattro modalità principali:
+
+\begin{enumerate}
+    \item \textbf{Qualcosa che l'utente conosce:} come password, PIN o risposte a domande specifiche.
+    \item \textbf{Qualcosa che l'utente possiede:} come una keycard elettronica, una smart card o una chiave fisica. Questi strumenti sono noti come token.
+    \item \textbf{Qualcosa che l'utente è:} metodi di biometria statica, come il riconoscimento delle impronte digitali, della retina o del volto.
+    \item \textbf{Qualcosa che l'utente fa:} metodi di biometria dinamica, come il riconoscimento della voce, delle caratteristiche della scrittura o del ritmo di battitura.
+\end{enumerate}
+
+Ciascun metodo, se correttamente implementato, può fornire una protezione sicura, ma ognuno presenta anche vulnerabilità, come il rischio di furto o falsificazione per password e token, e la possibilità di falsi positivi o negativi per la biometria. Inoltre, la gestione delle password e dei token può risultare onerosa in termini di sovraccarico amministrativo.
+
+\section{Autenticazione Multifattore}
+
+L'autenticazione multifattore (MFA) utilizza più di uno dei metodi precedentemente descritti. La robustezza del sistema aumenta con l'integrazione di più fattori: un sistema a due fattori è più sicuro rispetto a uno a fattore singolo, mentre l'uso di tre fattori incrementa ulteriormente la sicurezza. L'MFA è considerata una soluzione efficace per migliorare la protezione complessiva delle identità digitali, riducendo le possibilità di accessi non autorizzati.
+
+\section{Rischi nell'Autenticazione degli Utenti}
+
+La valutazione dei rischi di sicurezza per l'autenticazione degli utenti considera tre elementi fondamentali:
+
+\begin{itemize}
+    \item il livello di garanzia
+    \item l'impatto potenziale
+    \item le aree di rischio
+\end{itemize}
+
+Questi aspetti sono valutati per adattare le misure di sicurezza in funzione delle minacce specifiche.
+
+\subsection{Livello di Garanzia}
+
+Il livello di garanzia rappresenta il grado di affidabilità che un'organizzazione può avere nel fatto che un utente sia realmente colui al quale è stata rilasciata una determinata credenziale. È un parametro che misura la fiducia nel processo di verifica e nell'identità di chi utilizza la credenziale.
+
+I livelli di garanzia sono:
+
+\begin{description}
+    \item[Livello 1:] Bassa fiducia, appropriato per situazioni con requisiti di sicurezza minimi, come la registrazione in un forum online.
+    \item[Livello 2:] Fiducia discreta, adatto a interazioni con il pubblico che richiedono una verifica preliminare dell'identità.
+    \item[Livello 3:] Alta fiducia, utilizzato per l'accesso a informazioni riservate di valore elevato, richiede autenticazione multifattoriale.
+    \item[Livello 4:] Massima fiducia, destinato all'accesso a risorse di valore molto elevato o ad alto rischio, tipicamente con autenticazione multifattoriale e verifica di presenza.
+\end{description}
+
+\subsection{Impatto Potenziale}
+
+Il livello di impatto potenziale valuta le conseguenze di una compromissione dell'autenticazione. Viene suddiviso in tre livelli:
+
+\begin{description}
+    \item[Basso:] Implica effetti negativi limitati, con riduzione della funzionalità operativa e danni minori.
+    \item[Moderato:] Può causare una significativa riduzione dell'efficacia operativa e danni economici e personali rilevanti, senza tuttavia mettere in pericolo la vita.
+    \item[Alto:] Può comportare gravi danni, incluse perdite finanziarie significative, interruzione delle operazioni principali e lesioni potenzialmente letali per gli individui.
+\end{description}
+
+\subsection{Aree di Rischio e Corrispondenza}
+
+L'analisi dei rischi richiede di determinare il livello di impatto in caso di errore nell'autenticazione per ciascuna categoria di rischio rilevante. Questa valutazione definisce il livello di garanzia necessario per mitigare adeguatamente il rischio associato.
+
+Ad esempio, un errore di autenticazione che comporti accesso non autorizzato a un database può avere un impatto finanziario di:
+
+\begin{description}
+    \item[Basso:] Perdita finanziaria minima, con effetti limitati per l'organizzazione.
+    \item[Moderato:] Grave perdita finanziaria, con significative responsabilità per l'organizzazione.
+    \item[Alto:] Perdita finanziaria catastrofica, con gravi conseguenze per tutte le parti coinvolte.
+\end{description}
+
+Se l'impatto potenziale è basso, un livello di garanzia pari a 1 è sufficiente; con un impatto moderato, è necessario un livello di garanzia di 2 o 3; e per un impatto alto, è richiesto il livello 4. Un'analisi approfondita deve considerare l'impatto in ciascuna area di rischio, assicurando che il livello di garanzia scelto sia in linea con i requisiti di sicurezza e con le potenziali conseguenze di una violazione dell'autenticazione.
+
+\section{Autenticazione Basata su Password}
+
+L'autenticazione tramite password è una delle difese principali contro gli accessi non autorizzati.
+
+\subsection{Vulnerabilità delle Password e Contromisure}
+
+I sistemi basati su password sono soggetti a vari attacchi che richiedono specifiche contromisure per mitigare i rischi:
+
+\begin{enumerate}
+    \item \textbf{Attacco offline basato su dizionario:} L'attaccante ottiene il file delle password e confronta gli hash memorizzati con quelli di password comuni. Le contromisure includono limitazioni sull'accesso al file delle password e l'uso di misure di rilevamento intrusioni.
+    
+    \item \textbf{Attacco a un account specifico:} Si tenta di scoprire la password di un account specifico tramite tentativi ripetuti. Un meccanismo di blocco dopo un numero limitato di tentativi falliti è la principale contromisura.
+    
+    \item \textbf{Attacco con password comuni:} L'attaccante usa password comuni per una vasta gamma di ID utente. Politiche restrittive sulle password e il monitoraggio degli IP aiutano a contrastare questo tipo di attacco.
+    
+    \item \textbf{Indovinare la password di un singolo utente:} Conoscendo dettagli personali, l'attaccante prova a indovinare la password. Politiche di gestione della password che impongono complessità e segretezza rappresentano la contromisura.
+    
+    \item \textbf{Appropriazione di una Workstation:} L'attaccante sfrutta una sessione lasciata incustodita. Il logout automatico in caso di inattività riduce questa vulnerabilità.
+    
+    \item \textbf{Sfruttare errori dell'utente:} Tattiche di ingegneria sociale o condivisione non autorizzata di password sono comuni. Le contromisure includono educazione degli utenti e rilevamento delle intrusioni.
+    
+    \item \textbf{Utilizzo di password multiple identiche:} La condivisione di password tra diversi sistemi facilita gli attacchi. Una politica che proibisca password identiche su dispositivi diversi è la migliore contromisura.
+    
+    \item \textbf{Monitoraggio elettronico:} Le password inviate su rete possono essere intercettate. L'uso di crittografia per il canale di comunicazione e la gestione del riutilizzo delle password sono essenziali.
+\end{enumerate}
+
+\subsection{Persistenza delle Password}
+
+Nonostante le vulnerabilità, le password continuano a essere ampiamente utilizzate per ragioni di costo, convenienza e compatibilità:
+
+\begin{itemize}
+    \item Le soluzioni hardware, come scanner biometrici, richiedono l'implementazione di software appropriato su client e server, con una reciproca accettazione non ancora diffusa.
+    \item I token fisici, come le smart card, possono risultare scomodi e costosi da utilizzare.
+    \item Gli schemi di single sign-on introducono un singolo punto di rischio per la sicurezza.
+    \item I gestori automatici di password non sono ancora abbastanza avanzati per supportare il roaming tra piattaforme multiple, riducendo la loro praticità.
+\end{itemize}
+
+Data l'importanza e la persistenza delle password, è essenziale comprenderne l'uso e studiarne le tecniche di gestione per garantire la sicurezza degli utenti.
+
+\section{Hash delle Password}
+
+L'uso delle password hashate con l'aggiunta di un salt (sale) rappresenta una tecnica efficace per aumentare la sicurezza delle password memorizzate nei sistemi informatici.
+
+\subsection{Hashing con Salt}
+
+Questo metodo è basato sull'applicazione di una funzione hash che genera un codice a partire dalla password dell'utente combinata con un valore di salt univoco. Il salt è un valore casuale o pseudocasuale che viene memorizzato insieme all'hash della password nel file delle password del sistema. Questo approccio aggiunge un livello di complessità che rende difficile per un attaccante indovinare la password.
+
+Quando un utente registra una nuova password:
+
+\begin{enumerate}
+    \item \textbf{Scelta e combinazione della password con salt:} La password scelta viene combinata con un valore di salt, generato con numeri pseudocasuali o casuali per garantire maggiore sicurezza.
+    \item \textbf{Generazione dell'hash:} La password e il salt diventano input di una funzione di hashing. Questa funzione produce un hash di lunghezza fissa, che viene poi memorizzato insieme al salt.
+    \item \textbf{Verifica durante il login:} Quando l'utente inserisce il proprio ID e password, il sistema recupera il salt e l'hash memorizzati. La password fornita viene combinata con il salt e trasformata tramite la stessa funzione di hashing. Se l'hash risultante corrisponde a quello memorizzato, la password è considerata corretta e l'utente viene autenticato.
+\end{enumerate}
+
+\subsection{Vantaggi del Salt}
+
+L'uso del salt aggiunge robustezza al sistema di hashing per tre motivi principali:
+
+\begin{enumerate}
+    \item \textbf{Prevenzione di duplicati:} Se due utenti scelgono la stessa password, l'uso di valori di salt diversi per ciascun account garantisce che gli hash generati siano diversi.
+    
+    \item \textbf{Aumento della complessità negli attacchi offline:} L'uso di un salt di $b$ bit incrementa il numero di possibili combinazioni di password di un fattore $2^b$. Questo significa che un attaccante deve testare ogni ipotesi di password in combinazione con ogni possibile valore di salt, moltiplicando il numero di tentativi necessari.
+    
+    \item \textbf{Difesa contro riutilizzo di password su più sistemi:} Anche se un utente usa la stessa password su più sistemi, l'uso di salti casuali rende difficile per un attaccante determinare tale coincidenza tra diversi file delle password.
+\end{enumerate}
+
+\section{Cracking delle Password e Contromisure}
+
+\subsection{Approcci Tradizionali}
+
+\subsubsection{Metodi Basati su Dizionari}
+
+Consiste nel costruire un grande dizionario di possibili password e confrontarle con gli hash memorizzati. Ogni possibile password viene sottoposta alla funzione di hashing, utilizzando tutti i valori di salt disponibili, e poi confrontata con gli hash presenti nei file delle password. Se non viene trovata alcuna corrispondenza, il software di cracking applica variazioni su ogni parola del dizionario, come inversione della parola, aggiunta di numeri, caratteri speciali o modifiche alle maiuscole e minuscole.
+
+\subsubsection{Rainbow Table}
+
+Un approccio alternativo consiste nel pre-calcolare gli hash per un'ampia gamma di password e valori di salt, memorizzando i risultati in una cosiddetta rainbow table. Questo consente di ridurre drasticamente il tempo di verifica. Tuttavia, l'uso di salti e lunghezze di hash sufficientemente grandi può rendere inefficaci le rainbow table.
+
+\subsubsection{Variazioni delle Password e Predicibilità}
+
+Un problema significativo deriva dalla scelta di password prevedibili da parte degli utenti. Spesso, le persone scelgono parole comuni, nomi personali o sequenze facilmente indovinabili, rendendo il cracking più semplice. Gli attaccanti possono sfruttare questa debolezza testando le password con liste di parole comuni, nomi propri e permutazioni basate su informazioni personali.
+
+\subsection{Approcci Moderni}
+
+\subsubsection{Aumento della Potenza di Calcolo}
+
+Con l'evoluzione della tecnologia, la potenza di calcolo è aumentata in modo significativo. Le GPU consentono ai programmi di cracking di eseguire milioni di combinazioni al secondo, aumentando esponenzialmente la velocità rispetto ai sistemi basati esclusivamente su CPU.
+
+\subsubsection{Algoritmi di Generazione Sofisticati}
+
+Anche gli algoritmi per generare password si sono evoluti. Tecniche basate su modelli probabilistici e approcci di apprendimento automatico, come quelli derivati dall'elaborazione del linguaggio naturale, hanno permesso di ridurre il numero di tentativi necessari per violare una password. Utilizzando dati reali provenienti da fughe di password, i ricercatori hanno potuto creare modelli statistici delle scelte comuni degli utenti.
+
+\subsection{Contromisure}
+
+\subsubsection{Controllo degli Accessi al File delle Password}
+
+Per contrastare un attacco alle password è necessario impedire l'accesso al file delle password da parte degli avversari. Se la sezione del file che contiene l'hash delle password è accessibile solo da utenti privilegiati, l'avversario non potrà leggerla senza prima conoscere la password di un utente privilegiato. In molti sistemi, gli hash delle password sono memorizzati in un file separato dagli ID utente, noto come file shadow delle password, che è rigorosamente protetto per evitare accessi non autorizzati.
+
+\subsubsection{Strategie di Selezione della Password}
+
+Quando gli utenti sono liberi di scegliere le proprie password, spesso tendono a sceglierne di troppo corte o facilmente intuibili. Se invece si assegnano password casuali e complesse, diventa difficile per gli utenti ricordarle. L'obiettivo ideale è consentire la scelta di password memorizzabili, ma non prevedibili. Per raggiungere tale obiettivo si usano diverse tecniche:
+
+\begin{itemize}
+    \item \textbf{Educazione degli utenti:} Insegnare agli utenti a scegliere password sicure può essere utile, ma spesso non sufficiente, specialmente in ambienti con molti utenti.
+    \item \textbf{Password generate dal computer:} Le password generate automaticamente possono risultare difficili da ricordare, riducendo l'accettazione da parte degli utenti.
+    \item \textbf{Controllo reattivo delle password:} Il sistema può eseguire periodicamente un proprio cracker per individuare le password deboli. Sebbene efficace, questa strategia può essere onerosa in termini di risorse e non risolve il problema delle password deboli finché non vengono rilevate.
+    \item \textbf{Politica delle password complesse:} Consente agli utenti di scegliere le proprie password, ma il sistema verifica se rispettano determinati criteri di complessità.
+\end{itemize}
+
+\section{Autenticazione Basata su Token}
+
+I token rappresentano un metodo di autenticazione in cui l'utente possiede un oggetto fisico che serve per verificare la propria identità. Tra i tipi più comuni di token troviamo le memory card e le smart card.
+
+\subsection{Memory Card}
+
+Le memory card sono in grado di immagazzinare dati, ma non di elaborarli. L'esempio più noto è costituito dalle carte bancarie dotate di una banda magnetica, che memorizza un semplice codice di sicurezza leggibile e modificabile tramite un lettore di carte. Queste card possono essere utilizzate per accesso fisico e per autenticazione combinando la carta con un PIN o una password. Questo sistema offre maggiore sicurezza rispetto alla sola password, poiché un avversario dovrebbe entrare in possesso fisico della carta e conoscere il PIN.
+
+Tuttavia, ci sono alcuni svantaggi:
+
+\begin{itemize}
+    \item \textbf{Richiede un lettore speciale:} l'uso di un token comporta costi aggiuntivi per l'acquisto e la manutenzione del lettore.
+    \item \textbf{Rischio di perdita del token:} se il token viene smarrito, il proprietario è temporaneamente impossibilitato ad accedere al sistema e deve sostenere il costo per la sua sostituzione.
+    \item \textbf{Insoddisfazione degli utenti:} alcuni utenti potrebbero trovare scomodo l'uso di memory card per accedere a sistemi informatici.
+\end{itemize}
+
+\subsection{Smart Card}
+
+Le smart card sono token che includono un microprocessore e possono assumere varie forme, dalle carte bancarie a dispositivi simili a chiavi o calcolatrici. Le smart card hanno diverse caratteristiche:
+
+\begin{itemize}
+    \item \textbf{Caratteristiche fisiche:} includono un microprocessore, che rende possibile l'elaborazione di dati e operazioni complesse, come la crittografia.
+    \item \textbf{Interfaccia utente ed elettronica:} la comunicazione può avvenire tramite contatti fisici o a distanza, utilizzando frequenze radio (contactless).
+    \item \textbf{Protocollo di autenticazione:} le smart card possono implementare protocolli statici (autenticazione simile alle memory card), generare password dinamiche o usare metodi di challenge-response per rispondere a richieste del sistema.
+\end{itemize}
+
+Le smart card possono essere utilizzate come carte d'identità elettroniche (eID), offrendo funzioni come:
+
+\begin{itemize}
+    \item \textbf{ePass:} per l'uso governativo, simile a un passaporto elettronico.
+    \item \textbf{eID:} per l'accesso a servizi governativi e commerciali.
+    \item \textbf{eSign:} per generare firme digitali.
+\end{itemize}
+
+\section{Autenticazione Biometrica}
+
+L'autenticazione biometrica rappresenta una tecnologia che si basa sull'uso di caratteristiche fisiche uniche degli individui per garantire la sicurezza e l'accesso ai sistemi informatici. Le caratteristiche biometriche sono intrinseche a ciascun individuo e risultano difficili da replicare, offrendo così un livello di sicurezza superiore.
+
+\subsection{Tipologie di Caratteristiche Biometriche}
+
+Esistono numerosi tipi di caratteristiche fisiche e comportamentali che possono essere utilizzate per l'autenticazione biometrica. Tra queste, alcune delle più comuni e significative includono:
+
+\subsubsection{Caratteristiche Facciali}
+
+Il riconoscimento facciale è uno dei metodi più popolari poiché simula il modo in cui gli esseri umani si identificano visivamente. Le tecnologie di riconoscimento facciale identificano i tratti del viso, come la posizione e la forma degli occhi, del naso, della bocca e del mento. Un approccio alternativo utilizza termocamere a infrarossi per rilevare un termogramma del viso, che si basa sul sistema vascolare sottostante e offre un'ulteriore protezione contro le maschere o le immagini contraffatte.
+
+\subsubsection{Impronte Digitali}
+
+Le impronte digitali presentano un modello unico di rilievi e solchi che varia da persona a persona. I sistemi di riconoscimento digitale analizzano questi modelli ed estraggono caratteristiche specifiche per creare un ``template'' numerico.
+
+\subsubsection{Geometria della Mano}
+
+I sistemi basati sulla geometria della mano analizzano diverse caratteristiche, come la forma, la lunghezza e la larghezza delle dita. Seppur meno preciso, questo metodo è ampiamente utilizzato per applicazioni aziendali grazie alla sua rapidità e semplicità.
+
+\subsubsection{Schema della Retina}
+
+Sfrutta il pattern unico delle vene presenti nella parte posteriore dell'occhio. Questa tecnologia è molto precisa ma richiede apparecchiature specifiche. Gli utenti devono fissare un punto preciso per consentire la scansione.
+
+\subsubsection{Scansione dell'Iride}
+
+Il processo è meno invasivo rispetto alla scansione retinica e fornisce un elevato livello di accuratezza. Le scansioni dell'iride possono essere eseguite anche da una distanza moderata, rendendo la tecnologia più pratica per l'uso quotidiano.
+
+\subsubsection{Firma}
+
+Ogni persona possiede uno stile unico di scrittura, specialmente per quanto riguarda la firma. Sebbene ci siano naturali variazioni tra i campioni della stessa persona, il riconoscimento biometrico delle firme analizza la velocità, la pressione e il movimento utilizzati per creare la firma. Questo metodo può essere utile per verificare documenti e transazioni.
+
+\subsubsection{Voce}
+
+L'identificazione vocale sfrutta le caratteristiche uniche delle corde vocali e delle cavità risonanti di ciascun individuo. Tuttavia, i modelli vocali possono variare nel tempo a causa di fattori come malattie, invecchiamento e stress, rendendo complesso il riconoscimento vocale. Ciononostante, è spesso utilizzato per applicazioni come l'assistenza clienti e l'accesso remoto.
+
+\subsection{Accuratezza e Complessità}
+
+L'accuratezza dei sistemi biometrici può variare. A differenza delle password, che corrispondono esattamente o meno a ciò che è memorizzato, le misure biometriche devono essere valutate in termini di quanto strettamente un attributo corrisponde a quello salvato. Pertanto, i sistemi biometrici utilizzano criteri di tolleranza e soglie di accettazione per determinare una corrispondenza, affrontando problemi di falsi positivi (riconoscimento errato di un intruso come utente legittimo) e falsi negativi (rifiuto dell'accesso a un utente legittimo).

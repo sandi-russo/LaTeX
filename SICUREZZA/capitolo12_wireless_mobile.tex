@@ -1,0 +1,190 @@
+\chapter{Sicurezza delle Reti Wireless e Dispositivi Mobili}
+
+\section{Le Reti Wireless}
+
+Le reti wireless e i dispositivi che le utilizzano introducono una serie di problemi di sicurezza che si aggiungono a quelli delle reti cablate. Alcuni dei principali fattori che contribuiscono al maggior rischio di sicurezza delle reti wireless rispetto a quelle cablate includono i seguenti:
+
+\begin{description}
+    \item[Canale] Le comunicazioni wireless generalmente avvengono tramite trasmissioni broadcast, rendendole più suscettibili ad intercettazioni e interferenze rispetto alle comunicazioni cablate. Le reti wireless sono inoltre più vulnerabili ad attacchi attivi che sfruttano le vulnerabilità nei protocolli di comunicazione.
+    
+    \item[Mobilità] I dispositivi wireless sono, per definizione, molto più portatili e mobili rispetto a quelli cablati. Questa mobilità comporta una serie di rischi.
+    
+    \item[Risorse] Alcuni dispositivi wireless, come smartphone e tablet, dispongono di sistemi operativi sofisticati ma con risorse di memoria e capacità di elaborazione limitate, il che li rende vulnerabili a minacce come attacchi di tipo Denial of Service e malware.
+    
+    \item[Accessibilità] Alcuni dispositivi wireless, come sensori e robot, possono essere lasciati incustoditi in luoghi remoti o ostili, aumentando il rischio di attacchi fisici.
+\end{description}
+
+\subsection{Composizione di una Rete Wireless}
+
+In termini semplici, l'ambiente wireless si compone di tre elementi principali che rappresentano possibili punti di attacco:
+
+\begin{enumerate}
+    \item Il client wireless può essere un telefono cellulare, un laptop o tablet abilitato al Wi-Fi, un sensore wireless, un dispositivo Bluetooth, e così via.
+    
+    \item Il punto di accesso wireless consente il collegamento alla rete o al servizio, come torri cellulari, hotspot Wi-Fi e punti di accesso wireless per reti locali o estese cablate.
+    
+    \item Il mezzo di trasmissione (onde radio) per il trasferimento dei dati costituisce anch'esso una fonte di vulnerabilità.
+\end{enumerate}
+
+\section{Misure di Sicurezza per le Reti Wireless}
+
+Le misure di sicurezza per le reti wireless possono essere raggruppate in tre categorie:
+
+\begin{itemize}
+    \item Sicurezza delle trasmissioni wireless
+    \item Sicurezza dei punti di accesso wireless
+    \item Sicurezza delle reti wireless
+\end{itemize}
+
+\subsection{Sicurezza delle Trasmissioni Wireless}
+
+Le principali minacce alle trasmissioni wireless includono intercettazioni, modifiche o inserimenti di messaggi, e interruzioni del servizio. Per contrastare l'intercettazione, si possono adottare due principali contromisure:
+
+\subsubsection{Occultamento del Segnale}
+
+È possibile adottare diverse misure per rendere più difficile individuare i punti di accesso wireless, come disattivare la trasmissione dell'SSID da parte degli AP, assegnare nomi criptici agli SSID, ridurre la potenza del segnale al livello minimo necessario per garantire una copertura adeguata e posizionare i punti di accesso all'interno dell'edificio, lontano da finestre e pareti esterne. Una maggiore sicurezza può essere ottenuta utilizzando antenne direzionali e tecniche di schermatura del segnale.
+
+\subsubsection{Crittografia}
+
+La crittografia di tutte le trasmissioni wireless è efficace contro l'intercettazione, a condizione che le chiavi di crittografia siano protette. L'uso di protocolli di crittografia e autenticazione è il metodo standard per contrastare i tentativi di modificare o inserire trasmissioni.
+
+\subsection{Sicurezza dei Punti di Accesso Wireless}
+
+La principale minaccia per i punti di accesso wireless è l'accesso non autorizzato alla rete. Il metodo principale per prevenire tale accesso è lo standard IEEE 802.1X per il controllo dell'accesso alla rete basato su porte. Questo standard fornisce un meccanismo di autenticazione per i dispositivi che desiderano collegarsi a una LAN o a una rete wireless, impedendo l'uso di punti di accesso illegittimi e di altri dispositivi non autorizzati che potrebbero rappresentare delle backdoor insicure.
+
+\subsection{Sicurezza delle Reti Wireless}
+
+Sono raccomandate le seguenti tecniche per la sicurezza delle reti wireless:
+
+\begin{enumerate}
+    \item \textbf{Utilizzare la crittografia:} I router wireless sono generalmente dotati di meccanismi di crittografia integrati per il traffico da router a router.
+    
+    \item \textbf{Usare software antivirus, antispyware e un firewall:} Questi strumenti dovrebbero essere abilitati su tutti i dispositivi di rete wireless.
+    
+    \item \textbf{Disattivare la trasmissione dell'identificatore:} I router wireless trasmettono generalmente un segnale identificativo che consente a qualsiasi dispositivo nel raggio d'azione di rilevare la loro presenza. Se una rete è configurata in modo che i dispositivi autorizzati conoscano l'identità dei router, questa funzione può essere disattivata per ostacolare gli attaccanti.
+    
+    \item \textbf{Modificare l'identificatore del router rispetto al valore predefinito:} Questo accorgimento serve a impedire agli attaccanti di accedere alla rete wireless utilizzando identificatori di router di default.
+    
+    \item \textbf{Cambiare la password preimpostata per l'amministrazione del router:} Questo è un passo prudente per aumentare la sicurezza.
+    
+    \item \textbf{Consentire l'accesso solo a computer specifici:} Un router può essere configurato per comunicare solo con indirizzi MAC approvati. Tuttavia, poiché gli indirizzi MAC possono essere falsificati, questa misura è solo un elemento di una strategia di sicurezza complessiva.
+\end{enumerate}
+
+\section{RADIUS}
+
+RADIUS (Remote Authentication Dial-In User Service) è un protocollo di rete che fornisce un sistema centralizzato per la gestione dell'accesso a risorse di rete.
+
+\subsection{Funzionamento}
+
+Il suo scopo principale è offrire funzionalità di Autentication, Autorization e Accounting (AAA) in ambienti distribuiti, come reti aziendali, reti wireless e servizi VPN. La struttura client-server del protocollo lo rende scalabile e flessibile, consentendo l'autenticazione centralizzata degli utenti su una vasta gamma di dispositivi e applicazioni.
+
+\subsubsection{Fase di Connessione}
+
+Quando un utente o un dispositivo cerca di connettersi a una rete:
+
+\begin{enumerate}
+    \item Il client invia una richiesta di autenticazione al server RADIUS, contenente le credenziali.
+    \item Il server verifica le informazioni ricevute confrontandole con un database, che può essere locale o integrato con sistemi esterni come LDAP o Active Directory.
+    \item Il server risponde con un messaggio che accetta, rifiuta o sfida ulteriormente la richiesta.
+\end{enumerate}
+
+RADIUS può registrare dettagli relativi alla sessione, come la durata della connessione e il volume di dati trasferiti, per scopi di contabilità.
+
+\subsection{Architettura e Protocolli}
+
+RADIUS utilizza principalmente il protocollo UDP, tuttavia può funzionare anche su TCP per ambienti che richiedono maggiore affidabilità. Le comunicazioni tra client e server RADIUS sono protette tramite una chiave segreta condivisa, ma, per maggiore sicurezza, il protocollo può essere combinato con estensioni come EAP-TLS per autenticazione basata su certificati o con protocolli di trasporto sicuro come IPSec e TLS.
+
+\section{Sicurezza dei Dispositivi Mobili}
+
+\subsection{Cambio di Paradigma}
+
+Prima della diffusione degli smartphone, la sicurezza informatica e di rete nelle organizzazioni seguiva un paradigma molto diverso. L'IT aziendale era strettamente controllato e i dispositivi utente erano principalmente PC Windows. Oggi, queste premesse sono cambiate drasticamente.
+
+Le reti aziendali devono far fronte a:
+
+\begin{enumerate}
+    \item Uso crescente di nuovi dispositivi
+    \item Applicazioni basate su cloud
+    \item De-perimetralizzazione
+    \item Esigenze esterne: l'azienda deve fornire accesso alla rete anche a ospiti, utilizzando vari dispositivi e da numerose ubicazioni.
+\end{enumerate}
+
+Al centro di questi cambiamenti vi sono i dispositivi mobili, come smartphone, tablet che offrono una maggiore comodità per gli utenti ma presentano anche complessità di sicurezza.
+
+\subsection{Minacce alla Sicurezza dei Dispositivi Mobili}
+
+Le principali preoccupazioni di sicurezza per i dispositivi mobili includono:
+
+\begin{description}
+    \item[Mancanza di controllo fisico] I dispositivi mobili sono spesso sotto il controllo totale degli utenti e possono essere utilizzati e conservati in diversi luoghi al di fuori del controllo aziendale.
+    
+    \item[Uso di dispositivi non sicuri] Molti dipendenti utilizzano dispositivi personali, i quali potrebbero presentare vulnerabilità come l'assenza di crittografia.
+    
+    \item[Uso di reti non sicure] I dispositivi mobili possono connettersi a reti aziendali sicure in sede, ma accedono spesso a risorse aziendali tramite reti Wi-Fi o cellulari potenzialmente vulnerabili.
+    
+    \item[Interazione con altri sistemi] I dispositivi mobili spesso sincronizzano dati con altri dispositivi o con archiviazioni cloud, rischiando di esporre dati sensibili o introdurre malware.
+    
+    \item[Accesso a contenuti non sicuri] I dispositivi mobili possono accedere a contenuti come codici QR che possono reindirizzare a siti web dannosi.
+    
+    \item[Utilizzo di servizi di localizzazione] I servizi GPS possono esporre informazioni sensibili sulla posizione del dispositivo.
+\end{description}
+
+\subsection{Strategia di Sicurezza per i Dispositivi Mobili}
+
+Le strategie di sicurezza devono affrontare la protezione dei dispositivi, la sicurezza del traffico client/server e la sicurezza delle barriere di rete.
+
+\begin{description}
+    \item[Sicurezza dei dispositivi] Le organizzazioni possono fornire dispositivi preconfigurati ai dipendenti con controlli di sicurezza obbligatori, come il blocco automatico, la protezione tramite PIN o password, il wipe remoto e l'uso di software aggiornato.
+    
+    \item[Sicurezza del traffico] Tutto il traffico deve essere crittografato e protetto tramite reti private virtuali (VPN). È preferibile utilizzare un'autenticazione a due livelli, autenticando sia il dispositivo che l'utente.
+    
+    \item[Sicurezza delle barriere] Devono essere implementate misure per proteggere la rete, incluse politiche firewall specifiche per il traffico dei dispositivi mobili e sistemi di rilevamento/prevenzione delle intrusioni con regole più rigorose per questi dispositivi.
+\end{description}
+
+\section{Rete Wireless Ospiti}
+
+Una rete wireless ospiti è una rete dedicata separata dalle reti aziendali principali, progettata per consentire l'accesso temporaneo a utenti esterni come visitatori, partner commerciali e appaltatori, senza compromettere la sicurezza della rete aziendale principale.
+
+Queste reti offrono connettività a Internet ma limitano l'accesso alle risorse critiche interne dell'organizzazione, riducendo i rischi di intrusioni e fughe di dati.
+
+\subsection{Caratteristiche della Rete Ospiti}
+
+\begin{description}
+    \item[Isolamento della rete] La separazione dalla rete principale impedisce agli ospiti di accedere ai dispositivi e ai dati aziendali.
+    
+    \item[Facilità d'uso] Generalmente configurate per offrire una connessione semplice, spesso richiedendo solo una password o l'accettazione di termini di utilizzo.
+    
+    \item[Controllo dell'accesso] L'accesso alla rete può essere gestito attraverso diverse politiche per garantire un utilizzo sicuro.
+\end{description}
+
+\subsection{Implementazione}
+
+\subsubsection{Separazione tramite VLAN}
+
+Le VLAN consentono di segmentare una rete fisica in sottoreti logiche separate. La rete ospiti può essere configurata in una VLAN distinta rispetto alla rete principale, in modo che il traffico di rete tra le VLAN sia isolato a meno che non sia esplicitamente consentito da regole specifiche.
+
+\subsubsection{Regole di Firewall e ACL}
+
+Un firewall può essere configurato per limitare il traffico tra la rete ospiti e la rete principale mediante regole specifiche che bloccano l'accesso non autorizzato. Le ACL possono essere utilizzate per definire quali dispositivi o servizi sulla rete principale possono essere visibili e accessibili dai dispositivi nella rete ospiti.
+
+\subsubsection{SSID Separati con Differenti Configurazioni}
+
+Gli access point wireless possono essere configurati per offrire più SSID, ognuno dei quali può avere configurazioni di sicurezza e di accesso diverse. L'SSID della rete ospiti può essere configurato per fornire accesso solo a Internet o a risorse limitate, mentre l'SSID della rete principale può essere riservato per l'accesso a tutte le risorse aziendali.
+
+\section{Il Jamming}
+
+Il jamming del segnale è un'azione mirata a interferire e bloccare le comunicazioni wireless tramite l'emissione di rumore su una specifica frequenza radio.
+
+A differenza delle interferenze accidentali, causate spesso da dispositivi che utilizzano le stesse frequenze, il jamming funziona in modo simile a un attacco Denial of Service, bloccando le comunicazioni wireless.
+
+\subsection{Funzionamento del Jamming}
+
+Il jamming si realizza trasmettendo segnali potenti per sovrastare le frequenze bersaglio, impedendo così ai dispositivi vicini di inviare o ricevere dati. Questo fenomeno colpisce dispositivi che utilizzano segnali wireless su una determinata frequenza, come Wi-Fi, Bluetooth, GPS e comunicazioni radio.
+
+\subsection{Riconoscere e Contrastare il Jamming}
+
+Riconoscere il jamming non è sempre semplice, ma ci sono segni che possono indicarlo, come avere una buona ricezione senza riuscire a effettuare chiamate o accedere a Internet, oppure il malfunzionamento di reti e dispositivi senza motivi evidenti. È importante distinguere i problemi di connettività ordinaria dal jamming.
+
+\subsubsection{Cambio della Frequenza e del Canale}
+
+Per proteggersi, si possono cambiare la frequenza e il canale del Wi-Fi (es. passare da 2.4 GHz a 5 GHz) o utilizzare sistemi di sicurezza capaci di rilevare tentativi di jamming. L'uso di servizi VoIP può garantire la comunicazione anche in caso di blocchi sui segnali radio tradizionali.

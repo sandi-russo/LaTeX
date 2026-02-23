@@ -1,0 +1,276 @@
+\chapter{SQL Injection e Sicurezza dei Database}
+
+\section{SQL Injection}
+
+Le SQL injection (o SQLi) sono un tipo di vulnerabilità in cui l'attaccante utilizza parte di un codice SQL per manipolare un database e accedere a informazioni potenzialmente preziose.
+
+\subsection{Come Funzionano le SQLi}
+
+SQLi sfrutta vulnerabilità presenti a livello database di un'applicazione (quali le query). Mediante un attacco di tipo SQL injection, l'attaccante può estrarre o manipolare i dati dell'applicazione Web.
+
+\subsection{Fonti di Attacco}
+
+È possibile caratterizzare gli attacchi SQLi in base al fronte di attacco e al tipo di attacco. Le principali fonti sono:
+
+\begin{description}
+    \item[Input utente] In cui l'attaccante inietta i comandi SQL fornendo un input opportunamente costruito.
+    \item[Cookie] Utilizzati per recuperare le informazioni sullo stato dell'utente, in cui l'attaccante potrebbe modificarli opportunamente per far in modo che, quando il server effettuerà una query basata sul contenuto dei cookie, la struttura e la funzionalità della query siano modificate.
+    \item[Input fisico dell'utente] Tramite il quale è possibile iniettare comandi SQL anche al di fuori del contesto di richieste Web. L'input può consistere di codici a barre, moduli cartacei che vengono digitalizzati attraverso riconoscimento dei caratteri e inviati al database management system.
+\end{description}
+
+\section{Tipi di SQL Injection}
+
+I tipi di attacco possono essere raggruppati in tre categorie principali:
+
+\begin{itemize}
+    \item Attacchi in banda
+    \item Attacchi inferenziali
+    \item Attacchi fuori banda
+\end{itemize}
+
+\subsection{Attacco in Banda}
+
+Un attacco in banda sfrutta lo stesso canale di comunicazione per iniettare codice e per ottenere i risultati. I dati ottenuti sono direttamente visualizzati nella pagina web. Gli attacchi in banda si classificano in:
+
+\subsubsection{Tautologia}
+
+Questa forma di attacco inietta il codice in una o più istruzioni condizionali per far in modo che vengano valutate sempre come vere.
+
+\paragraph{Esempio} Supponiamo che abbiamo una query SQL in un'applicazione web che estrae i dati di un utente dal database in base al nome utente fornito tramite un form.
+
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '$username';
+\end{lstlisting}
+
+Se l'input non viene gestito correttamente, l'attaccante potrebbe inserire questo valore nel campo username:
+
+\begin{verbatim}
+' OR '1'='1
+\end{verbatim}
+
+ottenendo:
+
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '' OR '1'='1';
+\end{lstlisting}
+
+\begin{enumerate}
+    \item La condizione \texttt{username = ''} fallisce (non ci sono utenti con il nome vuoto).
+    \item Ma \texttt{OR '1'='1'} è sempre vero, quindi la query restituirà tutti gli utenti presenti nella tabella \texttt{users}, perché la condizione è sempre vera per tutti i record.
+\end{enumerate}
+
+\subsubsection{Commenti di Fine Riga}
+
+Dopo aver iniettato codice in un determinato campo, codici legittimi che seguono sono annullati dall'uso del commento di fine riga. In questo modo, il testo seguente non venga processato come codice ma come commento.
+
+\paragraph{Esempio} Supponiamo di avere una query che verifica le credenziali di un utente:
+
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '$username' AND password = '$pwd';
+\end{lstlisting}
+
+Se l'input non viene gestito correttamente, l'attaccante potrebbe inserire questo valore nel campo username:
+
+\begin{verbatim}
+' OR '1'='1' -- 
+\end{verbatim}
+
+ottenendo:
+
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '' OR '1'='1' -- ' AND password = '';
+\end{lstlisting}
+
+\begin{enumerate}
+    \item La condizione \texttt{username = ''} fallisce (non ci sono utenti con il nome vuoto).
+    \item Ma \texttt{OR '1'='1'} è sempre vero, quindi la query restituirà tutti gli utenti presenti nella tabella \texttt{users}, perché la condizione è sempre vera per tutti i record.
+    \item \texttt{--} è un commento in SQL, quindi tutto ciò che viene dopo (in questo caso la verifica della password) viene ignorato.
+\end{enumerate}
+
+\subsubsection{Query Piggybacked}
+
+L'attaccante aggiunge ulteriori query rispetto a quella prevista, veicolando l'attacco a dorso di una richiesta legittima. Questa tecnica sfrutta configurazioni del server che permettono di eseguire diverse query all'interno di una singola riga di codice.
+
+\paragraph{Esempio} Supponiamo di avere una query SQL che estrae informazioni su un utente in base al suo nome utente:
+
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '$username';
+\end{lstlisting}
+
+Se l'input non viene gestito correttamente, l'attaccante potrebbe inserire questo valore nel campo username:
+
+\begin{verbatim}
+'; DROP TABLE users; --
+\end{verbatim}
+
+ottenendo:
+
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = ''; DROP TABLE users; --';
+\end{lstlisting}
+
+\begin{enumerate}
+    \item La prima parte, \texttt{SELECT * FROM users WHERE username = '';}, non restituirà alcun risultato (il nome utente è vuoto).
+    \item La seconda parte, \texttt{DROP TABLE users;}, viene eseguita come una seconda istruzione SQL indipendente e cancella la tabella \texttt{users}.
+    \item Il commento \texttt{--} viene usato per ignorare il resto della query.
+\end{enumerate}
+
+Questo attacco è devastante perché elimina completamente la tabella \texttt{users}, cancellando tutti i dati contenuti.
+
+\subsection{Attacco Inferenziale}
+
+In un attacco inferenziale non c'è un effettivo trasferimento di dati, ma l'attaccante è in grado di ricostruire alcune informazioni inviando particolari richieste e analizzando le risposte del server. Sono attacchi inferenziali:
+
+\subsubsection{Error-based SQL Injection}
+
+Un attacco basato su errori sfrutta le risposte di errore del database per dedurre informazioni sensibili. Manipolando una query in modo da far generare errori al database, l'attaccante può ricavare dettagli sulla struttura delle tabelle, i campi, o i dati stessi.
+
+\subsubsection{Blind SQL Injection}
+
+Permette ad un attaccante di risalire ai dati contenuti in un database anche quando questo è sufficientemente sicuro da non restituire informazioni sensibili all'attaccante. Quest'ultimo pone al server domande di tipo booleano. Se la query sottoposta viene valutata come vera, l'applicazione web continua a funzionare correttamente. Se la query sottoposta viene valutata falsa, anche se il server non restituisce un chiaro messaggio di errore, la pagina differisce notevolmente dalla pagina ottenuta nel normale funzionamento.
+
+\subsection{Attacco Fuori Banda}
+
+In un attacco fuori banda i dati vengono estratti sfruttando un canale differente (per esempio, un'e-mail con i risultati della query viene generata e inviata al richiedente). Questo può essere usato quando esistono vincoli sull'estrazione delle informazioni, ma il server del database implementa pochi controlli sulle comunicazioni in uscita attraverso altri canali.
+
+\section{Contromisure per le SQL Injection}
+
+Le contromisure possono essere classificate in tre categorie:
+
+\begin{itemize}
+    \item programmazione difensiva
+    \item rilevazione
+    \item prevenzione a tempo di esecuzione
+\end{itemize}
+
+\subsection{Programmazione Difensiva}
+
+Molti attacchi SQLi vanno a buon fine perché gli sviluppatori, spesso, hanno utilizzato tecniche di programmazione non sicure. Con la programmazione difensiva andiamo a ridurre i danni provocati da attacchi SQLi.
+
+\subsubsection{Pratiche Manuali di Programmazione Difensiva}
+
+Una tipica vulnerabilità sfruttata è la scarsa validazione dell'input. La soluzione più semplice consiste nel controllare che se il tipo di dato atteso è numerico, non contenga caratteri che non siano di questo tipo.
+
+\subsubsection{Inserimento Parametrizzato della Query}
+
+Questo approccio cerca di bloccare attacchi SQLi dando la possibilità allo sviluppatore di definire dettagliatamente la struttura di una query SQL, inserendo i valori dei parametri uno per volta, così che, qualsiasi input inserito dell'utente, non possa modificare la struttura della query.
+
+\subsubsection{SQL DOM}
+
+SQL DOM è un insieme di classi che abilitano la validazione automatica dei tipi di dati e dei caratteri di escape. Questo approccio sfrutta l'incapsulamento delle query per garantire un accesso sicuro e affidabile al database. Viene modificato il processo di costruzione delle query, passando da un approccio basato sulla concatenazione di stringhe a uno strutturato che utilizza una API che implementa controlli sui tipi.
+
+\subsection{Rilevamento}
+
+Numerosi metodi di rilevazione sono stati proposti e sviluppati, quali i seguenti:
+
+\subsubsection{Basati sulle Firme (signature-based)}
+
+Cercano di individuare specifiche sequenze di attacco. Tali approcci richiedono un aggiornamento costante e potrebbero non rilevare attacchi basati su codice automodificante.
+
+\subsubsection{Basati sulle Anomalie (anomaly-based)}
+
+Questo approccio tenta di individuare attività che si discostano dal modello standard del sistema monitorato. Si utilizzano numerosi approcci. Generalmente, vi è una fase di addestramento, in cui il sistema apprende il modello del comportamento tipico del sistema, seguita da una fase di vera e propria individuazione.
+
+\subsubsection{Analisi del Codice}
+
+Le tecniche di analisi del codice prevedono l'uso di suite di test per rilevare vulnerabilità SQLi. Questi test sono progettati per generare diversi tipi di attacchi SQLi e valutare la risposta del sistema.
+
+\subsection{Prevenzione a Tempo di Esecuzione}
+
+Sono state sviluppate diverse tecniche di prevenzione a tempo di esecuzione come strumento di difesa contro attacchi SQLi. Queste tecniche controllano le query a tempo di esecuzione per valutare se sono coerenti con il modello di query previsto.
+
+\section{Controllo degli Accessi ai Database}
+
+I DBMS forniscono controllo degli accessi che può essere discrezionale o basato sui ruoli. Tipicamente, i DBMS supportano varie politiche di gestione, fra cui:
+
+\begin{itemize}
+    \item \textbf{Amministrazione centralizzata}, in cui un numero limitato di utenti può concedere o revocare permessi.
+    \item \textbf{Amministrazione basata sulla proprietà}, dove il proprietario di una tabella (l'utente che la crea) può concedere e revocare i permessi.
+    \item \textbf{Amministrazione decentralizzata} nella quale il proprietario di una tabella può autorizzare altri utenti a concedere o revocare permessi per quella tabella.
+\end{itemize}
+
+\subsection{Definizione dei Permessi Basati su SQL}
+
+SQL fornisce due comandi per la gestione dei permessi, \texttt{GRANT} e \texttt{REVOKE}.
+
+\subsubsection{Sintassi del comando GRANT}
+
+\begin{lstlisting}[language=SQL]
+GRANT {privileges | role} 
+[ON table]
+TO {user | role | PUBLIC}
+[IDENTIFIED BY password]
+[WITH GRANT OPTION]
+\end{lstlisting}
+
+\subsubsection{Sintassi del comando REVOKE}
+
+\begin{lstlisting}[language=SQL]
+REVOKE {privileges | role} 
+[ON table]
+FROM {user | role | PUBLIC}
+\end{lstlisting}
+
+\subsection{Autorizzazioni in Cascata}
+
+L'istruzione \texttt{GRANT OPTION} permette la concessione di permessi in cascata tra più utenti, consentendo a chi riceve un permesso di trasmetterlo ad altri. Tuttavia, anche la revoca segue una logica a cascata: se l'utente che ha originariamente concesso il permesso lo revoca, tutti i permessi successivi trasmessi in base a quello originale vengono automaticamente revocati.
+
+Ciò può generare complicazioni quando un utente riceve lo stesso permesso da più fonti. La convenzione generale adottata prevede che la revoca si applichi a tutti i permessi derivati, salvo che un permesso esista indipendentemente dalla concessione originale.
+
+\subsection{Controllo degli Accessi Basato sui Ruoli}
+
+Un sistema per il controllo degli accessi basato sui ruoli (Role-based Access Control, RBAC) rappresenta una valida soluzione per il controllo degli accessi in un database.
+
+È possibile classificare gli utenti che accedono al database in tre categorie principali:
+
+\begin{enumerate}
+    \item \textbf{Proprietario dell'applicazione}, il proprietario degli oggetti del database (come tabelle, colonne e righe).
+    \item \textbf{Utente finale diverso dal proprietario}, l'utente finale che utilizza alcuni oggetti del database attraverso un'applicazione, ma non è il proprietario di nessuno degli oggetti utilizzati.
+    \item \textbf{Amministratore}, l'utente che ha la responsabilità di amministrare, interamente o parzialmente, il database.
+\end{enumerate}
+
+\subsubsection{Ruoli Predefiniti}
+
+\begin{itemize}
+    \item I ruoli fissi del server sono definiti a livello del server, sono indipendenti da qualsiasi database utente e sono concepiti per semplificare l'amministrazione del server.
+    \item I ruoli fissi del database hanno validità a livello del singolo database.
+    \item Ai ruoli definiti dagli utenti è possibile assegnare permessi a porzioni del database. Esistono due tipi di ruoli definiti dall'utente: standard e applicazione.
+    \begin{enumerate}
+        \item Per un ruolo di tipo standard, un utente può assegnare, ad altri utenti, lo stesso ruolo.
+        \item Un ruolo di tipo applicazione è associato a un'applicazione piuttosto che a un gruppo di utenti, e richiede una password.
+    \end{enumerate}
+\end{itemize}
+
+\section{Inferenza nei Database}
+
+L'inferenza, nel contesto dei database, consiste nell'effettuare interrogazioni legittime e dedurre informazioni riservate attraverso le risposte ricevute.
+
+Il problema dell'inferenza si presenta quando la combinazione di più dati rappresenta un'informazione più sensibile rispetto ai singoli dati. In generale, è possibile utilizzare due tecniche di inferenza per ottenere ulteriori informazioni:
+
+\begin{itemize}
+    \item Analizzare le dipendenze funzionali tra gli attributi all'interno di una o più tabelle
+    \item Unire viste che usano gli stessi vincoli
+\end{itemize}
+
+\subsection{Contromisure}
+
+In generale, esistono due approcci per contrastare l'inferenza tramite l'uso di algoritmi per la rilevazione:
+
+\subsubsection{Rilevamento in Fase di Progettazione del Database}
+
+Questo approccio elimina un canale di inferenza modificando la struttura del database o intervenendo sul sistema per il controllo degli accessi. Alcuni esempi comprendono la rimozione delle dipendenze fra i dati dividendo una tabella in più tabelle oppure l'aumento del livello di dettaglio nell'assegnazione dei ruoli in un sistema RBAC.
+
+\subsubsection{Rilevamento in Fase di Esecuzione delle Query}
+
+Questo approccio mira ad eliminare un canale di inferenza durante l'esecuzione di una o più query. Se viene individuato un canale di inferenza, la query viene bloccata o modificata.
+
+\section{Cifratura dei Database}
+
+La cifratura rappresenta l'ultimo meccanismo di difesa nella sicurezza dei database. La cifratura dei database implica due svantaggi:
+
+\begin{description}
+    \item[Gestione delle chiavi] Gli utenti autorizzati devono conoscere la chiave di decifratura per poter accedere ai dati. Fornire le chiavi relative alle singole parti di un database, diventa un problema complesso.
+    \item[Rigidità] Quando il database viene cifrato, interamente o parzialmente, eseguire la ricerca sui record diventa più complesso.
+\end{description}
+
+La cifratura può essere applicata all'intero database, a livello di record (cifrare determinati record), a livello di attributi (cifrare determinate colonne) o a livello del singolo campo.

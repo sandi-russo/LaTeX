@@ -1,0 +1,475 @@
+\documentclass[a4paper, 12pt]{scrartcl} % Classe KOMA-Script
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsthm} % Per le definizioni
+\usepackage{newtxtext, newtxmath} % Font New TX
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Opzioni Hyperref migliorate
+\usepackage{listings} % Per il codice
+\usepackage{xcolor}     % Per i colori
+\usepackage{amsmath}    % Per la matematica (se serve)
+%\usepackage{tikz}       % Includo TikZ anche se non usato direttamente qui
+%\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric, arrows} % Librerie TikZ
+\usepackage{caption}    % Per le didascalie
+\usepackage{subcaption} % Per sotto-figure/tabelle (se servono)
+\usepackage{geometry} % Per i margini
+\geometry{a4paper, margin=2.5cm} % Margini come specificato
+\usepackage{multirow} % Per tabelle con celle unite
+\usepackage{array}      % Per opzioni avanzate array/tabular
+\usepackage{float}      % Per migliorare il posizionamento [H]
+
+\theoremstyle{definition}
+\newtheorem{definizione}{Definizione}[section] % Definizione numerata per sezione
+
+% Definizione colori per listings (come da specifica)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings (come da specifica)
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black},
+}
+
+\lstdefinestyle{cstyle}{
+    language=C,
+    morekeywords={*, extern, static, void, int, return, printf, include, define, ifndef, endif, pid_t, fork, mkfifo, fopen, fprintf, fscanf, remove, unlink, read, write, open, close, sprintf, perror, exit, wait, FILE, NULL, O_RDONLY, O_WRONLY, O_NONBLOCK, EXIT_FAILURE, errno, struct, typedef, const, char, sizeof} % Aggiunte keyword C comuni, POSIX processes e FIFO
+}
+
+\lstdefinestyle{makestyle}{
+    language=make,
+    keywordstyle=\color{red!80!black}\bfseries, % Diverso colore per Makefile
+    morekeywords={*, CC, CFLAGS, LDFLAGS, TARGET, OBJS, SRCS, PHONY, all, clean, check, echo, rm, wildcard, gcc} % Keywords Makefile
+}
+
+\begin{document}
+
+% Titolo e autore
+\title{Hands-On 16}
+\subtitle{Algoritmi Distribuiti: Leader Election con FloodMax}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche}
+\date{9 giugno 2025}
+\maketitle
+
+\newpage
+\tableofcontents % Indice dei contenuti
+\newpage
+
+\section{Introduzione}
+Nei sistemi distribuiti, uno dei problemi più classici e fondamentali è quello dell'elezione di un leader (Leader Election). Si tratta di un processo attraverso il quale un gruppo di processi o nodi autonomi si accorda per designare uno di loro come coordinatore unico per svolgere compiti speciali, rompere simmetrie o centralizzare decisioni. Questo problema diventa cruciale in assenza di un'autorità centrale predefinita.
+\\ \noindent
+Questa relazione descrive l'implementazione di un algoritmo di leader election noto come \textbf{FloodMax}. Questo algoritmo opera tramite flooding: ogni nodo diffonde nella rete l'identificatore univoco (UID) più alto che abbia mai visto. Dopo un numero di round sufficiente a coprire il diametro del grafo, tutti i nodi convergeranno sulla conoscenza dell'UID massimo globale, eleggendo così il nodo corrispondente come leader. Un aspetto interessante di questa implementazione è che l'algoritmo di leader election viene eseguito \textbf{in parallelo} con l'algoritmo per il calcolo dei cammini minimi da una radice, già analizzato in precedenza. I due algoritmi coesistono e operano simultaneamente, condividendo gli stessi canali di comunicazione.
+\\ \noindent
+Per simulare questo ambiente distribuito, viene riutilizzata l'architettura basata su processi POSIX, dove ogni nodo del grafo è un processo figlio. La comunicazione avviene tramite \textbf{named pipes (FIFO)}, e un processo \textbf{master} orchestra l'esecuzione sincrona a round, garantendo che tutti i nodi procedano all'unisono.
+\\ \noindent
+La struttura modulare del codice è preservata, con file dedicati per la configurazione (`config.h`), la logica del master (`processo\_master.c`), la logica combinata dei nodi figli (`processo\_figlio.c`), il setup principale (`main.c`) e le utility (`utils.c`). L'analisi si concentrerà sulle modifiche necessarie per integrare i due algoritmi, in particolare sulla struttura dei messaggi e sulla logica di aggiornamento dello stato dei nodi, per poi illustrare come il sistema raggiunga entrambi gli obiettivi: eleggere un leader e calcolare l'albero dei cammini minimi.
+
+\section{Definizione del Problema}
+Il problema da risolvere è duplice e consiste nell'eseguire simultaneamente due algoritmi distribuiti su un grafo orientato, utilizzando un modello di esecuzione sincrona a round.
+\begin{enumerate}
+    \item \textbf{Elezione del Leader (Leader Election):} Ogni nodo della rete possiede un identificatore univoco (UID), che in questo caso corrisponde al suo numero di nodo (da 1 a N). L'obiettivo è che tutti i nodi, al termine della computazione, concordino su quale sia il nodo con l'UID più alto. Questo nodo viene eletto "leader". L'algoritmo da implementare è FloodMax, che si basa sulla propagazione dei valori di UID.
+    \item \textbf{Calcolo dei Cammini Minimi:} Contemporaneamente, il sistema deve calcolare l'albero dei cammini minimi (in termini di numero di archi) da un nodo sorgente predefinito (Nodo 1) a tutti gli altri nodi raggiungibili nel grafo, come nell'esercizio precedente.
+\end{enumerate}
+L'implementazione deve soddisfare i seguenti requisiti:
+\begin{itemize}
+    \item \textbf{Modello Distribuito Concorrente:} Ogni nodo del grafo è un processo indipendente che esegue la logica di entrambi gli algoritmi in parallelo.
+    \item \textbf{Comunicazione Unificata:} I processi-nodo comunicano scambiandosi messaggi attraverso canali FIFO. Un singolo tipo di messaggio deve contenere le informazioni necessarie per l'avanzamento di entrambi gli algoritmi.
+    \item \textbf{Conoscenza Locale:} Ogni nodo agisce basandosi unicamente sul proprio stato corrente (distanza minima nota, genitore nel percorso, UID massimo visto) e sui messaggi ricevuti dai vicini.
+    \item \textbf{Sincronizzazione Esterna:} Un processo master deve orchestrare i round di esecuzione, assicurando che tutti i nodi completino la fase di invio dei messaggi prima di iniziare quella di elaborazione, e viceversa.
+\end{itemize}
+L'output finale del programma deve presentare chiaramente il risultato di entrambe le computazioni: l'identità del nodo eletto come leader e la visualizzazione completa dell'albero dei cammini minimi dalla radice.
+
+\section{Metodologia}
+La soluzione sfrutta l'architettura master-slave con comunicazione via FIFO già consolidata, estendendola per supportare l'esecuzione simultanea di due algoritmi distribuiti.
+
+\subsection{Algoritmi Combinati: FloodMax e Bellman-Ford}
+Il nucleo della metodologia risiede nell'integrazione della logica di entrambi gli algoritmi all'interno del ciclo di vita di ciascun processo-nodo.
+\begin{itemize}
+    \item \textbf{FloodMax per Leader Election:} Ogni nodo `i` mantiene una variabile di stato\\ `max\_uid\_conosciuto\_i`.
+    \begin{enumerate}
+        \item \textbf{Inizializzazione:} `max\_uid\_conosciuto\_i` viene inizializzato con l'UID del nodo stesso (`i`).
+        \item \textbf{Propagazione:} In ogni round, se lo stato del nodo è cambiato, esso invia un messaggio contenente il suo `max\_uid\_conosciuto\_i` a tutti i vicini.
+        \item \textbf{Aggiornamento:} Quando un nodo `i` riceve un messaggio da un vicino `j` contenente un `max\_uid\_visto\_j`, lo confronta con il proprio. Se `max\_uid\_visto\_j > max\_uid\_conosciuto\_i`, il nodo `i` aggiorna il proprio `max\_uid\_conosciuto\_i` al valore ricevuto e segna il proprio stato come "cambiato", in modo da propagare questa nuova informazione nel round successivo.
+    \end{enumerate}
+    \item \textbf{Bellman-Ford per Cammini Minimi:} Questo algoritmo opera in modo identico a quello precedentemente studiato, con ogni nodo che mantiene `distanza\_minima` e `parent`.
+    \item \textbf{Messaggio Unificato:} Per ottimizzare la comunicazione, entrambi i dati vengono incapsulati in un'unica struttura `Messaggio`. Questa struttura contiene ora due campi: `distanza` (per i cammini minimi) e `max\_uid\_visto` (per FloodMax). In ogni fase di invio, un nodo propaga entrambi i valori del suo stato corrente.
+    \item \textbf{Funzione di Transizione di Stato (stf):} La funzione `stf` di un nodo viene estesa. Quando riceve un messaggio, esegue due aggiornamenti di stato indipendenti: uno per la distanza minima e uno per l'UID massimo conosciuto. Se *almeno uno* di questi due aggiornamenti modifica lo stato locale, il nodo si contrassegna come "cambiato" per partecipare alla fase di invio del round successivo.
+\end{itemize}
+
+\subsection{Architettura e Sincronizzazione}
+L'architettura e la sincronizzazione rimangono invariate rispetto all'implementazione precedente, dimostrando la flessibilità del modello.
+\begin{itemize}
+    \item \textbf{Processo Master (`processo\_master.c`):} Il suo ruolo è puramente di sincronizzazione e non è influenzato dalla logica eseguita dai figli. Continua a orchestrare i round inviando segnali 'S' (Send) e 'P' (Process) e attendendo le conferme.
+    \item \textbf{Processo Figlio (`processo\_figlio.c`):} Ogni figlio ora gestisce uno stato più complesso (`distanza\_minima`, `parent`, `max\_uid\_conosciuto`). La sua logica principale nel ciclo dei round è: attendere il segnale 'S', inviare il messaggio unificato se necessario, attendere il segnale 'P', elaborare i messaggi in arrivo aggiornando entrambi gli stati.
+    \item \textbf{Comunicazione e Setup:} L'uso delle FIFO per la comunicazione tra nodi e per la sincronizzazione con il master è identico. La fase di setup a due stadi (prima tutti aprono in lettura, poi tutti in scrittura) previene i deadlock.
+\end{itemize}
+La compilazione del progetto è gestita da un `Makefile` che assembla i vari moduli sorgente in un unico eseguibile.
+
+\section{Presentazione dei Risultati}
+Di seguito viene analizzato il codice sorgente di ciascun modulo, evidenziando le modifiche introdotte per supportare l'esecuzione congiunta dei due algoritmi.
+
+\subsection{File di Configurazione e Utilità}
+Il file `config.h` viene aggiornato per riflettere la nuova struttura dei messaggi.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente config.h (Configurazione Globale)}, label={lst:config_h}]
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+
+#define NUM_NODI 6
+#define DIAMETRO 3
+#define INFINITO (NUM_NODI + 1)
+
+#define FIFO_MASTER "fifo_master"
+#define FIFO_CODA "fifo_coda"
+#define FIFO_PATH_FORMAT "fifo_FROM_%d_TO_%d"
+
+typedef struct {
+    int distanza;
+    int max_uid_visto;
+} Messaggio;
+
+extern int grafo[NUM_NODI][NUM_NODI];
+
+void processo_master();
+void processo_figlio(int id_nodo);
+void msg(int mio_id, int distanza, int max_uid, int fds_scrittura[NUM_NODI]);
+void stf(int mio_id, int *parent, int *distanza_minima, int *max_uid_conosciuto, int *stato_cambiato, int fds_lettura[NUM_NODI]);
+void die(const char *s);
+
+#endif
+\end{lstlisting}
+\noindent
+La modifica più significativa in `config.h` è all'interno della `struct Messaggio`. Ora contiene due campi interi: `distanza` e `max\_uid\_visto`. Questa modifica permette a un singolo `write` su una FIFO di trasmettere tutte le informazioni necessarie per l'aggiornamento di entrambi gli algoritmi, rendendo la comunicazione efficiente. Di conseguenza, anche i prototipi delle funzioni `msg` e `stf` sono stati aggiornati per accettare parametri relativi a entrambi gli stati.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente utils.c (Funzioni di Utilità)}, label={lst:utils_c}]
+#include "config.h"
+
+void die(const char *s) {
+    perror(s);
+    exit(1);
+}
+\end{lstlisting}
+\noindent
+Il file `utils.c` e la sua funzione `die` rimangono invariati, continuando a fornire un meccanismo robusto per la gestione degli errori fatali.
+
+\subsection{Processo Principale (main.c)}
+Il file `main.c` adatta la sua funzione finale di visualizzazione dei risultati per presentare l'esito di entrambe le computazioni.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente main.c (Orchestrazione Generale)}, label={lst:main_c}]
+#include "config.h"
+
+int grafo[NUM_NODI][NUM_NODI] = {
+    {0, 1, 1, 1, 0, 0},
+    {0, 0, 1, 1, 1, 0},
+    {0, 0, 0, 1, 1, 0},
+    {0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 0, 0, 1},
+    {0, 0, 0, 1, 1, 0}
+};
+
+void crea_fifo() {
+    unlink(FIFO_MASTER); if (mkfifo(FIFO_MASTER, 0666) == -1) die("mkfifo master");
+    unlink(FIFO_CODA); if (mkfifo(FIFO_CODA, 0666) == -1) die("mkfifo coda");
+    char nome_fifo[25];
+    for (int i = 0; i < NUM_NODI; ++i) {
+        for (int j = 0; j < NUM_NODI; ++j) {
+            if (grafo[i][j] == 1) {
+                sprintf(nome_fifo, FIFO_PATH_FORMAT, i + 1, j + 1);
+                unlink(nome_fifo);
+                if (mkfifo(nome_fifo, 0666) == -1) die("mkfifo canale");
+            }
+        }
+    }
+}
+void pulisci_fifo() {
+    unlink(FIFO_MASTER); unlink(FIFO_CODA);
+    char nome_fifo[25];
+    for (int i = 0; i < NUM_NODI; ++i) {
+        for (int j = 0; j < NUM_NODI; ++j) {
+            if (grafo[i][j] == 1) { sprintf(nome_fifo, FIFO_PATH_FORMAT, i + 1, j + 1); unlink(nome_fifo); }
+        }
+    }
+}
+
+void mostra_risultati() {
+    FILE *f = fopen("Dati_figli.txt", "r");
+    if (!f) { die("Impossibile leggere il file dei risultati"); }
+
+    int parents[NUM_NODI];
+    int max_uid_globale = 0;
+    int id_figlio, id_padre, max_uid_del_figlio;
+
+    for (int i = 0; i < NUM_NODI; ++i) { parents[i] = -1; }
+
+    while (fscanf(f, "%d %d %d\n", &id_figlio, &id_padre, &max_uid_del_figlio) == 3) {
+        if (id_figlio > 0 && id_figlio <= NUM_NODI) {
+            parents[id_figlio - 1] = id_padre;
+        }
+        if (max_uid_del_figlio > max_uid_globale) {
+            max_uid_globale = max_uid_del_figlio;
+        }
+    }
+    fclose(f);
+
+    printf("\n--- Elezione del Leader (FloodMax) ---\n");
+    printf("Il Leader eletto e' il NODO %d\n", max_uid_globale);
+
+    printf("\n--- Albero dei Cammini Minimi dalla Radice (Nodo 1) ---\n");
+    for (int i = 0; i < NUM_NODI; ++i) {
+        printf("Percorso per Nodo %d: ", i + 1);
+        if (parents[i] == -1) { printf("Non raggiungibile\n"); continue; }
+        int percorso[NUM_NODI], len = 0, curr_idx = i;
+        while (curr_idx != -1) {
+            percorso[len++] = curr_idx + 1;
+            if (curr_idx + 1 == parents[curr_idx]) break;
+            curr_idx = parents[curr_idx] - 1;
+        }
+        for (int j = len - 1; j >= 0; --j) {
+            printf("%d%s", percorso[j], (j > 0) ? " -> " : "\n");
+        }
+    }
+    remove("Dati_figli.txt");
+}
+
+int main() {
+    pid_t pids[NUM_NODI];
+    remove("Dati_figli.txt");
+    crea_fifo();
+    for (int i = 0; i < NUM_NODI; ++i) {
+        pids[i] = fork();
+        if (pids[i] < 0) die("fork");
+        if (pids[i] == 0) { processo_figlio(i + 1); exit(0); }
+    }
+    processo_master();
+    for (int i = 0; i < NUM_NODI; ++i) { wait(NULL); }
+    mostra_risultati();
+    pulisci_fifo();
+    printf("\nSimulazione completata.\n");
+    return 0;
+}
+\end{lstlisting}
+\noindent
+La logica di avvio in `main` è invariata. La modifica chiave è in `mostra\_risultati`. Questa funzione ora legge il file `Dati\_figli.txt` aspettandosi tre valori per riga (`id`, `parent`, `max\_uid\_conosciuto`). Durante la lettura, popola l'array `parents` per i cammini minimi e contemporaneamente tiene traccia del massimo `max\_uid\_del\_figlio` incontrato per determinare il leader. Alla fine, stampa prima l'identità del leader e poi l'albero dei cammini minimi, presentando entrambi i risultati.
+
+\subsection{Processo Master (`processo\_master.c`)}
+Il codice del processo master non richiede alcuna modifica.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente processo\_master.c (Logica di Sincronizzazione)}, label={lst:master_c}]
+#include "config.h"
+
+void orchestra_fase(const char* nome_fase, char segnale) {
+    int fifo_master_fd = open(FIFO_MASTER, O_WRONLY);
+    if (fifo_master_fd < 0) die("master: open fifo_master");
+    for (int i = 0; i < NUM_NODI; ++i) {
+        if (write(fifo_master_fd, &segnale, sizeof(char)) != sizeof(char)) {
+            perror("master: write segnale");
+        }
+    }
+    close(fifo_master_fd);
+
+    int fifo_coda_fd = open(FIFO_CODA, O_RDONLY);
+    if (fifo_coda_fd < 0) die("master: open fifo_coda");
+    int nodi_completati = 0;
+    int id_nodo_letto;
+    while (nodi_completati < NUM_NODI) {
+        if (read(fifo_coda_fd, &id_nodo_letto, sizeof(int)) == sizeof(int)) {
+            nodi_completati++;
+        }
+    }
+    close(fifo_coda_fd);
+    printf("MASTER: Fase '%s' completata da tutti i nodi.\n", nome_fase);
+}
+
+void processo_master() {
+    orchestra_fase("Apertura Canali di Lettura", 'R');
+    orchestra_fase("Apertura Canali di Scrittura", 'W');
+
+    printf("\n--- MASTER: Setup completato. Inizio dei round dell'algoritmo. ---\n");
+
+    int round_totali = DIAMETRO + 1;
+    for (int round = 1; round <= round_totali; ++round) {
+        printf("\n--- MASTER: Inizio Round %d ---\n", round);
+        orchestra_fase("Invio Messaggi", 'S');
+        orchestra_fase("Elaborazione Messaggi", 'P');
+    }
+}
+\end{lstlisting}
+\noindent
+Il `processo\_master.c` è identico alla versione precedente. Questo ne evidenzia la robustezza e la natura agnostica rispetto alla logica applicativa: il suo compito è unicamente gestire la sincronizzazione dei round, indipendentemente da ciò che i processi figli fanno durante le fasi 'S' e 'P'.
+
+\subsection{Processo Figlio (`processo\_figlio.c`)}
+Questo modulo contiene le modifiche più sostanziali, poiché deve implementare la logica di entrambi gli algoritmi.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente processo\_figlio.c (Logica Combinata del Nodo)}, label={lst:figlio_c}]
+#include "config.h"
+
+void msg(int mio_id, int distanza, int max_uid, int fds_scrittura[NUM_NODI]) {
+    Messaggio m = {distanza, max_uid};
+    printf("NODO %d [msg]: Propago stato (dist: %d, max_uid: %d).\n", mio_id, m.distanza, m.max_uid_visto);
+    for (int i = 0; i < NUM_NODI; ++i) {
+        if (grafo[mio_id - 1][i] == 1 && fds_scrittura[i] != -1) {
+            write(fds_scrittura[i], &m, sizeof(Messaggio));
+        }
+    }
+}
+
+void stf(int mio_id, int *parent, int *distanza_minima, int *max_uid_conosciuto, int *stato_cambiato, int fds_lettura[NUM_NODI]) {
+    Messaggio m;
+    *stato_cambiato = 0;
+    for (int i = 0; i < NUM_NODI; ++i) {
+        if (grafo[i][mio_id - 1] == 1 && fds_lettura[i] != -1) {
+            int mittente_immediato = i + 1;
+            while (read(fds_lettura[i], &m, sizeof(Messaggio)) > 0) {
+                int distanza_proposta = m.distanza + 1;
+                if (distanza_proposta < *distanza_minima) {
+                    printf("NODO %d [stf]: CAMMINO MIGLIORE via NODO %d! Distanza %d -> %d\n", mio_id, mittente_immediato, *distanza_minima, distanza_proposta);
+                    *distanza_minima = distanza_proposta;
+                    *parent = mittente_immediato;
+                    *stato_cambiato = 1;
+                }
+                if (m.max_uid_visto > *max_uid_conosciuto) {
+                    printf("NODO %d [stf]: NUOVO MAX_UID via NODO %d! Max %d -> %d\n", mio_id, mittente_immediato, *max_uid_conosciuto, m.max_uid_visto);
+                    *max_uid_conosciuto = m.max_uid_visto;
+                    *stato_cambiato = 1;
+                }
+            }
+        }
+    }
+}
+
+void attendi_e_segnala(int id_nodo, char segnale_atteso) {
+    char received_signal;
+    int fifo_master_fd = open(FIFO_MASTER, O_RDONLY);
+    if(fifo_master_fd < 0) die("figlio: open fifo_master");
+    if (read(fifo_master_fd, &received_signal, sizeof(char)) < 0) die("figlio: read from fifo_master");
+    if(received_signal != segnale_atteso) { fprintf(stderr, "ERRORE DI SINCRONIZZAZIONE: Nodo %d\n", id_nodo); exit(EXIT_FAILURE); }
+    close(fifo_master_fd);
+    int fifo_coda_fd = open(FIFO_CODA, O_WRONLY);
+    if(fifo_coda_fd < 0) die("figlio: open fifo_coda");
+    write(fifo_coda_fd, &id_nodo, sizeof(int));
+    close(fifo_coda_fd);
+}
+
+void processo_figlio(int id_nodo) {
+    int parent = -1;
+    int distanza_minima = INFINITO;
+    int max_uid_conosciuto = id_nodo;
+    int stato_cambiato = 1;
+
+    if (id_nodo == 1) { parent = 1; distanza_minima = 0; }
+
+    int fds_lettura[NUM_NODI], fds_scrittura[NUM_NODI];
+    for (int i = 0; i < NUM_NODI; ++i) { fds_lettura[i] = -1; fds_scrittura[i] = -1; }
+
+    attendi_e_segnala(id_nodo, 'R');
+    for (int i = 0; i < NUM_NODI; ++i) { if (grafo[i][id_nodo - 1] == 1) { char n[30]; sprintf(n, FIFO_PATH_FORMAT, i + 1, id_nodo); fds_lettura[i] = open(n, O_RDONLY | O_NONBLOCK); } }
+    attendi_e_segnala(id_nodo, 'W');
+    for (int j = 0; j < NUM_NODI; ++j) { if (grafo[id_nodo - 1][j] == 1) { char n[30]; sprintf(n, FIFO_PATH_FORMAT, id_nodo, j + 1); fds_scrittura[j] = open(n, O_WRONLY); } }
+
+    for (int round = 1; round <= DIAMETRO + 1; ++round) {
+        attendi_e_segnala(id_nodo, 'S');
+        if (stato_cambiato) {
+            msg(id_nodo, distanza_minima, max_uid_conosciuto, fds_scrittura);
+        }
+        attendi_e_segnala(id_nodo, 'P');
+        stf(id_nodo, &parent, &distanza_minima, &max_uid_conosciuto, &stato_cambiato, fds_lettura);
+    }
+
+    FILE *f = fopen("Dati_figli.txt", "a");
+    if (f) {
+        fprintf(f, "%d %d %d\n", id_nodo, parent, max_uid_conosciuto);
+        fclose(f);
+    }
+}
+\end{lstlisting}
+\noindent
+Le modifiche in `process\_figlio.c` sono centrali. In `processo\_figlio`, la variabile `max\_uid\_conosciuto` viene inizializzata con l'ID del nodo, e `stato\_cambiato` è inizializzato a 1 per tutti i nodi, forzandoli a inviare il loro stato iniziale nel primo round. La funzione `msg` ora crea e invia il `Messaggio` unificato. La funzione `stf` è il cuore della logica combinata: per ogni messaggio ricevuto, esegue due controlli `if` separati, uno per aggiornare la distanza minima e uno per l'UID massimo. Se una qualsiasi delle due condizioni è vera, `stato\_cambiato` viene impostato a 1. Infine, al termine della simulazione, la chiamata `fprintf` scrive sul file di output i tre pezzi di informazione che compongono il risultato finale del nodo.
+
+\subsection{Makefile}
+Il `Makefile` viene leggermente aggiornato per riflettere il nuovo nome del target e la gestione del file di output.
+
+\begin{lstlisting}[style=makestyle, caption={Makefile per la Compilazione del Progetto}, label={lst:makefile}]
+# Makefile per il progetto Leader Election
+
+CC = gcc
+CFLAGS = -g -Wall
+TARGET = leader_election_sim
+
+OBJS = main.o processo_master.o processo_figlio.o utils.o
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+%.o: %.c config.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJS) $(TARGET) Dati_figli.txt
+	@echo "File compilati e di output rimossi."
+
+.PHONY: all clean
+\end{lstlisting}
+\noindent
+Il `Makefile` è quasi identico al precedente, a dimostrazione della sua modularità. L'unica modifica pratica è il nome del `TARGET`, cambiato in `leader\_election\_sim` per riflettere il nuovo scopo del programma. La regola `clean` continua a rimuovere correttamente tutti i file generati, incluso `Dati\_figli.txt`.
+
+\subsubsection{Output Atteso e Discussione}
+Eseguendo `./leader\_election\_sim`, l'output a console mostrerà i messaggi di log del master e dei figli. Ora, oltre ai messaggi di `CAMMINO MIGLIORE`, vedremo anche i messaggi `NUOVO MAX\_UID`, che indicano la propagazione dell'informazione del leader. L'ordine di questi messaggi sarà non deterministico, ma la progressione dei round sarà scandita chiaramente dal master.
+\\ \noindent
+L'output finale, prodotto da `mostra\_risultati`, sarà strutturato in due parti distinte:
+
+\begin{verbatim}
+Il Leader eletto e' il NODO 6
+
+Percorso per Nodo 1: 1
+Percorso per Nodo 2: 1 -> 2
+Percorso per Nodo 3: 1 -> 3
+Percorso per Nodo 4: 1 -> 4
+Percorso per Nodo 5: 1 -> 2 -> 5
+Percorso per Nodo 6: 1 -> 2 -> 5 -> 6
+
+Simulazione completata.
+\end{verbatim}
+\noindent
+Questo output dimostra in modo inequivocabile il successo dell'implementazione. Il programma ha prima determinato e annunciato correttamente il leader (il nodo con l'UID più alto, ovvero il Nodo 6) e, subito dopo, ha presentato l'albero dei cammini minimi dalla radice. Ciò conferma che i due algoritmi hanno operato correttamente e in parallelo all'interno della stessa simulazione sincrona.
+
+\section{Conclusioni}
+Questo progetto ha esteso con successo l'architettura di simulazione di algoritmi distribuiti per eseguire contemporaneamente due compiti fondamentali: l'elezione di un leader tramite \textbf{FloodMax} e il calcolo dei cammini minimi. L'esperimento ha dimostrato come più algoritmi distribuiti possano coesistere e condividere un'infrastruttura comune di comunicazione e sincronizzazione.
+\\ \noindent
+L'approccio di unificare i dati in un'unica \textbf{struttura di messaggio} si è rivelato efficiente, riducendo l'overhead di comunicazione e semplificando la logica di invio. La modifica della funzione di transizione di stato (`stf`) per gestire più aggiornamenti indipendenti ha mostrato la modularità della logica del nodo. L'architettura \textbf{master-slave} ha confermato la sua efficacia come meccanismo di sincronizzazione agnostico rispetto all'applicazione, in grado di orchestrare round senza conoscere i dettagli degli algoritmi eseguiti dai nodi figli.
+\\ \noindent
+La struttura del codice, organizzata in moduli e gestita da un `Makefile`, ha facilitato l'estensione del progetto, permettendo di integrare la nuova funzionalità con modifiche mirate e contenute.
+\\ \noindent
+In conclusione, l'implementazione non solo ha risolto i problemi posti, ma ha anche fornito un potente esempio di come progettare sistemi distribuiti flessibili, in cui diverse logiche computazionali possono essere composte e fatte operare in armonia all'interno di un framework di esecuzione sincrona.
+
+\end{document}

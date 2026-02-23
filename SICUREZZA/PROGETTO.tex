@@ -1,0 +1,368 @@
+\documentclass[a4paper, 12pt, titlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\usepackage{tabularx} % Aggiunto per gestire tabelle a larghezza fissa
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, calc, fit}
+
+% Margini ottimizzati per la lettura
+\geometry{a4paper, top=3cm, bottom=3cm, left=2.5cm, right=2.5cm}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    urlcolor=blue!80!black,
+    citecolor=red!70!black,
+    pdftitle={Fort Knox: Sistema Bancario Sicuro Virtualizzato},
+    pdfauthor={Sandi Russo},
+}
+
+% Colori per il codice
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.96}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{blue!80!black}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    framerule=0.5pt,
+    rulecolor=\color{black!20}
+}
+\lstset{style=mystyle}
+
+% Definizioni linguaggi
+\lstdefinelanguage{Python}{
+    keywords={def, return, raise, from, import, as, if, elif, else, while, for, try, except, class, async, await, pass, with, open},
+    keywordstyle=\color{blue!80!black}\bfseries,
+    identifierstyle=\color{black},
+    sensitive=false,
+    comment=[l]{\#},
+    morestring=[b]',
+    morestring=[b]"
+}
+
+\lstdefinelanguage{bash}{
+    keywords={docker, exec, sudo, apt, pip, uvicorn, npm, run, psql},
+    keywordstyle=\color{blue!80!black}\bfseries,
+    sensitive=true,
+    comment=[l]{\#},
+    morestring=[b]',
+    morestring=[b]"
+}
+
+\lstdefinelanguage{SQL}{
+    keywords={SELECT, FROM, WHERE, INSERT, INTO, VALUES, UPDATE, DELETE, CREATE, TABLE, PRIMARY, KEY, FOREIGN},
+    keywordstyle=\color{purple!80!black}\bfseries,
+    sensitive=false,
+    morestring=[b]',
+    morestring=[b]"
+}
+
+\lstdefinelanguage{YAML}{
+    keywords={services, image, build, container_name, restart, environment, ports, volumes, networks, depends_on, driver},
+    sensitive=true,
+    morecomment=[l]\#,
+    morestring=[b]',
+    morestring=[b]"
+}
+
+% Stile titoli
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{blue!60!black}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{black}}
+  {\thesubsection}{1em}{}
+
+\begin{document}
+
+% --- FRONTESPIZIO ---
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+
+    \Huge\bfseries
+    Università degli Studi di Messina
+
+    \vspace{1.5cm}
+
+    \Large
+    CdL in Scienze Informatiche \\
+    Sicurezza dei Sistemi Software \\
+    A.A. 2024/2025
+
+    \vspace{2.5cm}
+
+    \textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+    \vspace{0.4cm}
+    \Huge\bfseries
+    Progetto "Fort Knox": \\ Implementazione di un'Infrastruttura Bancaria Sicura e Virtualizzata
+    \vspace{0.4cm}
+    \textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+
+    \vspace{2cm}
+
+    \Large
+    \textbf{Sandi Russo} \\
+    Matr. 553675
+
+    \vfill
+
+    \Large
+    \today
+
+\end{titlepage}
+
+% --- SETUP PAGINE ---
+\pagenumbering{roman} % Numerazione romana per indici
+
+\pagestyle{fancy}
+\fancyhf{} 
+\renewcommand{\headrulewidth}{0pt} 
+\renewcommand{\footrule}{\color{blue!70!black}\hrule width \linewidth height 0.4pt}
+
+\lfoot{\color{black!75}Sandi Russo}
+\cfoot{\color{black!75}\thepage}
+\rfoot{\color{black!75}Progetto Fort Knox}
+
+% --- ABSTRACT ---
+\begin{abstract}
+\noindent
+La presente relazione illustra in dettaglio la progettazione, l'implementazione e la verifica di "Fort Knox", un prototipo di sistema bancario ad alta sicurezza. Il progetto nasce dall'esigenza di applicare concretamente i principi della \textit{Security by Design}, integrando competenze trasversali che spaziano dalla sicurezza delle reti alla crittografia applicata, fino allo sviluppo full-stack moderno.
+
+L'infrastruttura realizzata simula un ambiente di produzione reale basato su una rigorosa segmentazione di rete. Il perimetro è difeso da un firewall \textbf{pfSense} virtualizzato, che isola una \textit{Demilitarized Zone} (DMZ) contenente i servizi applicativi dalla rete pubblica. L'architettura software adotta un approccio a microservizi containerizzati tramite \textbf{Docker}, orchestrati per garantire il principio del minimo privilegio.
+
+Particolare enfasi è stata posta sulla protezione del dato: sono stati implementati algoritmi di crittografia simmetrica \textbf{AES-256} per l'archiviazione sicura dei documenti e crittografia asimmetrica \textbf{RSA-2048} per garantire il non ripudio delle transazioni finanziarie. Il risultato è un sistema resiliente, capace di mitigare le più comuni vulnerabilità web (OWASP Top 10) e di proteggere la riservatezza degli utenti anche in caso di compromissione fisica del server.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% --- INIZIO CONTENUTO ---
+\clearpage
+\pagenumbering{arabic} % Numerazione araba per il contenuto
+
+\section{Introduzione e Obiettivi}
+Nel panorama attuale della sicurezza informatica, la protezione dei dati finanziari e personali rappresenta una delle sfide più critiche. Il progetto "Fort Knox" si prefigge l'obiettivo di costruire una piattaforma bancaria simulata che non si limiti alla funzionalità, ma che ponga la sicurezza come requisito fondante dell'architettura.
+
+Gli obiettivi principali del progetto sono stati:
+\begin{itemize}
+    \item \textbf{Difesa in Profondità (Defense in Depth):} Implementare molteplici livelli di sicurezza (rete, applicazione, dati) in modo che il fallimento di un livello non comprometta l'intero sistema.
+    \item \textbf{Protezione dei Dati a Riposo:} Garantire che i documenti sensibili degli utenti siano illeggibili se sottratti direttamente dal disco rigido.
+    \item \textbf{Integrità delle Transazioni:} Utilizzare la firma digitale per impedire la falsificazione o il ripudio dei bonifici bancari.
+    \item \textbf{Isolamento dei Servizi:} Utilizzare la containerizzazione per limitare la superficie di attacco ("Blast Radius") in caso di compromissione di un singolo servizio.
+\end{itemize}
+
+\subsection{Stack Tecnologico}
+La scelta delle tecnologie è stata guidata da criteri di robustezza, supporto della community e aderenza agli standard industriali:
+\begin{itemize}
+    \item \textbf{Virtualizzazione:} Oracle VirtualBox per l'hosting delle VM.
+    \item \textbf{Sicurezza di Rete:} pfSense (Firewall/Router basato su FreeBSD).
+    \item \textbf{Containerizzazione:} Docker e Docker Compose per l'orchestrazione dei microservizi.
+    \item \textbf{Backend:} Python FastAPI, scelto per le prestazioni elevate e le robuste librerie crittografiche (\texttt{cryptography}, \texttt{passlib}).
+    \item \textbf{Frontend:} React con TypeScript e Ant Design per un'interfaccia utente moderna e tipizzata.
+    \item \textbf{Database:} PostgreSQL 15, un RDBMS solido e conforme ACID.
+\end{itemize}
+
+\section{Architettura di Rete e Sicurezza Perimetrale}
+La base della sicurezza di "Fort Knox" risiede nella topologia di rete. Non è stato utilizzato un semplice bridging delle interfacce, ma è stata costruita una rete segmentata gestita da un firewall dedicato.
+
+
+
+\subsection{Configurazione del Firewall pfSense}
+È stata installata e configurata una macchina virtuale \textbf{pfSense} che agisce come gateway unico per l'intera infrastruttura. La configurazione delle interfacce è la seguente:
+
+\begin{enumerate}
+    \item \textbf{WAN (Interfaccia em0):} Configurata in modalità \textit{NAT} verso l'host fisico. Questa interfaccia simula la connessione a Internet pubblica e acquisisce un indirizzo IP dinamico (es. \texttt{10.0.2.15}) dalla rete di VirtualBox.
+    \item \textbf{LAN/DMZ (Interfaccia vtnet0):} Configurata su una \textit{Rete Interna} virtuale isolata. Su questa interfaccia, pfSense agisce come server DHCP e gateway, gestendo la sottorete \texttt{172.16.0.0/24}. L'indirizzo del gateway è \texttt{172.16.0.1}.
+\end{enumerate}
+
+La macchina virtuale server (Ubuntu Server 22.04), che ospita l'applicazione Docker, è connessa esclusivamente all'interfaccia LAN (IP statico \texttt{172.16.0.15}). Di conseguenza, questa macchina è \textbf{invisibile e irraggiungibile} direttamente da Internet, proteggendola da scansioni di porte e attacchi diretti.
+
+\subsection{Regole di Accesso e Port Forwarding (NAT)}
+Per consentire l'utilizzo dei servizi mantenendo l'isolamento, è stata adottata una politica di firewall "Default Deny" (nega tutto tranne ciò che è esplicitamente permesso). L'accesso ai servizi avviene esclusivamente tramite \textbf{Port Forwarding (DNAT)}.
+
+Di seguito la tabella delle regole NAT configurate su pfSense:
+
+\begin{table}[H]
+\centering
+\caption{Regole di Port Forwarding su pfSense}
+\vspace{0.2cm}
+% Tabella adattata alla larghezza della pagina con tabularx
+\begin{tabularx}{\textwidth}{|l|X|l|l|}
+\hline
+\textbf{Servizio} & \textbf{Descrizione} & \textbf{Porta WAN} & \textbf{Destinazione LAN} \\ \hline
+SSH Tunnel & Accesso amministrativo cifrato al server & 2222 & 172.16.0.15:22 \\ \hline
+Frontend HTTPS & Interfaccia Web utente (React/Nginx) & 443 & 172.16.0.15:5173 \\ \hline
+Backend API & API REST per la logica di business & 8001 & 172.16.0.15:8001 \\ \hline
+\end{tabularx}
+\end{table}
+
+Questa configurazione garantisce che un attaccante esterno veda aperte solo le porte strettamente necessarie sul firewall pubblico, mentre la struttura interna della rete rimane offuscata.
+
+\section{Architettura Applicativa a Microservizi}
+L'applicazione non è un monolite, ma è stata decomposta in microservizi containerizzati gestiti da \textbf{Docker Compose}. Questo approccio offre vantaggi significativi in termini di sicurezza: ogni servizio gira in un ambiente isolato (sandbox) con accesso limitato alle risorse del sistema operativo host.
+
+
+
+\subsection{Definizione dei Container}
+Il file \texttt{docker-compose.yml} definisce l'orchestrazione dei tre componenti principali, collegati tramite una rete bridge interna (\texttt{fort\_knox\_net}) che non espone porte all'esterno se non quelle mappate esplicitamente.
+
+\begin{lstlisting}[language=YAML, caption={Configurazione dei servizi Docker}]
+services:
+  # 1. DATABASE: Accessibile SOLO dagli altri container, mai dall'esterno
+  db:
+    image: postgres:15
+    container_name: fort_knox_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - fort_knox_net
+
+  # 2. BACKEND: Contiene la logica crittografica
+  backend:
+    build: ./backend
+    depends_on:
+      - db
+    volumes:
+      # Montaggio del volume per la persistenza sicura dei file cifrati
+      - ./backend/safe_storage:/app/safe_storage
+    networks:
+      - fort_knox_net
+
+  # 3. FRONTEND: Server Nginx per servire l'app React
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:443" # Esposizione tramite tunnel SSL
+    networks:
+      - fort_knox_net
+\end{lstlisting}
+
+\section{Implementazione della Sicurezza Software}
+Questo capitolo descrive il cuore del progetto: le misure crittografiche e logiche implementate per proteggere i dati e le transazioni.
+
+\subsection{Crittografia Simmetrica (AES-256) per i Documenti}
+Uno dei requisiti critici era la protezione dei documenti di identità caricati dagli utenti. Per garantire la riservatezza (\textit{Confidentiality}), è stato implementato l'algoritmo \textbf{AES (Advanced Encryption Standard)} con chiave a 256 bit in modalità \textbf{CBC (Cipher Block Chaining)}.
+
+Il flusso di sicurezza è il seguente:
+\begin{enumerate}
+    \item L'utente carica il file tramite interfaccia web sicura.
+    \item Il backend riceve il file stream in memoria (senza scriverlo su disco).
+    \item Viene generato un \textit{Salt} casuale e un \textit{Initialization Vector (IV)} unico per ogni file.
+    \item Il contenuto viene cifrato.
+    \item Il file cifrato viene salvato su disco con estensione \texttt{.enc}.
+\end{enumerate}
+
+Questo approccio garantisce che, anche in caso di furto fisico del server, i file siano matematicamente impossibili da leggere senza la chiave di sistema.
+
+\begin{lstlisting}[language=Python, caption={Snippet della funzione di cifratura AES}]
+def encrypt_file_content(file_bytes, password):
+    key_length = 32 # AES-256
+    bs = AES.block_size
+    salt = urandom(bs)
+    # Derivazione della chiave sicura (PBKDF2-like)
+    key, iv = derive_key_and_iv(password, salt, key_length, bs)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    # Padding PKCS7 necessario per blocchi non allineati
+    padding_length = (bs - len(file_bytes) % bs) or bs
+    file_bytes += (padding_length * chr(padding_length)).encode()
+    return salt + cipher.encrypt(file_bytes)
+\end{lstlisting}
+
+\subsection{Crittografia Asimmetrica (RSA) e Firma Digitale}
+Per garantire il \textbf{Non Ripudio} e l'\textbf{Integrità} delle transazioni bancarie (bonifici), è stata utilizzata la crittografia asimmetrica RSA.
+
+\subsubsection{Gestione delle Chiavi}
+Al momento della registrazione dell'utente:
+\begin{enumerate}
+    \item Viene generata una coppia di chiavi RSA a 2048 bit.
+    \item La \textbf{Chiave Pubblica} viene salvata in chiaro nel database (visibile per verifica).
+    \item La \textbf{Chiave Privata} viene cifrata con AES (usando una Master Key di sistema) prima di essere salvata nel database.
+\end{enumerate}
+Questa tecnica, nota come \textit{Key Wrapping}, assicura che la chiave privata non risieda mai in chiaro nel database.
+
+\subsubsection{Firma della Transazione}
+Quando un utente esegue un bonifico:
+\begin{enumerate}
+    \item Il backend decifra temporaneamente la chiave privata dell'utente in memoria RAM.
+    \item Viene creato un \textit{hash} (SHA-256) contenente i dati della transazione (Mittente, Destinatario, Importo, Timestamp).
+    \item L'hash viene firmato con la chiave privata.
+    \item La firma viene allegata alla transazione.
+\end{enumerate}
+In questo modo, qualsiasi modifica successiva all'importo o al destinatario invaliderebbe la firma matematica.
+
+\subsection{Autenticazione Stateless con JWT}
+Il sistema abbandona le vecchie sessioni server-side in favore dello standard \textbf{JWT (JSON Web Token)}.
+\begin{itemize}
+    \item \textbf{Login:} L'utente invia le credenziali. La password viene verificata confrontando l'hash \textbf{Bcrypt} salvato nel DB.
+    \item \textbf{Token Issue:} Se valida, il server firma un token JWT contenente l'identità dell'utente e una scadenza.
+    \item \textbf{Richieste Successive:} Il Frontend allega il token nell'header \texttt{Authorization: Bearer}. Un middleware nel backend verifica la firma del token prima di processare qualsiasi richiesta (es. download file o bonifico).
+\end{itemize}
+
+\section{Verifica Sperimentale}
+Il sistema è stato sottoposto a test per validare l'efficacia delle misure di sicurezza.
+
+\subsection{Verifica della Cifratura a Riposo}
+Per dimostrare che i dati sensibili non sono esposti, è stato eseguito un accesso diretto al database PostgreSQL bypassando l'applicazione.
+
+Eseguendo la query direttamente nel container DB:
+\begin{lstlisting}[language=SQL]
+SELECT email, balance, encrypted_private_key FROM users;
+\end{lstlisting}
+
+Il risultato mostra che la colonna della chiave privata contiene una stringa Base64 incomprensibile (il ciphertext AES), confermando che un amministratore di database malintenzionato non potrebbe impersonare gli utenti per firmare transazioni a loro nome.
+
+\subsection{Test Funzionale Completo}
+È stato simulato un intero ciclo operativo:
+\begin{enumerate}
+    \item \textbf{Registrazione:} Creazione utente con upload di un documento PDF. Verifica della creazione del file \texttt{.enc} nella cartella \texttt{safe\_storage}.
+    \item \textbf{Accesso:} Login corretto e ottenimento del Token JWT.
+    \item \textbf{Operatività:} Esecuzione di un bonifico. Verifica nei log del backend della generazione e validazione della firma RSA.
+    \item \textbf{Recupero Dati:} Download del documento dalla dashboard. Il sistema ha decifrato correttamente il file al volo, restituendo il PDF originale.
+\end{enumerate}
+
+\section{Conclusioni}
+Il progetto "Fort Knox" ha permesso di realizzare un prototipo funzionale che rispetta i moderni standard di sicurezza. L'architettura implementata dimostra come la combinazione di \textbf{segmentazione di rete} (pfSense), \textbf{isolamento dei processi} (Docker) e \textbf{crittografia applicativa robusta} (AES/RSA) possa mitigare efficacemente i rischi di attacchi esterni e interni.
+
+\subsection{Sviluppi Futuri}
+Per evolvere il prototipo verso un sistema di produzione, si propongono i seguenti miglioramenti:
+\begin{itemize}
+    \item \textbf{HSM (Hardware Security Module):} Spostare la gestione delle chiavi private RSA dal database software a un modulo hardware dedicato.
+    \item \textbf{Kubernetes:} Migrazione a un orchestratore K8s per gestire la scalabilità e l'alta disponibilità dei container.
+    \item \textbf{VPN Site-to-Site:} Sostituire il Port Forwarding amministrativo con una VPN WireGuard gestita direttamente da pfSense.
+    \item \textbf{CI/CD Security:} Implementazione di pipeline automatiche per la scansione statica del codice (SAST) alla ricerca di vulnerabilità.
+\end{itemize}
+
+\end{document}

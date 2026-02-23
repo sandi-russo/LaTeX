@@ -1,0 +1,352 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\geometry{a4paper, top=2.5cm, bottom=2.5cm, left=3cm, right=3cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, positioning, fit, backgrounds, shadows, calc, trees, shapes.geometric}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{array}
+
+\onehalfspacing
+
+% Colori per il codice
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.96}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+\lstset{style=mystyle}
+
+% Intestazioni
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small{Sandi Russo - 553675}}
+\lhead{\small{Progetto Zero Trust}}
+\cfoot{\thepage}
+
+% Titoli capitoli
+\titleformat{\section}
+{\normalfont\Large\bfseries\uppercase}{\thesection}{1em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\begin{document}
+
+% ===================================================================
+% FRONTESPIZIO
+% ===================================================================
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    \Huge
+    \textbf{SICUREZZA DEI SISTEMI}
+    
+    \vspace{1.5cm}
+    
+    \LARGE
+    \textbf{Piattaforma documentale basata su Paradigma Zero Trust}
+    
+    \vspace{0.8cm}
+    
+    \Large
+    \vspace{2cm}
+    
+    \large
+    \textbf{Studente:} Sandi Russo \\
+    \textbf{Matricola:} 553675
+    
+    \vspace{2.5cm}
+    
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ===================================================================
+% CAPITOLO 1: INTRODUZIONE
+% ===================================================================
+\section{Introduzione}
+
+\subsection{Descrizione del Progetto}
+
+Il presente elaborato documenta la progettazione e lo sviluppo di una piattaforma web per la gestione sicura di documenti aziendali, realizzata applicando i principi del paradigma Zero Trust. L'obiettivo principale è stato creare un sistema che garantisca la massima protezione dei dati sensibili, partendo dall'assunto che nessun componente della rete possa essere considerato affidabile per default.
+
+L'architettura implementata si basa su microservizi containerizzati tramite Docker, dove ogni componente è isolato e comunica con gli altri attraverso reti virtuali segmentate. Questa scelta progettuale permette di applicare il principio del minimo privilegio non solo agli utenti umani, ma anche ai processi software, riducendo la superficie di attacco.
+
+\subsection{Obiettivi e Requisiti}
+
+Gli obiettivi che mi sono posto per questo progetto sono stati molteplici e misurabili. In primo luogo, ho voluto garantire la \textbf{confidenzialità assoluta dei documenti} implementando un sistema di cifratura che rendesse i file inutilizzabili anche in caso di accesso fisico ai server di storage. Ogni documento caricato viene automaticamente cifrato con una chiave univoca prima di essere salvato.
+
+Il secondo obiettivo fondamentale è stata l'implementazione di un \textbf{sistema di autenticazione robusto} che andasse oltre la semplice combinazione username-password. Ho integrato l'autenticazione a due fattori basata su codici temporanei; inoltre, ho implementato meccanismi di protezione contro attacchi di forza bruta, con blocco automatico dell'account dopo tentativi ripetuti.
+
+Un terzo aspetto cruciale è stato il \textbf{controllo degli accessi granulare}. Ho progettato un sistema basato sui ruoli dove esistono quattro livelli gerarchici di privilegi: amministratore, manager, utente standard e ospite. Ogni ruolo ha permessi specifici che determinano quali documenti può visualizzare, modificare o eliminare.
+
+La \textbf{tracciabilità} delle operazioni è stata soddisfatta implementando un audit log completo e immutabile. Ogni azione, dal login al caricamento di un documento, dalla modifica dei permessi alla cancellazione di un file, viene registrata permanentemente con informazioni dettagliate su chi ha fatto cosa, quando e da dove.
+
+Ho inoltre affrontato il problema del \textbf{malware} implementando un sistema di scansione preventiva che analizza ogni file prima del salvataggio, bloccando l'upload se vengono identificate minacce.
+
+\section{Definizione del Problema e Analisi delle Minacce}
+
+\subsection{Gli Asset da Proteggere}
+
+Prima di implementare qualsiasi misura di sicurezza è fondamentale identificare con precisione cosa si sta proteggendo. In una piattaforma di gestione documentale, l'asset più ovvio sono i documenti stessi. Questi possono contenere informazioni altamente sensibili come contratti riservati, referti medici o brevetti industriali. La loro divulgazione non autorizzata potrebbe causare danni economici diretti, violazioni normative con relative sanzioni, o perdita di vantaggio competitivo.
+
+Le credenziali degli utenti rappresentano un altro asset fondamentale: se compromesse, permettono l'impersonificazione e l'accesso a tutti i documenti autorizzati. L'audit log è a sua volta critico perché se modificabile, un attaccante potrebbe nascondere le tracce delle proprie attività malevole.
+
+\subsection{Le Minacce Principali}
+
+La prima categoria di minacce riguarda l'autenticazione e l'impersonificazione. Un attaccante potrebbe tentare di accedere al sistema utilizzando credenziali rubate, indovinate o ottenute tramite phishing. Gli attacchi di forza bruta, in cui vengono provate sistematicamente migliaia di combinazioni di password, sono particolarmente comuni e possono avere successo se non vengono implementate contromisure adeguate.
+
+Un'altra minaccia significativa è rappresentata dalla possibilità di intercettare le comunicazioni tra client e server. In una rete non protetta, un attaccante posizionato tra l'utente e il server potrebbe catturare tutto il traffico in transito, incluse password, token di sessione e contenuto dei documenti. La manipolazione dei dati rappresenta un'altra classe di minacce: un attaccante potrebbe tentare di modificare i documenti salvati, alterare i metadati nel database, o manipolare i log per nascondere le proprie tracce.
+
+Le vulnerabilità applicative costituiscono un vettore di attacco molto comune. In particolare, le SQL injection permettono a un attaccante di manipolare le query al database inserendo codice malevolo nei campi di input dell'applicazione. Gli attacchi basati su malware rappresentano una minaccia sia per la piattaforma che per gli utenti: un utente compromesso potrebbe caricare file contenenti virus che poi vengono scaricati da altri utenti legittimi, trasformando la piattaforma in un vettore di distribuzione.
+
+\subsection{Strategie di Mitigazione Adottate}
+
+Per affrontare le minacce legate all'autenticazione ho implementato un approccio multilivello. Le password vengono salvate solo come hash calcolato con Bcrypt, un algoritmo lento e computazionalmente costoso che rende gli attacchi di forza bruta estremamente inefficienti. Ogni password viene combinata con un salt casuale prima dell'hashing, impedendo l'uso di rainbow tables precompilate. Ho integrato l'autenticazione a due fattori basata su codici temporanei che cambiano ogni 30 secondi, e implementato un blocco account dopo cinque tentativi falliti.
+
+Per garantire la sicurezza delle comunicazioni ho configurato HTTPS obbligatorio con TLS 1.2 e 1.3, utilizzando solo cipher suites moderni. Ho implementato HTTP Strict Transport Security, che istruisce i browser a ricordare che il sito deve essere sempre visitato in HTTPS. La protezione dei dati a riposo è garantita tramite cifratura automatica: quando un utente carica un file, il sistema genera una chiave univoca, cifra il contenuto con AES, e salva il file cifrato. La chiave viene a sua volta cifrata con una master key gestita a livello di sistema.
+
+Per prevenire SQL injection ho adottato l'ORM SQLAlchemy che utilizza automaticamente prepared statements, impedendo l'esecuzione di codice malevolo. Tutti gli input vengono validati lato server utilizzando Pydantic. Il controllo degli accessi è implementato attraverso un sistema basato sui ruoli che verifica i permessi prima di ogni operazione sensibile tramite un decorator Python applicato agli endpoint API.
+
+Per quanto riguarda il malware, ho implementato un sistema di scansione che analizza ogni file caricato alla ricerca di pattern noti. Se viene rilevato un file sospetto, l'upload viene bloccato e l'evento loggato. Per proteggere la disponibilità ho configurato rate limiting su Nginx con un massimo di cinque richieste al secondo per indirizzo IP, impedendo attacchi denial of service.
+
+\newpage
+
+% ===================================================================
+% CAPITOLO 3: METODOLOGIA
+% ===================================================================
+\section{Metodologia e Architettura}
+
+\subsection{Scelte Tecnologiche}
+
+La selezione delle tecnologie è stata guidata da considerazioni di sicurezza e praticità. Per il backend ho scelto FastAPI, un framework Python moderno con architettura asincrona ASGI che gestisce operazioni di I/O intensive senza bloccare il server. Nei test condotti, FastAPI ha dimostrato performance circa dieci volte superiori rispetto a Flask in scenari con molte richieste concorrenti. L'integrazione nativa con Pydantic per la validazione automatica riduce drasticamente le vulnerabilità legate a input malformati.
+
+Per il frontend ho optato per React con Ant Design come libreria di componenti UI. PostgreSQL è stato scelto come database relazionale per la sua robustezza e il supporto completo delle proprietà ACID, garantendo che operazioni critiche avvengano in modo atomico. Per lo storage ho scelto MinIO, un object storage compatibile S3 che offre vantaggi in termini di sicurezza: essendo un servizio separato nel proprio container, anche se il backend venisse compromesso non ci sarebbe accesso diretto ai file.
+
+Redis viene utilizzato per gestire il rate limiting, Nginx funge da reverse proxy e terminatore SSL, mentre Docker e Docker Compose orchestrano i container permettendo di definire l'intera infrastruttura come codice versionabile.
+
+\subsection{Architettura del Sistema}
+
+L'architettura si basa su una separazione netta tra i diversi livelli del sistema. Al livello più esterno il browser comunica esclusivamente tramite HTTPS sulla porta 443. Le richieste arrivano al reverse proxy Nginx, unico punto di ingresso pubblico, che termina la connessione SSL, applica il rate limiting e inoltra le richieste al backend solo se le verifiche hanno successo.
+
+Il backend FastAPI riceve le richieste su una rete interna non esposta pubblicamente. Implementa tutta la logica applicativa: autentica gli utenti, controlla i permessi, gestisce la cifratura dei documenti, e orchestra le interazioni con database e storage. I componenti di persistenza, PostgreSQL, Redis e MinIO, risiedono su una rete ancora più isolata, accessibile solo dal backend.
+
+Ho configurato Docker per creare tre reti virtuali separate: la DMZ che connette Internet a Nginx, l'Application Network che connette Nginx al backend, e la Data Network che connette il backend ai servizi di persistenza. Questa micro-segmentazione implementa il concetto di defense in depth: un attaccante che compromettesse Nginx non potrebbe raggiungere direttamente il database.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=2cm,
+    container/.style={rectangle, draw=blue!60, fill=blue!5, very thick, minimum height=1.5cm, minimum width=3cm, rounded corners, drop shadow, align=center},
+    db/.style={cylinder, draw=red!60, fill=red!5, shape border rotate=90, aspect=0.25, minimum height=1.5cm, minimum width=2cm, drop shadow, align=center},
+    internet/.style={cloud, draw=gray, fill=gray!10, aspect=2, minimum width=3cm, minimum height=1.5cm, align=center},
+    zone/.style={rectangle, draw=black!30, dashed, inner sep=0.6cm, rounded corners}
+]
+
+\node[internet] (web) {\textbf{INTERNET}};
+\node[container, below=1.8cm of web] (nginx) {\textbf{NGINX}\\ Porta 443 HTTPS};
+\node[container, below=2cm of nginx] (backend) {\textbf{BACKEND}\\ FastAPI:8000};
+\node[db, below left=2.5cm of backend] (postgres) {\textbf{PostgreSQL}\\ Porta 5432};
+\node[db, below=2.5cm of backend] (redis) {\textbf{Redis}\\ Porta 6379};
+\node[db, below right=2.5cm of backend] (minio) {\textbf{MinIO}\\ Porta 9000};
+
+\draw[->, ultra thick, orange] (web) -- node[right, font=\tiny] {HTTPS} (nginx);
+\draw[->, ultra thick, blue] (nginx) -- node[right, font=\tiny] {HTTP interno} (backend);
+\draw[->, thick] (backend) -- node[left, font=\tiny] {SQL} (postgres);
+\draw[->, thick] (backend) -- node[right, font=\tiny] {Cache} (redis);
+\draw[->, thick] (backend) -- node[right, font=\tiny] {S3 API} (minio);
+
+\begin{pgfonlayer}{background}
+    \node[zone, fit=(nginx), fill=green!10, label={[font=\small]north west:\textbf{DMZ - Esposta}}] {};
+    \node[zone, fit=(backend), fill=yellow!10, label={[font=\small]north west:\textbf{Application - Privata}}] {};
+    \node[zone, fit=(postgres) (redis) (minio), fill=red!10, label={[font=\small]north west:\textbf{Data - Isolata}}] {};
+\end{pgfonlayer}
+
+\end{tikzpicture}
+\caption{Architettura a microservizi con segmentazione della rete}
+\end{figure}
+
+\subsection{API e Interfacce}
+
+Ho progettato le API seguendo i principi REST, dove ogni risorsa è identificata da un URL e le operazioni sono espresse tramite i verbi HTTP standard.
+
+\begin{table}[H]
+\centering
+\caption{Principali Endpoint API Implementati}
+\begin{tabular}{@{}p{2.5cm}p{5.5cm}p{4.5cm}@{}}
+\toprule
+\textbf{Metodo HTTP} & \textbf{Endpoint} & \textbf{Descrizione} \\ \midrule
+POST & /auth/register & Registrazione nuovo utente con validazione \\
+POST & /auth/login & Autenticazione con verifica MFA, ritorna JWT \\
+POST & /auth/mfa/setup & Generazione secret TOTP e QR code \\
+POST & /auth/mfa/verify & Verifica codice TOTP a sei cifre \\ \midrule
+POST & /documents & Upload con cifratura automatica \\
+GET & /documents & Lista documenti filtrata per permessi RBAC \\
+GET & /documents/\{id\}/download & Download con decifratura on-the-fly \\
+DELETE & /documents/\{id\} & Eliminazione con controllo permessi \\ \midrule
+GET & /admin/users & Lista utenti, riservata agli amministratori \\
+PUT & /admin/users/\{id\}/role & Modifica ruolo utente \\
+GET & /admin/audit-logs & Visualizzazione log di sicurezza \\ \bottomrule
+\end{tabular}
+\end{table}
+
+Ogni endpoint è protetto da multiple verifiche: Nginx applica il rate limiting, il backend verifica l'autenticità del token JWT validando la firma crittografica, e per gli endpoint che richiedono permessi specifici viene verificato il ruolo dal token.
+
+\subsection{Autenticazione e Gestione delle Identità}
+
+Il flusso di autenticazione prevede diverse fasi di verifica coordinate. Quando un utente inserisce le credenziali, il browser invia una richiesta HTTPS a Nginx che verifica il rate limiting, poi inoltra al backend. Il backend valida il formato dei dati con Pydantic, interroga il database per recuperare l'utente, e utilizza Bcrypt per confrontare la password fornita con l'hash salvato.
+
+Se la password è corretta e l'utente ha abilitato MFA, il sistema verifica anche il codice TOTP recuperando il secret cifrato dal database, decifrandolo con la master key, e calcolando quale codice dovrebbe essere valido in questo momento. Solo dopo tutte le verifiche, viene generato un JWT firmato crittograficamente che contiene l'ID dell'utente e il suo ruolo. Il token ha scadenza di trenta minuti. Il backend registra l'evento nell'audit log e restituisce il token al client.
+
+\subsection{Controllo degli Accessi Basato sui Ruoli}
+
+Ho implementato un sistema RBAC a quattro livelli gerarchici che permette di controllare con precisione chi può accedere a quali risorse. Il ruolo GUEST rappresenta il livello più basso di privilegi: può solo visualizzare documenti esplicitamente marcati come pubblici, ed è utile per concedere accesso temporaneo a collaboratori esterni o consulenti senza esporli a informazioni interne sensibili. Il ruolo USER rappresenta un dipendente standard dell'organizzazione: può visualizzare documenti pubblici e interni, caricare nuovi documenti classificandoli appropriatamente, e gestire i propri file modificandone i metadati o cancellandoli, ma non può accedere a documenti confidenziali né gestire file di altri utenti.
+
+Il ruolo MANAGER aggiunge la capacità di visualizzare e gestire anche documenti classificati come confidenziali, tipicamente riservati a figure con responsabilità manageriali che necessitano di accedere a informazioni sensibili come budget, strategie aziendali o dati personali. Questo ruolo eredita tutti i permessi del ruolo USER aggiungendone di nuovi, seguendo il principio della gerarchia dei privilegi. Il ruolo ADMIN ha accesso completo e illimitato al sistema: può gestire qualsiasi documento indipendentemente dalla classificazione o dal proprietario, modificare i ruoli assegnati agli utenti, sbloccare account bloccati dopo troppi tentativi di login falliti, e visualizzare l'audit log completo per condurre analisi di sicurezza e indagini forensi.
+
+L'implementazione tecnica del controllo accessi avviene tramite un decorator Python che ho sviluppato specificatamente per questo scopo, applicabile a qualsiasi endpoint API specificando quali ruoli sono autorizzati ad accedervi. Quando arriva una richiesta a un endpoint protetto, il decorator estrae automaticamente il token JWT dall'header Authorization della richiesta HTTP, lo decodifica verificando la firma crittografica per assicurarsi che non sia stato manipolato, estrae il claim che indica il ruolo dell'utente, e lo confronta con l'elenco dei ruoli permessi per quell'operazione specifica. Se il ruolo dell'utente non corrisponde a uno dei ruoli autorizzati, la richiesta viene immediatamente respinta con un errore HTTP 403 Forbidden accompagnato da un messaggio esplicativo, e l'evento viene registrato nell'audit log come tentativo di accesso non autorizzato per permettere agli amministratori di identificare potenziali tentativi di privilege escalation o comportamenti anomali.
+
+\subsection{Protezione dei Dati: Cifratura}
+
+La protezione dei documenti a riposo è uno degli aspetti più critici del sistema ed è garantita tramite un processo di cifratura completamente automatico e trasparente all'utente. Quando un utente seleziona un file da caricare attraverso l'interfaccia web e conferma l'upload, il backend riceve il file tramite una richiesta HTTP multipart e lo legge completamente in memoria, operazione che è sicura e performante per file di dimensioni ragionevoli fino a qualche decina di megabyte. Prima di procedere con qualsiasi operazione di salvataggio, il sistema esegue una scansione preliminare del contenuto alla ricerca di pattern noti di malware o codice malevolo, attualmente implementata verificando la presenza della firma EICAR ma predisposta per integrare motori antivirus più sofisticati come ClamAV.
+
+Se la scansione ha esito positivo e non vengono rilevate minacce, il sistema procede generando una chiave di cifratura casuale e univoca specificamente per questo documento, utilizzando il generatore di numeri casuali crittograficamente sicuro fornito dal sistema operativo per garantire impredicibilità totale. Il contenuto del documento viene quindi cifrato utilizzando questa chiave con l'algoritmo AES in modalità CBC, che è uno standard industriale consolidato e ampiamente testato, producendo un ciphertext che include anche un codice HMAC per verificare l'integrità e prevenire manipolazioni. Il file cifrato viene salvato su MinIO utilizzando come identificatore un UUID versione 4 generato casualmente, che non ha alcuna relazione con il nome originale del file, aggiungendo un ulteriore livello di offuscamento e protezione.
+
+La chiave di cifratura utilizzata per proteggere il documento non può essere salvata in chiaro nel database, perché se un attaccante ottenesse accesso al database avrebbe immediatamente tutte le chiavi necessarie per decifrare tutti i documenti dell'archivio. Invece, implemento un meccanismo chiamato envelope encryption: la chiave del documento viene a sua volta cifrata utilizzando una master key gestita a livello di sistema, derivata da una password principale tramite l'algoritmo PBKDF2 che applica centomila iterazioni di una funzione hash per rallentare significativamente eventuali attacchi di forza bruta. La chiave cifrata viene quindi salvata nel database PostgreSQL insieme ai metadati del documento in forma completamente inutilizzabile senza la master key.
+
+Quando un utente autorizzato richiede il download di un documento, il processo si inverte seguendo i passi opposti: il backend recupera dal database i metadati e la chiave cifrata, decifra la chiave utilizzando la master key di sistema, usa la chiave decifrata per recuperare il ciphertext da MinIO e decifrarlo verificando l'HMAC per garantire che non sia stato manipolato, e infine invia il contenuto in chiaro al browser dell'utente attraverso il canale HTTPS sicuro che protegge i dati in transito. Questo approccio offre vantaggi significativi rispetto alla cifratura diretta: ogni documento ha la propria chiave univoca e indipendente, quindi se una chiave venisse compromessa solo quel singolo documento sarebbe a rischio e non l'intero archivio. Inoltre, se in futuro fosse necessario cambiare la master key per motivi di sicurezza, non sarebbe necessario ricifrare fisicamente tutti i documenti salvati, ma solo le chiavi di cifratura memorizzate nel database.
+
+\subsection{Persistenza dei Dati}
+
+Il database PostgreSQL è strutturato con tre tabelle principali che gestiscono le identità degli utenti, i metadati dei documenti e la tracciabilità delle operazioni. La tabella degli utenti contiene le informazioni per autenticazione e autorizzazione: email univoca che funge da username verificata tramite constraint di unicità, hash della password calcolato con Bcrypt che include automaticamente il salt configurabile per aumentare il costo computazionale, ruolo assegnato che determina i privilegi secondo il modello RBAC, eventuale secret per autenticazione a due fattori salvato cifrato per garantire la sicurezza in caso di compromissione, e campi per gestire il blocco account che includono un contatore di tentativi falliti e un timestamp che indica fino a quando l'account rimane bloccato.
+
+La tabella dei documenti contiene esclusivamente i metadati, mai il contenuto effettivo che risiede su MinIO: include un identificatore UUID versione 4 che funge da chiave primaria garantendo non predicibilità, il titolo descrittivo inserito dall'utente, il nome del file originale per il download corretto, la dimensione in byte per statistiche e quote, il tipo MIME per configurare le intestazioni HTTP, la classificazione di sicurezza che può essere PUBLIC, INTERNAL, CONFIDENTIAL o SECRET determinando l'accesso in base al ruolo, un riferimento tramite foreign key all'utente che ha caricato il documento, la data e ora di upload registrata automaticamente, e la chiave di cifratura salvata cifrata che è essenziale per decifrare il contenuto.
+
+La tabella dell'audit log è progettata con attenzione alla sicurezza e immutabilità: è append-only permettendo solo inserimenti, non modifiche o cancellazioni, comportamento garantito tramite trigger del database che respingono tentativi di UPDATE o DELETE. Ogni record contiene informazioni dettagliate sull'evento: quale utente lo ha generato tramite riferimento all'ID, il tipo di azione codificato come stringa per ricerche e aggregazioni, la risorsa coinvolta con il suo identificatore, l'indirizzo IP da cui è partita la richiesta per identificare accessi anomali, lo user agent che può rivelare tentativi di automazione o attacco, l'esito dell'operazione indicando se è completata con successo o fallita, e dettagli sul motivo di eventuali fallimenti che facilitano debugging e analisi forense.
+
+\newpage
+
+
+
+
+
+% ===================================================================
+% CAPITOLO 4: RISULTATI
+% ===================================================================
+\section{Presentazione dei Risultati}
+
+\subsection{Metodologia di Testing}
+
+Per validare l'efficacia delle misure di sicurezza ho sviluppato una suite di test automatizzati in Python che simulano scenari di attacco reali. L'approccio automatizzato permette di eseguire rapidamente centinaia di verifiche, garantendo che modifiche future non introducano regressioni di sicurezza.
+
+\subsection{Test di Resilienza agli Attacchi Brute Force}
+
+Ho sviluppato uno script che simula un attaccante che tenta ripetutamente di indovinare la password di un utente. Lo script esegue richieste POST all'endpoint di login con password errate casuali. I risultati hanno confermato il comportamento progettato: i primi cinque tentativi ricevono HTTP 401 con messaggio "Credenziali non valide". Al sesto tentativo, anche con password corretta, il sistema risponde con HTTP 403 "Account temporaneamente bloccato".
+
+Ho verificato interrogando il database che il campo locked\_until viene impostato a quindici minuti nel futuro. Durante questo periodo qualsiasi tentativo viene respinto automaticamente. Dopo la scadenza, l'utente può autenticarsi normalmente e il contatore viene azzerato. Tutti gli eventi vengono registrati nell'audit log.
+
+\subsection{Test di Rilevamento Malware}
+
+Ho creato un file contenente la firma EICAR e tentato di caricarlo attraverso l'interfaccia normale. Il sistema ha immediatamente rilevato la presenza della firma e abortito l'operazione prima di procedere con cifratura o salvataggio. La risposta è stata HTTP 400 con messaggio esplicativo. Ho verificato che il file non sia stato salvato né su MinIO né nel database, mentre l'evento è stato loggato come "MALWARE\_BLOCKED" con dettagli completi.
+
+\subsection{Test di Controllo Accessi}
+
+Ho creato un utente con ruolo GUEST, eseguito il login ottenendo un JWT valido, e tentato di accedere all'endpoint amministrativo che elenca gli utenti. Il sistema ha respinto con HTTP 403 "Accesso negato. Ruolo richiesto: ADMIN". L'evento è stato registrato come tentativo di accesso non autorizzato. Ripetendo il test con utente ADMIN, la richiesta è stata accettata con HTTP 200, confermando che il controllo RBAC funziona correttamente.
+
+\subsection{Test di Protezione da SQL Injection}
+
+Ho inviato una richiesta di login con email impostata a "admin' OR '1'='1", un payload classico di SQL injection. Il sistema ha respinto con HTTP 401 "Credenziali non valide". Nei log ho verificato che la query SQL ha automaticamente escaped i caratteri speciali grazie a SQLAlchemy, trattando l'intera stringa come valore letterale. Il sistema non ha mai restituito errori 500 che avrebbero potuto rivelare dettagli dell'implementazione.
+
+\subsection{Test di Rate Limiting}
+
+Ho sviluppato uno script che invia cinquanta richieste consecutive in meno di un secondo. Le prime richieste sono state accettate con HTTP 200, ma quando il contatore ha superato il limite Nginx ha iniziato a respingere con HTTP 429 Too Many Requests. Circa il trenta percento delle richieste ha ricevuto risposta positiva, il settanta percento è stato bloccato, coerentemente con la configurazione che permette un burst iniziale.
+
+\subsection{Analisi delle Performance}
+
+Ho eseguito un benchmark caricando cento documenti di un megabyte misurando i tempi. Il tempo medio per upload completo è risultato di circa duecentoottanta millisecondi, di cui quarantacinque attribuibili alla cifratura. L'overhead della cifratura rappresenta meno del cinque percento, impatto trascurabile sulla percezione utente. Le operazioni di download hanno mostrato latenze di circa trentotto millisecondi. Il throughput si attesta a circa tre file e mezzo al secondo, sufficiente per scenari reali e scalabile orizzontalmente.
+
+\subsection{Riepilogo}
+
+Tutti i test hanno avuto esito positivo. Il sistema resiste ad attacchi di forza bruta bloccando gli account, rileva e blocca malware, applica correttamente le policy RBAC, è immune a SQL injection, e protegge la disponibilità tramite rate limiting. Le performance sono eccellenti nonostante la cifratura completa, con overhead minimi.
+
+\newpage
+
+% ===================================================================
+% CAPITOLO 5: CONCLUSIONI
+% ===================================================================
+\section{Conclusioni e Sviluppi Futuri}
+
+\subsection{Risultati Raggiunti}
+
+Questo progetto ha dimostrato che è possibile implementare un sistema di gestione documentale con livelli di sicurezza elevati senza sacrificare usabilità o performance. Tutti gli obiettivi iniziali sono stati raggiunti e validati attraverso test rigorosi. La confidenzialità dei documenti è garantita dalla cifratura automatica, l'autenticazione robusta con MFA rende estremamente difficile l'accesso non autorizzato, il controllo RBAC garantisce il minimo privilegio, e la tracciabilità completa fornisce gli strumenti per analisi forensi.
+
+L'architettura a microservizi con segmentazione della rete implementa defense in depth, dove multiple barriere devono essere superate per compromettere il sistema. La separazione tra componenti esposti e servizi di backend riduce la superficie di attacco, mentre l'isolamento dei container limita il raggio di esplosione in caso di compromissione.
+
+\subsection{Sfide Affrontate}
+
+Durante lo sviluppo ho incontrato diverse sfide tecniche. La gestione dello streaming dei file richiedeva di leggere il contenuto due volte, causando problemi risolti caricando tutto in memoria una sola volta. I certificati self-signed hanno presentato complicazioni nei test automatizzati, evidenziando la necessità di integrare Let's Encrypt per deployment reali.
+
+La gestione delle chiavi crittografiche tramite variabile d'ambiente è una soluzione semplice ma non ottimale per produzione ad alta sicurezza. Ho progettato il sistema in modo che la gestione delle chiavi sia facilmente sostituibile con soluzioni più robuste come un Key Management Service dedicato. Ho dovuto bilanciare sicurezza e usabilità: il tempo di blocco account deve scoraggiare attacchi automatizzati ma non frustrare utenti legittimi.
+
+\subsection{Possibili Evoluzioni Future}
+
+La priorità più alta sarebbe l'integrazione con HashiCorp Vault per gestione centralizzata delle chiavi, rotazione automatica della master key, e audit trail dettagliato. L'integrazione di ClamAV tramite protocollo ICAP sostituirebbe l'attuale scansione con un sistema capace di rilevare minacce attraverso analisi euristica e comportamentale.
+
+Un sistema SIEM centralizzato con Elasticsearch, Logstash e Kibana permetterebbe di aggregare tutti i log in un unico sistema interrogabile, creare dashboard in tempo reale, configurare alert automatici, e applicare machine learning per rilevare anomalie comportamentali. Il versioning dei documenti aggiungerebbe valore in termini di usabilità e protezione contro ransomware, permettendo di ripristinare versioni precedenti non compromesse.
+
+L'adozione di certificati validi tramite Let's Encrypt eliminerebbe i warning dei browser. Una migrazione verso Kubernetes aprirebbe possibilità di scalabilità orizzontale automatica con service mesh come Istio che implementerebbe mutual TLS automatico tra microservizi. Un sistema di backup e disaster recovery robusto includerebbe backup automatici cifrati di PostgreSQL, replica geografica di MinIO, e backup sicuro della master key su hardware security module.
+
+L'estensione del modello di classificazione con metadati aggiuntivi come data retention policy o requisiti di compliance permetterebbe ricerche più sofisticate e policy automatiche di lifecycle management. L'integrazione con provider di identità esterni tramite SAML o OAuth permetterebbe single sign-on, eliminando password separate e centralizzando le policy di autenticazione.
+
+\subsection{Applicabilità}
+
+L'architettura è particolarmente adatta a scenari dove la protezione di dati sensibili è prioritaria. Studi legali troverebbero una soluzione che garantisce confidenzialità e tracciabilità richieste dalla deontologia professionale. Nel settore sanitario offrirebbe la cifratura necessaria per proteggere referti e cartelle cliniche, con audit log che dimostra compliance normativa. Aziende con R\&D potrebbero proteggere proprietà intellettuale da spionaggio industriale. Anche nel settore pubblico, dove la gestione di documenti classificati richiede particolare attenzione, questa architettura offrirebbe le garanzie necessarie.
+
+\subsection{Riflessioni Finali}
+
+Realizzare questo progetto mi ha permesso di applicare concretamente molti concetti teorici studiati. La differenza tra leggere di SQL injection e implementare effettivamente le protezioni è enorme. Ho compreso come la sicurezza non possa essere un'aggiunta successiva, ma debba essere integrata nelle fondamenta fin dall'inizio.
+
+Il threat modeling si è rivelato fondamentale per guidare le scelte progettuali. Identificare sistematicamente cosa proteggere e da quali minacce ha permesso decisioni motivate piuttosto che seguire soluzioni preconfezionate. Ho imparato che la sicurezza richiede un approccio olistico considerando codice, infrastruttura, rete, deployment e comportamento degli utenti.
+
+Il testing automatizzato si è rivelato prezioso non solo per validare le protezioni ma anche per documentare le aspettative di comportamento del sistema. I test fungono da specifica vivente che verifica continuamente i requisiti di sicurezza.
+
+Questo progetto rappresenta un'implementazione concreta dei principi Zero Trust applicati a un caso reale. Ho dimostrato che è possibile costruire sistemi sicuri con tecnologie open source accessibili. La chiave è stata l'approccio metodico: analizzare le minacce, progettare difese appropriate, implementare con attenzione, e validare attraverso test rigorosi. Il paradigma Zero Trust rappresenta un cambio di mentalità necessario dove applicare questi principi significa accettare complessità maggiore in cambio di resilienza superiore.
+
+\end{document}

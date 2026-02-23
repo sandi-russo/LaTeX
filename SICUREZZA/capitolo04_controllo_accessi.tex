@@ -1,0 +1,158 @@
+\chapter{Controllo degli Accessi}
+
+\section{Introduzione}
+
+L'obiettivo principale del controllo degli accessi è quello di regolamentare chi può accedere alle risorse, in che modo e in quali circostanze.
+
+\subsection{Obiettivi Principali}
+
+Gli obiettivi principali della sicurezza informatica si concentrano su tre aspetti:
+
+\begin{enumerate}
+    \item Impedire l'accesso non autorizzato, proteggendo così i dati sensibili e prevenendo potenziali danni.
+    \item Prevenire accessi non autorizzati da parte di utenti legittimi, per evitare che accedano in modi che non sono permessi o che compromettano la sicurezza del sistema.
+    \item Consentire l'accesso autorizzato, in modo che gli utenti legittimi possano accedere alle risorse in modo sicuro e conforme alle politiche di sicurezza.
+\end{enumerate}
+
+\subsection{Concetti di Base}
+
+Il controllo degli accessi è essenziale per mantenere la sicurezza e l'integrità di un sistema, regolando non solo chi ha accesso, ma anche come e quando può avvenire l'accesso.
+
+\subsection{Contesto del Controllo degli Accessi}
+
+Il controllo degli accessi opera all'interno di un contesto più ampio, che include le seguenti funzioni e componenti:
+
+\begin{description}
+    \item[Autenticazione] Processo di verifica delle credenziali di un utente o di un'entità per confermarne la validità.
+    \item[Autorizzazione] Concessione di diritti e permessi a un'entità per l'accesso a risorse di sistema, determinando chi è affidabile per un certo utilizzo.
+    \item[Controllo] Verifica indipendente e revisione delle attività e dei registri di sistema, per assicurare la conformità alla politica di sicurezza e individuare possibili violazioni.
+\end{description}
+
+Il controllo degli accessi può apparire come un unico modulo logico, ma spesso è suddiviso tra più componenti, ciascuno dei quali svolge una parte del processo. I sistemi operativi includono generalmente componenti di controllo degli accessi, che, in molti casi, sono robusti. Pacchetti di sicurezza aggiuntivi, applicazioni come i sistemi di gestione di database e dispositivi esterni, come i firewall, integrano queste funzionalità con ulteriori livelli di protezione.
+
+\section{Politiche di Controllo degli Accessi}
+
+Le politiche di controllo degli accessi definiscono i tipi di accesso consentiti, le condizioni di accesso e le entità autorizzate. Sono generalmente suddivise in quattro categorie principali. Il DAC rappresenta l'approccio più tradizionale per la gestione del controllo degli accessi, mentre il MAC risponde a esigenze di sicurezza militari e di fiducia elevata. Le politiche RBAC e ABAC sono sempre più diffuse e forniscono una maggiore flessibilità nella gestione dei privilegi. Queste quattro politiche non sono esclusive; possono essere combinate per garantire la sicurezza di diverse risorse all'interno di un sistema.
+
+\section{Controllo degli Accessi Discrezionale (DAC)}
+
+Il controllo degli accessi discrezionale (Discretionary Access Control) è basato sull'identità dell'entità richiedente e sulle autorizzazioni specifiche che stabiliscono quali azioni siano permesse o proibite. È definito ``discrezionale'' perché consente a un'entità di trasferire i propri privilegi a un'altra entità, autorizzandola ad accedere a determinate risorse. Questo approccio può essere adottato da un sistema operativo o un sistema di gestione di database attraverso una matrice degli accessi.
+
+\subsection{Matrice degli Accessi}
+
+La matrice degli accessi è una struttura dati bidimensionale in cui una dimensione rappresenta i soggetti (utenti o gruppi di utenti) e l'altra gli oggetti (risorse del sistema, come file o campi di dati). Ogni cella della matrice specifica i permessi di accesso di un soggetto su un oggetto. In pratica, la matrice è spesso implementata in modo sparso, tramite due principali modalità di decomposizione: le liste di controllo degli accessi (ACL) e i capability ticket.
+
+\subsection{Liste di Controllo degli Accessi}
+
+Una ACL elenca, per ogni oggetto, gli utenti autorizzati e i rispettivi permessi. Può includere anche una voce di default che definisce un insieme predefinito di permessi per utenti non elencati. Tale voce di default dovrebbe seguire la regola del minimo privilegio o concedere solo accesso in lettura. Le ACL sono vantaggiose per determinare i permessi su una specifica risorsa, ma non sono ideali per visualizzare i permessi associati a un singolo utente.
+
+\subsection{Capability Ticket}
+
+I capability ticket sono liste di permessi legati a un utente, specificando quali operazioni è autorizzato a eseguire su determinati oggetti. Ogni utente può possedere diversi ticket e, in alcuni casi, può trasferirli ad altri utenti.
+
+\subsection{Tabella di Autorizzazione}
+
+Per superare i limiti delle ACL e dei capability ticket, è possibile utilizzare una tabella di autorizzazione. In questa struttura, ogni riga contiene un permesso di accesso associato a un soggetto su una risorsa specifica.
+
+\section{Controllo degli Accessi Obbligatorio (MAC)}
+
+Il controllo degli accessi obbligatorio (Mandatory Access Control) è regolato dalle etichette di sicurezza delle risorse, che indicano il livello di sensibilità o criticità, e dalle autorizzazioni di sicurezza delle entità, che stabiliscono i livelli di accesso consentiti. È ``obbligatorio'' poiché l'entità autorizzata non può, a propria discrezione, estendere i suoi privilegi di accesso a un'altra entità.
+
+\section{Controllo degli Accessi Basato sui Ruoli (RBAC)}
+
+Il controllo degli accessi basato sui ruoli (Role-Based Access Control) si fonda sui ruoli che gli utenti ricoprono nel sistema, piuttosto che sulla loro identità individuale. Un ruolo rappresenta una funzione lavorativa all'interno dell'organizzazione, con specifici permessi di accesso assegnati a ciascun ruolo. Gli utenti vengono associati ai ruoli staticamente o dinamicamente, a seconda delle loro responsabilità operative.
+
+\subsection{Struttura del Modello}
+
+Le relazioni tra utenti, ruoli e risorse formano una struttura molti-a-molti. Gli utenti possono essere assegnati a più ruoli, e ogni ruolo può essere associato a più risorse. Il sistema RBAC si presta a una rappresentazione tramite una matrice di accesso. Questa matrice associa gli utenti ai ruoli e i ruoli alle risorse. In genere, gli utenti sono numerosi rispetto ai ruoli, quindi ogni utente può occupare più ruoli, e più utenti possono condividere lo stesso ruolo.
+
+Questo sistema facilita l'applicazione del principio del minimo privilegio: ogni ruolo detiene solo i privilegi necessari per le funzioni assegnate. In questo modo, gli utenti assegnati allo stesso ruolo usufruiscono dello stesso insieme minimo di permessi.
+
+\section{Controllo degli Accessi Basato sugli Attributi (ABAC)}
+
+Il controllo degli accessi basato sugli attributi (Attribute-Based Access Control) è un modello che consente di definire autorizzazioni basate su condizioni riferite sia alle proprietà del soggetto che della risorsa. Permette, ad esempio, di configurare una regola unica per concedere il diritto di proprietà a chiunque sia il creatore di una risorsa, rendendo l'accesso flessibile e potente.
+
+\section{Gestione delle Identità, delle Credenziali e degli Accessi}
+
+La gestione delle identità, delle credenziali e degli accessi (Identity, Credential, and Access Management -- ICAM) rappresenta un approccio completo per la gestione delle identità digitali, delle credenziali e del controllo degli accessi.
+
+Questo sistema permette di:
+
+\begin{itemize}
+    \item Creare identità digitali affidabili per persone e per Non-Person Entities come processi e dispositivi automatizzati che necessitano di accesso alle risorse.
+    \item Associare queste identità a credenziali utilizzabili per l'accesso da parte di individui o NPE.
+    \item Utilizzare le credenziali per autorizzare l'accesso a risorse aziendali.
+\end{itemize}
+
+\subsection{Gestione delle Identità}
+
+La gestione dell'identità si concentra sulla creazione e gestione delle identità digitali di individui o NPE, indipendentemente da applicazioni o contesti specifici.
+
+\subsubsection{Creazione di un'Identità Digitale}
+
+La creazione di un'identità digitale inizia con la raccolta di dati, seguita dalla definizione di attributi che identificano univocamente l'individuo. La gestione dell'identità prevede un ciclo di vita completo, con procedure di protezione, accesso e condivisione dei dati di identità, nonché la possibilità di revoca.
+
+\subsection{Gestione delle Credenziali}
+
+Una credenziale è un oggetto che lega autorevolmente un'identità a un token di accesso, come smart card, chiavi crittografiche o certificati digitali. La gestione delle credenziali comprende diverse fasi:
+
+\begin{enumerate}
+    \item \textbf{Certificazione della necessità di una credenziale:} un responsabile approva la richiesta di credenziali per un individuo o entità.
+    \item \textbf{Iscrizione:} il richiedente si registra, dimostrando la propria identità e fornendo dati biografici e biometrici.
+    \item \textbf{Generazione:} la credenziale viene creata tramite crittografia, firme digitali o altri processi.
+    \item \textbf{Distribuzione:} la credenziale viene assegnata al richiedente.
+    \item \textbf{Gestione del ciclo di vita:} include processi di revoca, sostituzione, riemissione e manutenzione generale della credenziale.
+\end{enumerate}
+
+\subsection{Gestione degli Accessi}
+
+La gestione degli accessi definisce le modalità con cui le entità possono ottenere l'accesso alle risorse aziendali, sia fisiche che logiche. La funzione di controllo degli accessi verifica l'identità del richiedente e utilizza le credenziali per autorizzare l'accesso. Per implementare il controllo degli accessi aziendale, sono necessarie tre componenti:
+
+\begin{description}
+    \item[Gestione delle risorse] Definisce le regole per ogni risorsa, includendo requisiti di credenziali e attributi necessari per accedere.
+    \item[Gestione dei privilegi] Stabilisce i permessi di accesso associati a ciascun individuo, formando il profilo di accesso basato sugli attributi della loro identità.
+    \item[Gestione delle politiche] Specifica le azioni consentite per un dato utente su una risorsa, in base agli attributi dell'utente, dell'oggetto e alle condizioni ambientali.
+\end{description}
+
+\subsection{Federazione delle Identità}
+
+La federazione delle identità riguarda la fiducia reciproca tra organizzazioni nel riconoscere identità digitali e credenziali emesse da terze parti. Consente, infatti, di verificare identità esterne e di garantire l'identità dei propri utenti in contesti di collaborazione esterna. La federazione si basa su tecnologie, standard e politiche condivise che permettono alle organizzazioni di riconoscere e accettare identità e attributi provenienti da altre entità, facilitando così la cooperazione interorganizzativa.
+
+\section{Trust Framework}
+
+Nell'ambito dell'e-commerce e delle transazioni online, i concetti di fiducia, identità e attributi sono diventati fondamentali per aziende e fornitori di servizi. Per garantire efficienza, privacy e sicurezza legale, le transazioni seguono il principio del need-to-know: è importante conoscere solo gli attributi essenziali del cliente, come il numero di licenza, l'ID, la nazionalità, o altre informazioni specifiche che variano in base al contesto.
+
+\subsection{Scambio di Informazioni}
+
+\subsubsection{Approccio Classico}
+
+Le transazioni tra organizzazioni diverse o con utenti singoli richiedono la condivisione di informazioni sull'identità, che includono attributi associati. Entrambe le parti devono avere fiducia nella sicurezza e privacy delle informazioni condivise. Il metodo classico prevede che un fornitore di servizi di identità autentichi l'utente e garantisca la validità degli attributi, mentre la parte che si fida accetta le credenziali fornite.
+
+\subsection{Open Identity Trust Framework (OITF)}
+
+Per superare i limiti della condivisione tradizionale, è stato sviluppato l'Open Identity Trust Framework (OITF), un sistema aperto e standardizzato per lo scambio di identità e attributi. Di seguito sono illustrati i principali termini e componenti di questo framework:
+
+\begin{description}
+    \item[OpenID] Uno standard che permette agli utenti di autenticarsi su più siti utilizzando un unico servizio di terze parti, semplificando la gestione delle identità digitali.
+    \item[OIDF (OpenID Foundation)] Un'organizzazione che supporta e promuove l'adozione di OpenID.
+    \item[ICF (Information Card Foundation)] Un ente che facilita l'uso delle Information Card, identità digitali organizzabili come carte di credito.
+    \item[OIX (Open Identity Exchange)] Fornisce certificazioni di conformità al modello OITF.
+    \item[AXN (Attribute Exchange Network)] Una rete che permette uno scambio efficiente di attributi di identità verificati e autorizzati.
+\end{description}
+
+\subsection{Componenti Principali dell'OITF}
+
+L'OITF prevede i seguenti ruoli e componenti:
+
+\begin{description}
+    \item[Relying Parties (RP)] Fornitori di servizi che devono fidarsi delle identità e attributi degli utenti.
+    \item[Soggetti] Utenti finali come clienti, dipendenti o partner.
+    \item[Fornitori di attributi (AP)] Entità che verificano attributi specifici e generano credenziali conformi alle regole dell'AXN.
+    \item[Fornitori di identità (IDP)] Autenticano gli utenti e forniscono identità digitali utilizzate per gestire gli attributi degli utenti.
+    \item[Periti] Valutano e certificano la conformità dei fornitori di servizi e degli RP al modello OITF.
+    \item[Revisori] Verificano che le pratiche delle parti siano conformi agli accordi dell'OITF.
+    \item[Risolutori di dispute] Forniscono servizi di arbitrato e risoluzione dei conflitti.
+    \item[Fornitori di infrastruttura di fiducia] Implementano l'infrastruttura di fiducia richiesta per soddisfare le specifiche OITF.
+\end{description}
+
+In un sistema di identità digitale, il trust framework opera come un programma di certificazione che permette a una parte di fidarsi della sicurezza e delle politiche di privacy di un'altra parte. Più formalmente, il framework è composto da un insieme di accordi verificabili che includono controlli e misure correttive per garantire l'adempimento degli impegni presi. Ogni trust framework definisce i diritti e le responsabilità dei partecipanti e specifica le procedure per garantire la conformità.

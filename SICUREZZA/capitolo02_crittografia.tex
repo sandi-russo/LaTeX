@@ -1,0 +1,140 @@
+\chapter{Crittografia}
+
+\section{Crittografia Simmetrica}
+
+\subsection{Introduzione}
+
+La crittografia simmetrica (o crittografia a chiave singola), era l'unico tipo di crittografia in uso prima dell'introduzione della crittografia a chiave pubblica.
+
+La crittografia simmetrica è composta da 5 elementi:
+
+\begin{enumerate}
+    \item \textbf{Testo in chiaro:} i dati originali che vengono immessi nell'algoritmo come input.
+    \item \textbf{Algoritmo di crittografia:} esegue varie trasformazioni sul testo in chiaro.
+    \item \textbf{Chiave segreta:} le sostituzioni e le trasformazioni esatte eseguite dall'algoritmo dipendono dalla chiave.
+    \item \textbf{Testo cifrato:} l'output dell'algoritmo di crittografia. Per un dato messaggio, due chiavi diverse produrranno due testi cifrati diversi.
+    \item \textbf{Algoritmo di decifrazione:} l'algoritmo di crittografia eseguito al contrario. Prende il testo cifrato e la chiave segreta e produce il testo in chiaro originale.
+\end{enumerate}
+
+\subsection{Requisiti}
+
+Abbiamo bisogno di un algoritmo di crittografia forte, in cui l'avversario non dovrebbe essere in grado di decifrare il testo cifrato o scoprire la chiave anche se è in possesso dei testi cifrati e i relativi testi in chiaro. Inoltre, il mittente e il destinatario devono aver ottenuto copie della chiave segreta in modo sicuro e devono conservare la chiave in modo sicuro. Se qualcuno riesce a scoprire la chiave e conosce l'algoritmo, tutte le comunicazioni che utilizzano questa chiave sono leggibili.
+
+\subsection{Attacco alla Crittografia Simmetrica}
+
+Esistono due approcci generali per attaccare uno schema di crittografia simmetrica:
+
+\begin{description}
+    \item[Crittoanalisi] Gli attacchi crittoanalitici si basano sulla natura dell'algoritmo, tentando di dedurre un testo in chiaro specifico o la chiave utilizzata.
+    
+    \item[Attacco brute-force] Consiste nel provare ogni possibile chiave fino a ottenere una traduzione intelligibile in testo in chiaro. In media, è necessario provare metà di tutte le possibili chiavi per ottenere il successo.
+\end{description}
+
+\subsection{Algoritmi a Crittografia Simmetrica}
+
+Gli algoritmi di crittografia simmetrica più comunemente utilizzati sono i cifrari a blocchi, che elaborano il testo in chiaro in blocchi di dimensioni fisse e producono un blocco di testo cifrato di dimensioni uguali per ogni blocco di testo in chiaro. L'algoritmo elabora quantità di testo in chiaro più lunghe come una serie di blocchi di dimensioni fisse. Gli algoritmi simmetrici più importanti, tutti cifrari a blocchi, sono il Data Encryption Standard (DES), il triplo DES e l'Advanced Encryption Standard (AES).
+
+\subsubsection{DES (Data Encryption Standard)}
+
+Il DES (Data Encryption Standard) è un algoritmo di crittografia simmetrica che utilizza una chiave di 56 bit e opera su blocchi di dati di 64 bit, applicando 16 cicli di permutazioni, sostituzioni e trasposizioni per cifrare i dati. Con il tempo, la sua sicurezza è stata messa in discussione a causa della crescita della potenza di calcolo: la chiave di 56 bit è ormai vulnerabile a brute force, rendendo DES obsoleto per applicazioni moderne.
+
+\subsubsection{3DES (Triple DES)}
+
+Il 3DES (Triple Data Encryption Standard) è una variante del DES sviluppata per rafforzare la sicurezza senza progettare un algoritmo completamente nuovo. Consiste nell'applicare il DES tre volte su ciascun blocco di dati: il primo passaggio cifra i dati con una chiave, il secondo li decifra con una seconda chiave, e il terzo li ricifra con una chiave finale (anche se spesso si usano due chiavi identiche). Questo approccio porta la lunghezza effettiva della chiave a 112 o 168 bit, rendendolo significativamente più sicuro rispetto a DES. Tuttavia, 3DES è più lento rispetto ad algoritmi moderni e, nel tempo, è stato dichiarato deprecato a causa di vulnerabilità teoriche e della crescente efficienza di metodi crittanalitici.
+
+\subsubsection{AES (Advanced Encryption Standard)}
+
+L'AES (Advanced Encryption Standard) è l'attuale standard di crittografia simmetrica adottato per sostituire DES e 3DES. Supporta chiavi di 128, 192 e 256 bit, offrendo un livello di sicurezza molto più alto rispetto ai suoi predecessori. Opera su blocchi di 128 bit utilizzando un numero variabile di cicli di trasformazioni (10, 12 o 14 a seconda della lunghezza della chiave) per crittografare i dati. Grazie alla sua efficienza e sicurezza, AES è largamente utilizzato in applicazioni moderne.
+
+\section{Autenticazione dei Messaggi}
+
+La crittografia protegge dagli attacchi passivi, come le intercettazioni. Un requisito diverso è la protezione dagli attacchi attivi, quali falsificazione di dati. La protezione contro tali attacchi è nota come autenticazione dei messaggi o dei dati.
+
+Un messaggio si dice autentico quando è genuino e proviene dalla sua presunta fonte. Gli aspetti importanti sono verificare che il contenuto del messaggio non sia stato alterato e che la fonte sia autentica.
+
+\subsection{Autenticazione Senza Cifratura del Messaggio}
+
+Esaminiamo diversi approcci all'autenticazione dei messaggi. In tutti questi approcci, un tag di autenticazione viene generato e aggiunto a ciascun messaggio per la trasmissione. Il messaggio stesso non è crittografato e può essere letto da chiunque, pertanto la riservatezza del messaggio non viene fornita.
+
+\subsection{Message Authentication Code}
+
+Una tecnica di autenticazione prevede l'uso di una chiave segreta per generare un piccolo blocco di dati, noto come codice di autenticazione del messaggio, che viene aggiunto al messaggio. Questa tecnica presuppone che due parti comunicanti, ad esempio A e B, condividano una chiave segreta comune $K_{AB}$.
+
+Il processo funziona come segue:
+
+\begin{enumerate}
+    \item Quando A ha un messaggio da inviare a B, calcola il codice di autenticazione del messaggio.
+    \item Il messaggio più il codice vengono trasmessi al destinatario previsto.
+    \item Il destinatario esegue lo stesso calcolo sul messaggio ricevuto, utilizzando la stessa chiave segreta, per generare un nuovo codice di autenticazione del messaggio.
+    \item Il codice ricevuto viene confrontato con il codice calcolato.
+\end{enumerate}
+
+\subsection{Funzione Hash Unidirezionale}
+
+Un'alternativa al codice di autenticazione del messaggio è la funzione hash unidirezionale. Come per il codice di autenticazione del messaggio, una funzione hash accetta un messaggio di dimensione variabile $M$ come input e produce un digest del messaggio di dimensione fissa $H(M)$ come output. In genere, il messaggio viene riempito fino a un multiplo intero di una lunghezza fissa (ad esempio, 1024 bit) e il riempimento include il valore della lunghezza del messaggio originale in bit. Il campo lunghezza è una misura di sicurezza per aumentare la difficoltà per un aggressore di produrre un messaggio alternativo con lo stesso valore hash.
+
+\subsection{Proprietà della Funzione Hash}
+
+Lo scopo di una funzione hash è di produrre un'impronta digitale di un file, messaggio o altro blocco di dati. Per essere utile per l'autenticazione dei messaggi, una funzione hash $H$ deve avere le seguenti proprietà:
+
+\begin{enumerate}
+    \item $H$ può essere applicata a un blocco di dati di qualsiasi dimensione.
+    \item $H$ produce un output di lunghezza fissa.
+    \item $H(x)$ è relativamente facile da calcolare per qualsiasi $x$ dato, rendendo pratiche sia le implementazioni hardware che software.
+    \item Deve essere resistente alle collisioni deboli: si riferisce alla difficoltà di trovare un input che produce un valore di hash specifico, dato un valore di hash già noto.
+    \item Deve essere resistente alle collisioni forti: si riferisce alla difficoltà di trovare due input distinti $x$ e $y$ che producono lo stesso valore di hash.
+\end{enumerate}
+
+\subsection{Integrità dei Dati}
+
+Oltre a fornire l'autenticazione, un digest del messaggio fornisce anche l'integrità dei dati. Svolge la stessa funzione di una sequenza di controllo dei frame: se alcuni bit nel messaggio vengono accidentalmente alterati durante il transito, il digest del messaggio sarà in errore.
+
+\subsection{Garantire la Riservatezza}
+
+È possibile combinare autenticazione e riservatezza in un singolo algoritmo crittografando un messaggio più il suo tag di autenticazione. L'autenticazione dei messaggi viene fornita come funzione separata dalla crittografia dei messaggi.
+
+\section{Crittografia Asimmetrica}
+
+\subsection{Introduzione}
+
+La crittografia a chiave pubblica, proposta per la prima volta pubblicamente da Diffie e Hellman nel 1976, è il primo progresso veramente rivoluzionario nella crittografia in letteralmente migliaia di anni. La crittografia a chiave pubblica è asimmetrica, comportando l'uso di due chiavi separate, a differenza della crittografia simmetrica, che utilizza solo una chiave.
+
+\subsection{Componenti di uno Schema a Chiave Pubblica}
+
+Uno schema di crittografia a chiave pubblica ha sei componenti:
+
+\begin{enumerate}
+    \item \textbf{Testo in chiaro:} il messaggio leggibile che viene immesso nell'algoritmo come input.
+    \item \textbf{Algoritmo di crittografia:} l'algoritmo di crittografia esegue varie trasformazioni sul testo in chiaro.
+    \item \textbf{Chiave pubblica e privata:} si tratta di una coppia di chiavi selezionate in modo che se una viene utilizzata per la cifratura, l'altra viene utilizzata per la decifratura. Le trasformazioni esatte eseguite dall'algoritmo di crittografia dipendono dalla chiave pubblica o privata fornita come input.
+    \item \textbf{Testo cifrato:} si tratta del messaggio criptato prodotto come output. Dipende dal testo in chiaro e dalla chiave. Per un dato messaggio, due chiavi diverse produrranno due testi cifrati diversi.
+    \item \textbf{Algoritmo di decifratura:} questo algoritmo accetta il testo cifrato e la chiave corrispondente e produce il testo in chiaro originale.
+\end{enumerate}
+
+Come suggeriscono i nomi, la chiave pubblica della coppia viene resa pubblica affinché altri possano utilizzarla, mentre la chiave privata è nota solo al suo proprietario. Un algoritmo crittografico a chiave pubblica si basa su una chiave per la cifratura e su una chiave diversa ma correlata per la decifratura.
+
+\subsection{Funzionamento Base}
+
+Se Bob desidera inviare un messaggio privato ad Alice, Bob crittografa il messaggio utilizzando la chiave pubblica di Alice. Quando Alice riceve il messaggio, lo decifra utilizzando la sua chiave privata.
+
+Nessun altro destinatario può decifrare il messaggio perché solo Alice conosce la sua chiave privata. In questo schema andiamo a garantire la riservatezza ma non l'autenticità del messaggio: solo il destinatario previsto dovrebbe essere in grado di decifrare il testo cifrato perché solo il destinatario previsto è in possesso della chiave privata richiesta.
+
+\subsection{Garantire l'Autenticità}
+
+In questo schema, un utente crittografa i dati utilizzando la propria chiave privata, garantendo l'autenticità ma non la riservatezza. In questo modo, chiunque disponga della chiave pubblica di Bob potrà decifrare il messaggio e leggerne il contenuto.
+
+\subsection{Busta Digitale}
+
+Un'altra applicazione in cui la crittografia a chiave pubblica viene utilizzata per proteggere una chiave simmetrica è la busta digitale, che può essere utilizzata per proteggere un messaggio senza dover prima predisporre che mittente e destinatario abbiano la stessa chiave segreta. La tecnica è definita busta digitale, che è l'equivalente di una busta sigillata contenente una lettera non firmata.
+
+Supponiamo che Bob desideri inviare un messaggio riservato ad Alice, ma non condividono una chiave segreta simmetrica. Bob fa quanto segue:
+
+\begin{enumerate}
+    \item Prepara un messaggio.
+    \item Genera una chiave simmetrica casuale che verrà utilizzata solo questa volta.
+    \item Crittografa quel messaggio usando la crittografia simmetrica della chiave monouso.
+    \item Crittografa la chiave monouso usando la crittografia a chiave pubblica con la chiave pubblica di Alice.
+    \item Allega la chiave monouso crittografata al messaggio crittografato e inviala ad Alice.
+\end{enumerate}
+
+Solo Alice è in grado di decrittografare la chiave monouso e quindi di recuperare il messaggio originale. Se Bob ha ottenuto la chiave pubblica di Alice tramite il certificato di chiave pubblica di Alice, allora Bob è sicuro che si tratti di una chiave valida.

@@ -1,0 +1,673 @@
+\documentclass[a4paper, 12pt, titlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{fancyhdr}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, calc, fit}
+
+\geometry{a4paper, top=3cm, bottom=3cm, left=2.5cm, right=2.5cm}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    urlcolor=blue!80!black,
+    citecolor=red!70!black,
+    pdftitle={Creazione di un Mini-Lab Virtualizzato},
+    pdfauthor={Sandi Russo},
+}
+
+
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.96}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{blue!80!black}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    framerule=0.5pt,
+    rulecolor=\color{black!20}
+}
+\lstset{style=mystyle}
+
+
+\lstdefinelanguage{Ruby}{
+    morekeywords={Vagrant, configure, do, config, vm, define, provider, provision, end, each, true, false, server_name, server_config, node},
+    sensitive=false,
+    morecomment=[l]\#,
+    morestring=[b]',
+    morestring=[b]"
+}
+\lstdefinelanguage{YAML}{
+    keywords={hosts, become, tasks, name, apt, copy, service, state, update_cache, src, dest, with_items, import_tasks, cron, minute, hour, job, upgrade, dist, present, latest, restarted},
+    sensitive=true,
+    morecomment=[l]\#,
+    morestring=[b]',
+    morestring=[b]"
+}
+\lstdefinelanguage{Batch}{
+    morekeywords={@echo, off, on, set, if, exist, del, echo, goto, pause, exit, findstr, find, timeout, else, neq},
+    sensitive=false,
+    morecomment=[l]rem,
+    morestring=[b]"
+}
+\lstdefinelanguage{nginx}{
+    morekeywords={upstream, server, listen, server_name, location, proxy_pass, proxy_set_header, Host, X-Real-IP, X-Forwarded-For, X-Forwarded-Proto, scheme},
+    sensitive=false,
+    morecomment=[l]\#,
+    morestring=[b]',
+    morestring=[b]"
+}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{blue!60!black}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{black}}
+  {\thesubsection}{1em}{}
+
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+
+    \Huge\bfseries
+    Università degli Studi di Messina
+
+    \vspace{1.5cm}
+
+    \Large
+    CdL in Scienze Informatiche \\
+    Sistemi Operativi - Modulo B \\
+    A.A. 2024/2025
+
+    \vspace{2.5cm}
+
+    \textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+    \vspace{0.4cm}
+    \Huge\bfseries
+    Progetto di un Mini-Laboratorio \\ Virtualizzato e Automatizzato
+    \vspace{0.4cm}
+    \textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+
+    \vspace{2cm}
+
+    \Large
+    \textbf{Sandi Russo} \\
+    553675
+
+    \vfill
+
+    \Large
+    \today
+
+\end{titlepage}
+
+
+
+
+\pagenumbering{roman}
+
+\pagestyle{fancy}
+\fancyhf{} % Pulisce header e footer predefiniti
+\renewcommand{\headrulewidth}{0pt} % Rimuove la linea dell'header
+
+% Definisce una linea blu spessa 0.4pt per il footer
+\renewcommand{\footrule}{\color{blue!70!black}\hrule width \linewidth height 0.4pt}
+
+% Definisce il contenuto del footer con testo grigio
+\lfoot{\color{black!75}Sandi Russo}
+\cfoot{\color{black!75}\thepage}
+\rfoot{\color{black!75}Sistemi Operativi mod. B}
+
+% Applica lo stesso stile anche alle pagine "plain"
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrule}{\color{blue!70!black}\hrule width \linewidth height 0.4pt}%
+  \lfoot{\color{black!65}Sandi Russo}%
+  \cfoot{\color{black!65}\thepage}%
+  \rfoot{\color{black!65}Sistemi Operativi mod. B}%
+}
+
+
+
+
+
+
+
+
+
+\begin{abstract}
+\noindent
+La presente relazione ha lo scopo di illustrare il processo di progettazione e implementazione di un laboratorio virtualizzato multi-macchina.
+Utilizzando le linee guida fornite dal docente, è stata creata un’architettura web a tre livelli, completamente automatizzata e resiliente, composta da quattro macchine virtuali: un bilanciatore di carico (load balancer), due server web e un server di database. L’intera infrastruttura è stata codificata utilizzando \textbf{Vagrant}, seguendo il principio dell'\textit{Infrastructure as Code} (IaC), mentre la configurazione del software su ciascuna macchina è stata realizzata in modo dichiarativo attraverso \textbf{Ansible}, che si occupa della gestione della configurazione e dell'installazione del software nelle macchine virtuali.
+Inoltre, il progetto prevede procedure automatizzate per la manutenzione, che comprendono la gestione di snapshot per ripristini rapidi e la realizzazione di backup completi in formato OVA per il disaster recovery. La validazione conclusiva attesta non soltanto il corretto funzionamento dell’intera architettura, ma anche la sua capacità di resistere a malfunzionamenti simulati, garantendo così un servizio di elevata affidabilità.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+\clearpage
+\pagenumbering{arabic}
+\section{Introduzione}
+Il progetto nasce dall'esigenza di creare un ambiente di laboratorio virtuale che non fosse una semplice aggregazione di macchine virtuali, ma un sistema complesso, realistico e gestito con metodologie moderne. L'obiettivo è stato quello di ingegnerizzare un'architettura web a tre livelli, capace di replicare scenari reali e di garantire elevata affidabilità, automazione e riproducibilità. Alla base di questo lavoro vi sono i paradigmi contemporanei del DevOps e dell'ingegneria di sistema, che trattano l'infrastruttura non come hardware fisico, ma come software: codificata, versionabile e replicabile. Questa transizione riflette un cambiamento fondamentale nell'amministrazione di sistema, che si sposta da configurazioni manuali, spesso soggette a errori, verso una disciplina ingegneristica dove gli ambienti sono costruiti con lo stesso rigore delle applicazioni software. Lo scopo finale è la creazione di sistemi non solo funzionali, ma intrinsecamente resilienti, scalabili e manutenibili nel tempo.
+
+\subsection{Concetti Teorici}
+
+\subsubsection{Virtualizzazione e Hypervisor}
+Il pilastro del progetto è la \textbf{virtualizzazione}, una tecnologia che consente di creare versioni virtuali di risorse informatiche, come server, storage o reti. Una \textbf{Macchina Virtuale (VM)} è un'emulazione software di un computer fisico che astrae le componenti hardware sottostanti. Di conseguenza, il sistema operativo guest interagisce con un set standard di dispositivi emulati (BIOS, dischi, schede di rete), del tutto ignaro del fatto che l'hardware non sia fisico. Le VM utilizzano le risorse della macchina ospitante (host) per eseguire un sistema operativo completo e isolato (guest). L'hypervisor, inoltre, gestisce la creazione di componenti di rete virtuali, come schede di rete (vNIC) per ciascuna VM e switch virtuali, che permettono alle macchine di comunicare tra loro in una rete isolata o di connettersi alla rete fisica esterna. Questo offre vantaggi cruciali:
+\begin{itemize}
+    \item \textbf{Isolamento:} un problema su una VM (es. un crash del software o una vulnerabilità) non si propaga all'host o alle altre VM, garantendo la stabilità e la sicurezza dell'intero sistema;
+    \item \textbf{Efficienza:} più sistemi possono operare simultaneamente su un unico hardware fisico, ottimizzandone l'uso e riducendo i costi energetici e di manutenzione;
+    \item \textbf{Portabilità e Riproducibilità:} l'intero stato di una VM, inclusi i dischi virtuali e la configurazione, è incapsulato in un insieme di file. Ciò la rende facilmente trasferibile, permettendo di clonare, spostare o ripristinare un intero ambiente di lavoro con grande semplicità.
+\end{itemize}
+Per la gestione delle VM è stato scelto \textbf{Oracle VirtualBox}, un \textit{hypervisor} di tipo 2. A differenza degli hypervisor di tipo 1 (bare-metal, es. VMware ESXi) che si installano direttamente sull'hardware, un hypervisor di tipo 2 viene eseguito come un'applicazione sul sistema operativo host (in questo caso, Windows 11), rendendolo ideale e accessibile per ambienti di sviluppo e test su workstation personali.
+
+\subsubsection{Infrastructure as Code (IaC)}
+Il principio dell'\textbf{Infrastructure as Code (IaC)} è centrale in questo progetto. Consiste nel gestire e provisionare l'infrastruttura (server, reti, load balancer) attraverso file di configurazione leggibili dall'uomo, anziché tramite configurazione manuale. Questo paradigma permette di trattare l'infrastruttura con le stesse pratiche utilizzate per lo sviluppo software. I principali vantaggi sono:
+\begin{itemize}
+    \item \textbf{Automazione e velocità:} l'intera infrastruttura può essere creata, aggiornata o distrutta eseguendo uno script, riducendo drasticamente i tempi di setup e deployment.
+    \item \textbf{Consistenza:} elimina le discrepanze tra ambienti e previene il "configuration drift" (modifiche manuali non tracciate che rendono i sistemi disallineati).
+    \item \textbf{Versionamento:} i file di configurazione possono essere gestiti con sistemi di controllo versione come Git, permettendo di tracciare ogni modifica, collaborare in team e ripristinare versioni precedenti in caso di problemi.
+\end{itemize}
+In questo progetto, l'IaC è stata implementata con la combinazione di \textbf{Vagrant}, per la creazione delle VM, e \textbf{Ansible}, per la gestione dichiarativa della loro configurazione software. È importante sottolineare la sinergia tra questi strumenti: Vagrant agisce come controllore a un livello superiore, occupandosi del ciclo di vita delle macchine (creazione, distruzione, configurazione di rete e risorse). Una volta che la VM è attiva, Vagrant passa il testimone ad Ansible, che opera all'interno del sistema operativo guest per la gestione granulare del software, installando pacchetti e configurando servizi. Questa combinazione permette di separare nettamente la gestione dell'infrastruttura da quella della configurazione, creando un flusso di lavoro pulito e modulare.
+
+\subsection{Architettura a tre livelli}
+È stata progettata un'architettura a tre livelli (3-tier), un modello standard per le applicazioni web che separa la logica in tre strati distinti, ciascuno con responsabilità specifiche. Questa separazione dei compiti (separation of concerns) è fondamentale per costruire sistemi robusti, perché permette a ciascun livello di essere sviluppato, gestito e scalato in modo indipendente. Ad esempio, è possibile aumentare il numero di web server per gestire un picco di traffico senza dover modificare il livello del database. Inoltre, questo design migliora l'isolamento dei guasti (fault isolation): un problema nel livello di presentazione difficilmente si propagherà al livello dati, aumentando la resilienza complessiva. Tale approccio permette anche una gestione delle risorse più efficiente ed economica, scalando selettivamente solo il componente che rappresenta il collo di bottiglia. Questa modularità costituisce anche un pilastro per un design sicuro, limitando la superficie di attacco complessiva del sistema.
+
+\begin{itemize}
+    \item \textbf{Presentation Tier (Load Balancer):} un server \textbf{Nginx} funge da \textit{reverse proxy} e bilanciatore di carico. È l'unico punto di ingresso (\textit{single point of entry}) per tutto il traffico HTTP. Il suo compito è distribuire le richieste in arrivo tra i server dello strato successivo e mascherare la topologia della rete interna. \\\noindent Svolge anche un ruolo attivo nel monitoraggio della salute del sistema, eseguendo controlli periodici (health checks) per inoltrare il traffico solo ai web server funzionanti. In scenari di produzione, questo livello è anche il punto ideale per gestire la terminazione SSL/TLS, decifrando il traffico HTTPS e alleggerendo così il carico computazionale dei web server, oltre a poter implementare meccanismi di caching per contenuti statici;
+
+    \item \textbf{Application Tier (Web Servers):} due server web identici (\texttt{web1} e \texttt{web2}) con Nginx. Ospitano la logica dell'applicazione (che in questo caso è un semplice web server statico, ma in un'applicazione reale conterrebbe il codice sorgente). La loro ridondanza è la chiave per l'\textbf{alta affidabilità} (High Availability): se uno dei due server smette di funzionare, l'altro continua a servire le richieste, garantendo la continuità del servizio in una configurazione di tipo attivo-attivo;
+
+    \item \textbf{Data Tier (Database Server):} un server dedicato (\texttt{db}) con \textbf{MariaDB} per la persistenza dei dati. È isolato e accessibile solo dalla rete privata interna (dai web server), una pratica di sicurezza fondamentale ("defense in depth") per proteggere i dati sensibili da accessi diretti non autorizzati provenienti da Internet.
+\end{itemize}
+\noindent
+Tutte le VM sono basate su \textbf{Ubuntu Jammy 22.04} e interconnesse tramite una rete privata isolata (\texttt{192.168.50.0/24}).
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        roundedrectangle/.style={rectangle, rounded corners, thick, draw=black!60, fill=black!5, minimum height=1.5cm, minimum width=2.5cm, drop shadow},
+        node distance=2.5cm and 3cm,
+        arrow/.style={- Stealth, thick, color=gray!80!black},
+        line/.style={thick, color=gray!80!black}
+    ]
+
+    \node[roundedrectangle, align=center] (web1) at (0,0) {\textbf{Web Server 1} \\ {192.168.50.10}};
+    \node[roundedrectangle, align=center, right=of web1] (web2)  {\textbf{Web Server 2} \\ {192.168.50.11}};
+
+    \coordinate (webcenter) at ($(web1)!0.5!(web2)$);
+
+    \node[roundedrectangle, align=center, above=of webcenter] (lb) {\textbf{Load Balancer} \\ {192.168.50.5}};
+    \node[roundedrectangle, align=center, below=of webcenter] (db) {\textbf{Database} \\ {192.168.50.20}};
+
+
+    \node[draw=gray, thick, dashed, inner sep=1.2cm, fit=(lb)(web1)(web2)(db), label={[anchor=south east, font=\small, text=gray]south east:Rete privata: 192.168.50.0/24}] (netbox) {};
+
+    \node[font=\bfseries] (client) at ($(lb.west)+(-2.5,0)$) {Client};
+    \draw[arrow] (client) -> (lb) node[midway, above] {\small{HTTP}};
+    \draw[arrow] (lb) -> (web1);
+    \draw[arrow] (lb) -> (web2);
+    \draw[arrow] (web1) -> (db) node[midway, left] {\small{SQL}};
+    \draw[arrow] (web2) -> (db) node[midway, right] {\small{SQL}};
+
+    \end{tikzpicture}
+    \caption{Diagramma dell'architettura a tre livelli del laboratorio}
+    \label{fig:architettura}
+\end{figure}
+
+
+
+\newpage
+
+\section{Definizione dell'infrastruttura: Vagrantfile}
+Il cuore dell'approccio IaC è il \texttt{Vagrantfile}, un file di configurazione scritto in Ruby che descrive a Vagrant come creare e configurare le VM. Questo singolo file rende il laboratorio portabile, riproducibile e facilmente modificabile
+
+\subsection{Analisi del Vagrantfile}
+Per rendere il codice più pulito e manutenibile, il \texttt{Vagrantfile} è stato strutturato in blocchi logici distinti. L'approccio segue il principio \textbf{DRY (Don't Repeat Yourself)}, separando la definizione dei dati dalla logica di configurazione.
+
+\subsubsection{Blocco 1: definizione dei dati di configurazione}
+La prima parte del file è dedicata alla centralizzazione di tutti i parametri delle macchine virtuali in una struttura dati Ruby, un Hash chiamato \texttt{SERVER}. Questo blocco agisce come un "inventario" del nostro laboratorio: ogni macchina è definita con le sue proprietà specifiche come l'hostname, l'indirizzo IP, la RAM allocata e il playbook Ansible che ne gestirà la configurazione. Questo metodo rende estremamente semplice aggiungere nuove macchine o modificare quelle esistenti, intervenendo solo in questo punto.
+
+\begin{lstlisting}[language=Ruby, caption={Definizione centralizzata dei parametri delle VM}]
+# definisco le caratteristiche che deve avere ogni macchina virtuale come il nome, l'indirizzo ip, la RAM e lo script ANSIBLE associato
+SERVER = {
+  "lb" => {
+    hostname: "loadbalancer",
+    ip: "192.168.50.5",
+    ram: 1024,
+    playbook: "ansible/playbook-lb.yml"
+  },
+  "web1" => {
+    hostname: "webserver1",
+    ip: "192.168.50.10",
+    ram: 1024,
+    playbook: "ansible/playbook-web.yml"
+  },
+  "web2" => {
+    hostname: "webserver2",
+    ip: "192.168.50.11",
+    ram: 1024,
+    playbook: "ansible/playbook-web.yml"
+  },
+  "db" => {
+    hostname: "database",
+    ip: "192.168.50.20",
+    ram: 2048,
+    playbook: "ansible/playbook-db.yml"
+  }
+}
+\end{lstlisting}
+
+\subsubsection{Blocco 2: ciclo di creazione e configurazione di base}
+La seconda parte contiene la logica principale. Il comando \texttt{Vagrant.configure("2")} inizializza la configurazione. Successivamente, un ciclo \texttt{SERVER.each} itera sulla struttura dati definita in precedenza e, per ogni elemento, crea una definizione di VM tramite \texttt{config.vm.define}. All'interno di questo blocco vengono impostati i parametri fondamentali della macchina, come l'immagine del sistema operativo da usare (\texttt{node.vm.box}), il suo nome di rete (\texttt{node.vm.hostname}) e la configurazione della rete privata. Questi comandi sono il cuore pulsante del file, trasformando una semplice lista di dati in istruzioni concrete per l'hypervisor. La scelta della "box" garantisce che ogni macchina parta da uno stato identico e pulito, eliminando le incertezze tipiche dei setup manuali. La definizione della rete privata, in particolare, è un passo architetturale critico, poiché crea il perimetro di sicurezza che isolerà il database.
+
+\begin{lstlisting}[language=Ruby, caption={Logica di iterazione e configurazione base delle VM}]
+Vagrant.configure("2") do |config|
+  #qui, leggo ogni singolo elemento dell'HASH creato in precedenza
+  SERVER.each do |server_name, server_config|
+    config.vm.define server_name do |node|
+      # specifico il sistema operativo da utilizzare
+      node.vm.box = "ubuntu/jammy64"
+
+      # specifico un nome a ogni macchina, per poterla riconoscere
+      node.vm.hostname = server_config[:hostname]
+
+      # creo una rete privata
+      node.vm.network "private_network", ip: server_config[:ip]
+
+    end
+  end
+end
+\end{lstlisting}
+
+\subsubsection{Blocco 3: configurazione del provider e provisioning}
+L'ultima parte, interna al ciclo, si occupa di definire "cosa c'è sopra" e "cosa c'è dentro" la macchina virtuale. La distinzione tra provider e provisioner è un concetto chiave in Vagrant, poiché permette di separare la configurazione dell'infrastruttura a livello hardware da quella del software che verrà eseguito al suo interno. Questa separazione rende il processo più ordinato e facile da debuggare, assegnando a ogni blocco una responsabilità chiara e definita.
+
+\begin{itemize}
+    \item \textbf{Provider Configuration}: il blocco \texttt{node.vm.provider} definisce parametri specifici per l'hypervisor in uso, in questo caso VirtualBox. Qui vengono allocate le risorse hardware come la quantità di RAM (\texttt{vb.memory}) e il numero di CPU (\texttt{vb.cpus});
+    \item \textbf{Provisioning}: il blocco \texttt{node.vm.provision} è il cuore dell'automazione software. Specifica a Vagrant di usare Ansible per configurare la macchina una volta creata. L'opzione \texttt{ansible\_local} è fondamentale perché istruisce Vagrant a installare Ansible direttamente sulla VM guest per poi eseguire il playbook specificato. Questo approccio è ideale perché non richiede che Ansible sia preinstallato sulla macchina host, garantendo la massima portabilità del progetto.
+\end{itemize}
+
+\begin{lstlisting}[language=Ruby, caption={configurazione hardware e automazione software}]
+      # qui specifico l'hypervisor, nel mio caso, virtualbox
+      node.vm.provider "virtualbox" do |vb| # richiamo i comandi da associare a virtualbox con "vb"
+
+        vb.name = server_config[:hostname]
+        vb.memory = server_config[:ram]
+        vb.cpus = 2
+      end
+
+      # lanciamo Ansible per installare tutto il software necessario
+      node.vm.provision "ansible_local" do |ansible|
+        ansible.install = true
+        ansible.playbook = server_config[:playbook]
+        ansible.version = "latest"
+      end
+    end
+  end
+end
+\end{lstlisting}
+
+\noindent
+L'esecuzione del comando \texttt{vagrant up} interpreta questo file e crea l'intera infrastruttura, come mostrato nell'interfaccia di gestione di VirtualBox in figura \ref{fig:oracle_vm_gui}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{grafici/OracleVM.png}
+    \caption{L'interfaccia di Oracle VM VirtualBox che mostra le quattro macchine virtuali create e in esecuzione dopo il comando \textit{vagrant up}}
+    \label{fig:oracle_vm_gui}
+\end{figure}
+
+
+
+\newpage
+
+
+
+\section{Gestione della configurazione con Ansible}
+Una volta che Vagrant ha creato le VM, \textbf{Ansible} subentra per automatizzare la loro configurazione software. Ansible si distingue per la sua architettura \textbf{agentless}: non richiede l'installazione di alcun software client ("agente") sulle macchine da gestire. Opera tramite connessioni SSH standard, inviando piccoli moduli Python che eseguono i compiti e poi vengono rimossi. Questo approccio semplifica notevolmente la gestione e riduce il carico sui server.
+\\\noindent
+Ansible opera in modo \textbf{dichiarativo}: si descrive lo stato finale desiderato del sistema (es. "Nginx deve essere installato e attivo") in file \textbf{YAML} chiamati \textit{playbook}. La scelta di YAML non è casuale: la sua sintassi pulita e basata sull'indentazione lo rende estremamente leggibile anche per chi non è un programmatore. Ansible si occupa poi di raggiungere lo stato descritto, garantendo che server con lo stesso ruolo (es. \texttt{web1} e \texttt{web2}) siano configurati in modo identico ed eliminando il "configuration drift".
+
+\subsection{Struttura e principi dei Playbook}
+Un concetto chiave in Ansible è l'\textbf{idempotenza}. Un'operazione idempotente, se eseguita più volte, produce lo stesso risultato della prima esecuzione. Ad esempio, se un task dichiara che un pacchetto deve essere installato, Ansible lo installerà solo la prima volta; le esecuzioni successive rileveranno che il pacchetto è già presente e non eseguiranno alcuna azione. Questo rende i playbook sicuri da rieseguire e prevedibili nel loro comportamento.
+\\\noindent
+Per massimizzare la riusabilità del codice, le operazioni comuni a tutte le macchine (aggiornamento, installazione di tool di base) sono state raggruppate in un playbook separato, \texttt{playbook-common.yml}, e importate dove necessario.
+
+\subsubsection{Struttura di un Playbook}
+Un playbook Ansible è il file centrale che gestisce tutte le operazioni; può essere visto come una vera e propria "ricetta" o un "piano di esecuzione" che Ansible segue dall'inizio alla fine. Sebbene la sua componente principale sia la lista dei task, un playbook può contenere anche altri elementi come la definizione di variabili, l'importazione di ruoli e la dichiarazione di "handler" (task speciali attivati da notifiche), rendendolo uno strumento estremamente versatile. Gli elementi fondamentali sono:
+\begin{itemize}
+\item \texttt{hosts}: specifica su quali macchine (o gruppi di macchine) dell'inventario eseguire i task. Nel nostro caso, poiché Ansible viene eseguito localmente su ogni VM, il target è sempre \texttt{all} (cioè, la macchina stessa);
+\item {become: yes}: istruisce Ansible a eseguire i task con privilegi elevati (equivalente a \texttt{sudo}). È necessario per operazioni come l'installazione di software o la modifica di file di sistema;
+\item \texttt{tasks}: è la lista delle operazioni da eseguire. Ogni task ha un nome descrittivo (\texttt{name}) e richiama un \textbf{modulo} Ansible (\texttt{apt}, \texttt{copy}, \texttt{service}, etc.) con i parametri necessari.
+\end{itemize}
+\noindent
+
+\subsection{Playbook comune}
+Questo playbook funge da base di partenza per tutte le macchine del laboratorio, assicurando che ciascuna di esse soddisfi i requisiti minimi prima di procedere con le configurazioni specifiche del proprio ruolo. Contiene i task fondamentali e comuni, come l'aggiornamento del sistema e l'installazione di pacchetti essenziali, garantendo così uno stato di partenza coerente e omogeneo per l'intera infrastruttura.
+\begin{lstlisting}[language=YAML, caption={ansible/playbook-common.yml}]
+- name: Aggiorno la cache dei pacchetti e il sistema
+  apt:
+    update_cache: yes  # apt-get update
+    upgrade: dist      # apt-get dist-upgrade
+
+- name: Installo pacchetti di base essenziali
+  apt:
+    name:
+      - build-essential
+      - python3-pip
+      - git
+      - curl
+      - vim
+    state: present # questo garantisce che i pacchetti siano installati
+\end{lstlisting}
+
+\subsection{Playbook del Load Balancer}
+Il load balancer è il punto di ingresso della nostra applicazione.
+\\\noindent
+Il suo playbook installa Nginx, un web server leggero e ad alte prestazioni, ideale per questo ruolo. Il cuore della configurazione è il file \texttt{lb-nginx.conf}, che definisce la logica di reverse proxy e bilanciamento del carico in modalità \textit{Round Robin} (l'algoritmo di default).
+
+\begin{lstlisting}[language=YAML, caption={ansible/playbook-lb.yml per il Load Balancer}]
+- hosts: all
+  become: yes
+  tasks:
+    - name: Importo i task di configurazione comune
+      import_tasks: playbook-common.yml
+
+    - name: Installo il web server Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Copio il file di configurazione per il Load Balancer
+      copy:
+        src: files/lb-nginx.conf # file sorgente sulla macchina host
+        dest: /etc/nginx/sites-available/default # destinazione VM
+
+    - name: Riavvio Nginx per applicare la nuova configurazione
+      service:
+        name: nginx
+        state: restarted #forza il riavvio del servizio
+\end{lstlisting}
+
+
+\subsection{Playbook dei Web Server}
+Questo playbook, essendo identico per \texttt{web1} e \texttt{web2}, garantisce la coerenza tra i server applicativi. Oltre a installare Nginx, introduce un task di manutenzione automatizzata tramite il modulo \texttt{cron} di Ansible. Questo modulo permette di gestire i cron job in modo idempotente, assicurando che l'operazione di backup sia schedulata correttamente.
+
+\begin{lstlisting}[language=YAML, caption={ansible/playbook-web.yml per i Web Server}]
+- hosts: all
+  become: yes
+  tasks:
+    - name: Importo i task di configurazione comune
+      import_tasks: playbook-common.yml
+
+    - name: Installo il web server Nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Pianifico un backup giornaliero dei file del sito web
+      cron:
+        name: "Backup giornaliero sito web"
+        minute: "0"
+        hour: "4"
+        job: "tar -czf /var/backups/sito-web-$(date +\\%Y-\\%m-\\%d).tar.gz /var/www/html"
+\end{lstlisting}
+
+\subsection{Configurazione del Reverse Proxy (Load Balancer)}
+Il cuore del load balancer è il suo file di configurazione Nginx. La direttiva `upstream` definisce un gruppo di server a cui inoltrare il traffico, mentre il blocco `location` specifica che tutte le richieste in entrata debbano essere passate a questo gruppo tramite `\textit{proxy\_pass}`. Le intestazioni `\textit{proxy\_set\_header}` sono fondamentali per inoltrare ai server web le informazioni originali del client.
+
+\begin{lstlisting}[language=nginx, caption={files/lb-nginx.conf: configurazione Nginx per il reverse proxy}]
+upstream web_servers {
+    server 192.168.50.10; # primo web server
+    server 192.168.50.11; # secondo web server
+}
+
+server {
+    listen 80;
+    server_name _; #risponde a qualsiasi richiesta
+
+    location / {
+        proxy_pass http://web_servers;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+\end{lstlisting}
+
+\subsection{Playbook del Database}
+Il server di database è un componente critico e va trattato con particolare attenzione alla sicurezza. Il suo playbook installa MariaDB, un fork open source di MySQL molto diffuso. Sebbene il playbook si limiti all'installazione, una configurazione di produzione dovrebbe includere task di \textit{hardening} per la messa in sicurezza del servizio.
+
+\begin{lstlisting}[language=YAML, caption={ansible/playbook-db.yml per il database server}]
+- hosts: all
+  become: yes
+  tasks:
+    - name: Importo i task di configurazione comune
+      import_tasks: playbook-common.yml
+
+    - name: Installo MariaDB Server e client
+      apt:
+        name:
+          - mariadb-server
+          - mariadb-client
+        state: latest
+\end{lstlisting}
+
+\subsection{Gestione dei dati sensibili: Ansible Vault}
+Nei playbook presentati, non sono stati gestiti dati sensibili come password o chiavi API per semplicità. Tuttavia, in un ambiente di produzione, è fondamentale evitare di scrivere informazioni critiche in chiaro nei file di configurazione. Per questo tipo di esigenza, Ansible offre una soluzione integrata e sicura: \textbf{Ansible Vault}.
+\\\noindent
+Ansible Vault è una funzionalità che permette di criptare singoli file o variabili all'interno del progetto. Un file criptato con Vault può essere tranquillamente incluso nel sistema di controllo versione (come Git), poiché il suo contenuto è illeggibile senza la password corretta. Durante l'esecuzione del playbook, è possibile fornire la password ad Ansible, che decripterà i dati al volo per utilizzarli nei task. Ad esempio, il playbook del database potrebbe essere esteso per impostare una password di root per MariaDB, leggendola da un file protetto da Vault, garantendo così la massima sicurezza e aderenza alle best practice.
+
+
+\newpage
+
+
+
+\section{Procedure di gestione e manutenzione}
+Un laboratorio, per quanto automatizzato, richiede procedure definite per la manutenzione ordinaria e per la gestione di imprevisti (disaster recovery). L'affidabilità di un sistema non dipende solo dalla sua architettura, ma anche dalla robustezza delle procedure operative che ne garantiscono la stabilità e la recuperabilità nel tempo.
+
+\subsection{Gestione degli snapshot}
+Gli snapshot di VirtualBox, gestibili comodamente tramite Vagrant, creano punti di ripristino istantanei dello stato di una VM, includendo la memoria RAM, le impostazioni e lo stato del disco. Sono lo strumento ideale prima di effettuare modifiche potenzialmente rischiose, come un aggiornamento del software o un cambio di configurazione, poiché consentono di annullare le operazioni e tornare allo stato precedente in pochi secondi.
+
+\begin{itemize}
+    \item \textbf{Creazione di uno snapshot:} \texttt{vagrant snapshot save <vm-name> <snapshot-name>}
+    \item \textbf{Ripristino di uno snapshot:} \texttt{vagrant snapshot restore <vm-name> <snapshot-name>}
+\end{itemize}
+
+\subsubsection{Snapshot vs. backup}
+È fondamentale comprendere che uno snapshot \textbf{non è un backup}. Uno snapshot è un disco differenziale che registra solo le modifiche rispetto allo stato precedente; dipende quindi dal disco originale e da eventuali snapshot precedenti. Se il disco base venisse cancellato o si corrompesse, lo snapshot diventerebbe inutilizzabile. Pertanto, gli snapshot sono perfetti per ripristini a brevissimo termine, ma non devono mai essere considerati una strategia di backup affidabile per il disaster recovery.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{grafici/Snapshot_Create.png}
+    \caption{Comando per la creazione di uno snapshot della VM `webserver1`}
+    \label{fig:snapshot_save}
+\end{figure}
+
+
+\subsection{Backup completo e migrazione (Disaster Recovery)}
+Per un vero disaster recovery o per la migrazione dell'infrastruttura, è necessario un backup completo, auto-contenuto e portabile. A questo scopo è stato sviluppato lo script Batch \texttt{backup.bat}, che orchestra l'utility a riga di comando di VirtualBox, \texttt{VBoxManage.exe}, per esportare una VM in formato \textbf{OVA (Open Virtualization Appliance)}. Questo formato standard, di fatto un archivio TAR, impacchetta in un unico file sia i dischi virtuali (in formato VMDK) sia la descrizione hardware della VM (in un file OVF basato su XML). Questa natura auto-contenuta lo rende agnostico rispetto all'hypervisor e ideale per l'archiviazione a lungo termine. L'automazione tramite script, inoltre, garantisce che la procedura di backup sia eseguita sempre in modo identico e affidabile, eliminando il rischio di errori umani tipico delle operazioni manuali.
+
+\subsubsection{Blocco 1: inizializzazione}
+La prima parte dello script imposta le variabili fondamentali, come il nome della VM da backuppare e i percorsi. Una pratica importante qui adottata è la generazione dinamica del nome del file di backup, che include la data corrente per creare archivi unici e facilmente identificabili. Subito dopo, implementa un meccanismo di "locking": crea un file temporaneo \texttt{backup.lock} che impedisce l'avvio di un'altra istanza dello script mentre una è già in esecuzione. Questo semplice controllo previene sovrapposizioni e possibili corruzioni dei dati durante il processo di esportazione.
+
+\begin{lstlisting}[language=Batch, caption={impostazione delle variabili e meccanismo di lock}]
+@echo off
+rem impostazioni
+set VM_NAME=webserver1
+set BACKUP_PATH=C:\Backups
+set BACKUP_NAME=%BACKUP_PATH%\%VM_NAME%_backup_%date:~-4%%date:~4,2%%date:~-10,2%.ova
+set VBOXMANAGE="C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
+set LOCKFILE=backup.lock
+
+rem controllo lock
+if not exist %BACKUP_PATH% mkdir %BACKUP_PATH%
+if exist %LOCKFILE% (
+    echo Script gia' in esecuzione. Uscita...
+    exit /b
+)
+echo > %LOCKFILE%
+\end{lstlisting}
+
+\subsubsection{Blocco 2: gestione dello stato della VM}
+Questa è la sezione più delicata dello script. Prima di avviare il backup, controlla se la macchina virtuale è in esecuzione, in caso affermativo, lo script non spegne brutalmente la VM, ma invia un segnale di spegnimento controllato (ACPI), che simula la pressione del tasto di accensione. Lo script attende poi in un ciclo che la VM completi lo shutdown. Questo garantisce che il sistema operativo guest si arresti correttamente, chiudendo file e servizi, per assicurare la massima consistenza dei dati nel backup.
+
+\begin{lstlisting}[language=Batch, caption={spegnimento controllato della VM}]
+echo Controllo lo stato della VM '%VM_NAME%'...
+rem controlla se la VM e in stato "running"
+%VBOXMANAGE% showvminfo %VM_NAME% --machinereadable | findstr "VMState=\"running\"" >nul
+if %errorlevel%==0 (
+    echo La VM e' accesa. Spegnimento controllato in corso...
+    set VM_WAS_RUNNING=1
+    %VBOXMANAGE% controlvm %VM_NAME% acpipowerbutton
+
+    rem attende in un ciclo che la VM sia spenta prima di continuare
+    :wait_shutdown
+    timeout /t 5 /nobreak >nul
+    %VBOXMANAGE% showvminfo %VM_NAME% --machinereadable | findstr "VMState=\"poweroff\"" >nul
+    if errorlevel 1 goto wait_shutdown
+    echo VM spenta.
+) else (
+    echo La VM e' gia' spenta.
+    set VM_WAS_RUNNING=0
+)
+\end{lstlisting}
+
+\subsubsection{Blocco 3: esportazione, riavvio e pulizia}
+Una volta che la VM è spenta, lo script esegue il comando \texttt{VBoxManage export} per creare il file \texttt{.ova}. Al termine del backup, se la macchina era stata spenta appositamente, viene riavviata in modalità \textit{headless} (senza interfaccia grafica) per ripristinare lo stato operativo. Infine, il file di lock viene rimosso, permettendo future esecuzioni dello script.
+
+\begin{lstlisting}[language=Batch, caption={esportazione, riavvio e pulizia finale}]
+echo Avvio esportazione della VM in: %BACKUP_NAME%
+%VBOXMANAGE% export %VM_NAME% --output %BACKUP_NAME%
+if %errorlevel% neq 0 (
+    echo ERRORE durante il backup.
+    goto cleanup
+)
+echo Backup completato con successo!
+
+rem se la VM era accesa all'inizio, la riavviamo
+if %VM_WAS_RUNNING%==1 (
+    echo Riavvio della VM in corso...
+    %VBOXMANAGE% startvm %VM_NAME% --type headless
+)
+
+rem rimuove il file di lock e termina
+:cleanup
+del %LOCKFILE%
+echo.
+pause
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{grafici/Backup.png}
+    \caption{esecuzione dello script `backup.bat` che mostra lo spegnimento, l'esportazione e il riavvio}
+    \label{fig:backup_output}
+\end{figure}
+
+\newpage
+
+
+
+\section{Verifica funzionale e test di resilienza}
+Il collaudo finale è un passaggio cruciale non solo per validare l'architettura, ma per dimostrare empiricamente che i principi di progettazione adottati si traducono in un sistema funzionante, robusto e affidabile. I test sono stati suddivisi in due scenari principali: il primo verifica il corretto funzionamento del sistema a regime (bilanciamento del carico), mentre il secondo ne simula un guasto per testarne la capacità di resistere e recuperare (alta affidabilità e failover).
+
+\subsection{Test del Load Balancing}
+Il primo test ha lo scopo di verificare che il load balancer distribuisca correttamente il traffico tra i due server web del backend. Per rendere visibile questo meccanismo, che altrimenti sarebbe trasparente per l'utente, le pagine di benvenuto di Nginx su ciascun web server sono state personalizzate.
+\\\noindent
+Accedendo tramite browser all'indirizzo IP del load balancer (\texttt{http://192.168.50.5}), e ricaricando la pagina più volte, si osserva l'alternarsi dei messaggi "Pagina servita da WEB-1" e "Pagina servita da WEB-2". Questo conferma che Nginx sta applicando correttamente l'algoritmo di bilanciamento di default, il \textbf{Round Robin}, che consiste nell'inoltrare ogni nuova richiesta al server successivo nella lista, in modo ciclico.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{grafici/Server_nginx1.png}
+    \caption{risposta dal primo web server, accessibile tramite l'IP del load balancer}
+    \label{fig:nginx1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{grafici/Server_nginx2.png}
+    \caption{dopo un refresh, il load balancer inoltra la richiesta al secondo web server}
+    \label{fig:nginx2}
+\end{figure}
+
+\subsection{Test di alta affidabilità (Failover)}
+Questo test simula un guasto critico per verificare che l'architettura sia realmente ad alta affidabilità. Uno dei due web server (\texttt{web1}) è stato spento forzatamente tramite Vagrant.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{grafici/Halt_cmd.png}
+    \caption{simulazione del guasto di un web server tramite il comando `\textit{vagrant halt}`}
+    \label{fig:halt}
+\end{figure}
+\noindent
+Ricaricando la pagina del browser, il servizio è risultato ancora perfettamente accessibile, mostrando costantemente la pagina servita da WEB-2. Questo dimostra il corretto funzionamento del \textbf{failover}.
+\\\noindent
+ Questo meccanismo di health check passivo è fondamentale per garantire la continuità del servizio (business continuity) anche in presenza di guasti.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{grafici/Log_webserver2.png}
+    \caption{analisi dei log di accesso su `web2` dopo lo spegnimento di `web1`, che mostra l'arrivo di tutte le nuove richieste}
+    \label{fig:logs}
+\end{figure}
+
+\subsubsection{Test di ripristino (Recovery)}
+A completamento del test di failover, è stata verificata la capacità del sistema di ripristinarsi automaticamente. La macchina \texttt{web1} è stata riavviata con il comando \texttt{vagrant up web1}. Dopo pochi istanti, ricaricando nuovamente la pagina del browser, si è potuto osservare che il load balancer ha ricominciato ad alternare le risposte tra WEB-1 e WEB-2. Questo conferma che Nginx ha rilevato il ritorno online del server e lo ha reintegrato automaticamente nel pool di bilanciamento, dimostrando la capacità di \textit{self-healing} dell'infrastruttura.
+
+\newpage
+
+
+
+
+\section{Conclusioni e sviluppi futuri}
+Il progetto ha permesso di raggiungere con successo tutti gli obiettivi prefissati. È stato realizzato un laboratorio virtualizzato che non è un semplice insieme di macchine, ma un sistema complesso, resiliente e gestito con metodologie professionali. L'uso combinato di \textbf{Vagrant} e \textbf{Ansible} ha permesso di applicare concretamente il paradigma dell'Infrastructure as Code, creando un'infrastruttura completamente definita da codice, automatizzata e facilmente riproducibile.
+\\\noindent
+Le procedure di manutenzione, come la gestione degli snapshot e i backup completi tramite script, insieme ai test di resilienza, hanno confermato la robustezza della soluzione, dimostrando le potenzialità delle pratiche DevOps nell'amministrazione di sistema moderna.
+
+\subsection{Possibili Sviluppi Futuri}
+Il laboratorio attuale costituisce una solida base per future esplorazioni e miglioramenti. Tra le possibili direzioni:
+\begin{itemize}
+    \item \textbf{Containerizzazione:} Sostituire le VM con container \textbf{Docker} e orchestrarli con \textbf{Docker Compose} o \textbf{Kubernetes}. Questo porterebbe a un utilizzo ancora più efficiente delle risorse e a tempi di avvio quasi istantanei.
+    \item \textbf{Integrazione Continua / Distribuzione Continua (CI/CD):} Implementare una pipeline CI/CD (es. con GitLab CI o Jenkins) che, a ogni modifica del codice dell'applicazione o dell'infrastruttura, esegua automaticamente test e deployment, automatizzando ulteriormente il ciclo di vita del software.
+    \item \textbf{Monitoring e Logging Centralizzato:} Integrare strumenti come \textbf{Prometheus} e \textbf{Grafana} per il monitoraggio delle performance in tempo reale e uno stack \textbf{ELK} (Elasticsearch, Logstash, Kibana) per aggregare e analizzare i log di tutte le macchine in un'unica dashboard.
+\end{itemize}
+\noindent
+Questi passi evolutivi permetterebbero di trasformare il laboratorio in una piattaforma ancora più sofisticata e allineata con gli standard più avanzati dell'industria tecnologica.
+
+\end{document}

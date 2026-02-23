@@ -1,0 +1,478 @@
+\documentclass[a4paper, 12pt]{scrartcl} % Classe KOMA-Script
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsthm} % Per le definizioni
+\usepackage{newtxtext, newtxmath} % Font New TX
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Opzioni Hyperref migliorate
+\usepackage{listings} % Per il codice
+\usepackage{xcolor}     % Per i colori
+\usepackage{amsmath}    % Per la matematica (se serve)
+%\usepackage{tikz}       % Includo TikZ anche se non usato direttamente qui
+%\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric, arrows} % Librerie TikZ
+\usepackage{caption}    % Per le didascalie
+\usepackage{subcaption} % Per sotto-figure/tabelle (se servono)
+\usepackage{geometry} % Per i margini
+\geometry{a4paper, margin=2.5cm} % Margini come specificato
+\usepackage{multirow} % Per tabelle con celle unite
+\usepackage{array}      % Per opzioni avanzate array/tabular
+\usepackage{float}      % Per migliorare il posizionamento [H]
+
+\theoremstyle{definition}
+\newtheorem{definizione}{Definizione}[section] % Definizione numerata per sezione
+
+% Definizione colori per listings (come da specifica)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings (come da specifica)
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black},
+}
+
+\lstdefinestyle{cstyle}{
+    language=C,
+    morekeywords={*, extern, static, void, int, return, printf, include, define, ifndef, endif, pthread_t, pthread_barrier_t, pthread_barrier_init, pthread_barrier_wait, pthread_barrier_destroy, pthread_mutex_t, pthread_mutex_init, pthread_mutex_lock, pthread_mutex_unlock, pthread_mutex_destroy, sem_t, sem_init, sem_wait, sem_post, sem_destroy, intptr_t, FILE, NULL, perror, pthread_create, pthread_join, pthread_exit, srand, time, rand, sleep, pthread_self, PTHREAD_BARRIER_SERIAL_THREAD} % Aggiunte keyword C comuni e pthreads/semaphores/barrier
+}
+
+\lstdefinestyle{makestyle}{
+    language=make,
+    keywordstyle=\color{red!80!black}\bfseries, % Diverso colore per Makefile
+    morekeywords={*, CC, CFLAGS, LDFLAGS, TARGET, OBJS, SRCS, PHONY, all, clean, check, echo, rm, wildcard, gcc} % Keywords Makefile
+}
+
+\begin{document}
+
+% Titolo e autore (modifica con i tuoi dati, usando lo stile richiesto)
+\title{Hands-On 12} % Titolo più specifico per HO12
+\subtitle{Semafori} % Sottotitolo specifico
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Autore come da esempio
+\date{\today} % Usa la data corrente o specifica una data
+\maketitle
+
+\newpage
+\tableofcontents % Indice dei contenuti
+\newpage
+
+\section{Introduzione}
+Nell'ambito della programmazione concorrente, dove molteplici flussi di esecuzione (thread) operano potenzialmente in parallelo, la gestione coordinata delle attività e l'accesso sicuro alle risorse condivise diventano aspetti cruciali. Senza meccanismi adeguati, possono sorgere problemi come race condition, deadlock e starvation, compromettendo la correttezza e l'efficienza del software. Per affrontare queste sfide, i programmatori si avvalgono di primitive di sincronizzazione. Questa relazione si concentra sull'analisi approfondita di due di queste primitive fondamentali, implementate utilizzando la libreria POSIX Threads (pthreads) in linguaggio C: le barriere e i semafori.
+ \\ \noindent
+Esamineremo in dettaglio due scenari specifici. Il primo riguarda l'uso di una barriera (`pthread\_barrier\_t`), un meccanismo che forza un gruppo di thread ad attendere fino a quando tutti i membri del gruppo non abbiano raggiunto un punto specifico nel codice, permettendo loro di ripartire simultaneamente. Il secondo scenario implementa la soluzione al classico problema del produttore-consumatore, utilizzando un buffer di capacità limitata. In questo caso, i semafori (`sem\_t`) e i mutex (`pthread\_mutex\_t`) vengono impiegati per orchestrare l'interazione tra il thread produttore, che inserisce dati nel buffer, e il thread consumatore, che li preleva, garantendo che le operazioni avvengano solo quando le condizioni lo permettono (buffer non pieno per produrre, buffer non vuoto per consumare) e che l'accesso al buffer stesso sia mutuamente esclusivo.
+\\ \noindent
+Per entrambe le implementazioni, verrà presentata la struttura modulare del codice, suddiviso in file sorgente `.c` e un file header `.h`, insieme al `Makefile` utilizzato per la compilazione. L'obiettivo è fornire una spiegazione chiara e discorsiva del funzionamento di ciascun componente, analizzando le funzioni chiave utilizzate e illustrando il comportamento atteso del programma attraverso il suo output.
+
+\section{Definizione del Problema}
+Affrontiamo due problemi classici ma fondamentali nella programmazione concorrente, ciascuno mirato a illustrare l'uso di specifici meccanismi di sincronizzazione Pthreads.
+
+\subsection{Sincronizzazione Collettiva all'Avvio: La Barriera}
+Il primo requisito è quello di sviluppare un sistema multithread in cui un numero predefinito N di thread, dopo essere stati creati, non procedano immediatamente con una determinata sezione del loro compito. Devono invece attendere collettivamente un segnale comune, che viene dato solo quando tutti gli N thread hanno raggiunto questo punto di attesa. Una volta che l'ultimo thread arriva, tutti i thread vengono sbloccati e possono riprendere l'esecuzione contemporaneamente. Questo pattern di sincronizzazione è comunemente noto come "barriera" ed è utile in situazioni in cui diverse parti di un calcolo parallelo devono completare una fase prima che la fase successiva possa iniziare globalmente. L'obiettivo è implementare questo meccanismo usando la specifica primitiva di barriera fornita dalla libreria pthreads (`pthread\_barrier\_t`).
+
+\subsection{Coordinamento Produttore-Consumatore: Semafori e Mutex}
+Il secondo problema è l'implementazione del modello produttore-consumatore. Questo modello coinvolge due tipi di attori (in questo caso, thread): un produttore che genera dati e un consumatore che li utilizza. La comunicazione tra loro avviene tramite una risorsa condivisa, un buffer, che in questo caso specifico ha una capacità limitata a un singolo elemento. Il sistema deve operare sotto vincoli precisi per garantire la correttezza:
+\begin{itemize}
+    \item \textbf{Vincolo di produzione:} Il produttore non deve aggiungere dati al buffer se questo è già pieno. Deve attendere che il consumatore liberi spazio.
+    \item \textbf{Vincolo di consumo:} Il consumatore non deve tentare di prelevare dati dal buffer se questo è vuoto. Deve attendere che il produttore inserisca nuovi dati.
+    \item \textbf{Mutua Esclusione:} L'accesso fisico al buffer (la variabile condivisa dove i dati vengono scritti e letti) deve essere protetto. In qualsiasi momento, solo il produttore o solo il consumatore può accedere al buffer per modificarlo o leggerlo, al fine di prevenire sovrascritture accidentali o letture di dati inconsistenti (race condition).
+\end{itemize}
+La sfida consiste nel realizzare questo sistema utilizzando i semafori POSIX (`sem\_t`) per gestire i vincoli di attesa legati allo stato del buffer (pieno/vuoto) e un mutex (`pthread\_mutex\_t`) per garantire la mutua esclusione durante l'accesso al buffer stesso.
+
+\section{Metodologia}
+La realizzazione delle soluzioni per i problemi descritti si è basata sull'utilizzo del linguaggio C e della libreria POSIX Threads (pthreads), uno standard ampiamente diffuso per la programmazione concorrente su sistemi Unix-like. La scelta di pthreads fornisce un insieme ricco e portabile di strumenti per la gestione dei thread e della loro sincronizzazione.
+\\ \noindent
+Per il problema della \textbf{barriera}, lo strumento chiave è stato il tipo di dato `pthread\_barrier\_t` e le funzioni associate. La funzione `pthread\_barrier\_init` permette di creare una barriera, specificando quanti thread dovranno raggiungerla prima che venga "aperta". Il cuore della sincronizzazione avviene tramite la chiamata `pthread\_barrier\_wait`, che ogni thread partecipante esegue. Questa funzione ha l'effetto di bloccare il thread chiamante finché il numero richiesto di thread non ha anch'esso invocato la funzione. Una volta raggiunto il conteggio, tutti i thread in attesa vengono sbloccati. Infine, `pthread\_barrier\_destroy` viene utilizzata per deallocare le risorse associate alla barriera quando non è più necessaria.
+\\ \noindent
+Per il problema \textbf{produttore-consumatore}, l'approccio ha richiesto la combinazione di due tipi di primitive Pthreads: semafori e mutex. I semafori POSIX (`sem\_t`) sono stati impiegati come contatori per gestire lo stato del buffer. Nello specifico, sono stati usati due semafori: uno, chiamato `empty`, inizializzato alla capacità del buffer (1 in questo caso), per contare gli slot vuoti; l'altro, chiamato `full`, inizializzato a 0, per contare gli slot pieni. Il produttore utilizza `sem\_wait` su `empty` per attendere uno slot libero e `sem\_post` su `full` per segnalare un nuovo elemento. Il consumatore, simmetricamente, usa `sem\_wait` su `full` per attendere un elemento e `sem\_post` su `empty` per segnalare uno slot liberato. Le funzioni `sem\_init` e `sem\_destroy` gestiscono rispettivamente l'inizializzazione e la deallocazione dei semafori. Per garantire invece l'accesso esclusivo alla variabile `buffer` durante le operazioni di lettura e scrittura, è stato utilizzato un mutex (`pthread\_mutex\_t`). Le funzioni `pthread\_mutex\_init` e `pthread\_mutex\_destroy` ne gestiscono il ciclo di vita, mentre `pthread\_mutex\_lock` e `pthread\_mutex\_unlock` vengono invocate rispettivamente prima e dopo l'accesso alla risorsa condivisa per assicurare che solo un thread alla volta possa operare sul buffer, prevenendo così race condition.
+\\ \noindent
+In entrambe le soluzioni, la creazione e la gestione dei thread sono state affidate alle funzioni standard `pthread\_create` (per avviare un nuovo thread associato a una funzione specificata) e `pthread\_join` (per permettere al thread principale di attendere la terminazione di un thread figlio). La funzione `pthread\_exit` è stata usata all'interno delle routine dei thread per indicarne la terminazione.
+\\ \noindent
+Dal punto di vista organizzativo, il codice è stato strutturato in modo \textbf{modulare}. Ogni progetto include file sorgente `.c` separati per la logica principale e per le funzioni eseguite dai thread. Un file header `.h` comune per ciascun progetto centralizza le inclusioni di librerie standard, le definizioni di costanti (come il numero di thread o la dimensione del buffer, sebbene qui sia implicita), le dichiarazioni `extern` per le variabili globali condivise (come barriere, semafori, mutex, buffer) e i prototipi delle funzioni. Questa suddivisione migliora la leggibilità e la manutenibilità del codice.
+\\ \noindent
+Infine, la \textbf{compilazione} di questi progetti modulari è stata gestita tramite un `Makefile`. Questo strumento automatizza il processo di trasformazione dei file sorgente `.c` in file oggetto `.o` e il successivo linking di questi ultimi per generare l'eseguibile finale. Il Makefile definisce le dipendenze tra i file e i comandi necessari per la compilazione (usando GCC con i flag appropriati come `-g` per il debug, `-Wall` per i warning e `-pthread` per collegare la libreria pthreads). Include anche un target `clean` per rimuovere facilmente i file generati durante la compilazione.
+
+\section{Presentazione dei Risultati}
+In questa sezione, analizzeremo nel dettaglio le due implementazioni, esaminando il codice sorgente di ciascun modulo, spiegando il ruolo delle funzioni chiave e presentando l'output atteso che dimostra il corretto funzionamento dei meccanismi di sincronizzazione.
+
+\subsection{Sincronizzazione Collettiva tramite Barriera}
+
+L'obiettivo di questo primo esercizio è dimostrare come utilizzare una barriera Pthreads per far sì che un gruppo di thread inizi una fase specifica del proprio lavoro esattamente nello stesso momento, solo dopo che tutti hanno raggiunto un punto di rendez-vous.
+\\ \noindent
+Iniziamo analizzando il file `barrier.c`, che contiene la funzione `main` e orchestra l'intero processo. Questo file ha la responsabilità di impostare l'ambiente per la sincronizzazione.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente barrier.c (Gestione Principale della Barriera)}, label={lst:barrier_main}]
+#include "function.h"
+
+pthread_barrier_t barrier; // Dichiarazione della barriera globale
+
+int main () {
+    pthread_t thread[NUM_THREAD];
+    int i;
+    // Inizializza la barriera per attendere NUM_THREAD thread
+    // Il secondo argomento (attr) e' NULL per usare attributi di default.
+    // Il terzo argomento (count) e' il numero di thread richiesti alla barriera.
+    if (pthread_barrier_init(&barrier, NULL, NUM_THREAD) != 0) {
+        perror("Errore inizializzazione barriera");
+        return 1;
+    }
+    
+    printf("Creazione di %d thread...\n", NUM_THREAD);
+    for (i = 0; i < NUM_THREAD; i++){
+        // Crea ciascun thread, associandolo alla funzione 'routine'
+        // Il quarto argomento (arg) e' NULL perche' non passiamo dati specifici al thread.
+        if(pthread_create(&thread[i], NULL, &routine, NULL) != 0){
+            perror("Errore nella creazione del thread");
+        }
+    }
+    
+    printf("Attesa del completamento dei thread...\n");
+    for (i = 0; i < NUM_THREAD; i++){
+        // Attende la terminazione di ciascun thread creato.
+        if(pthread_join(thread[i], NULL) != 0){
+            perror("Errore nel join del thread");
+        }
+    }
+
+    // Distrugge la barriera dopo che tutti i thread l'hanno usata e sono terminati.
+    // Rilascia le risorse associate alla barriera.
+    if (pthread_barrier_destroy(&barrier) != 0) {
+         perror("Errore distruzione barriera");
+    }
+    printf("Barriera distrutta. Programma terminato.\n");
+    return 0;
+}
+\end{lstlisting}
+\noindent
+Come si osserva dal codice, il flusso principale inizia con la dichiarazione della variabile globale `barrier` di tipo `pthread\_barrier\_t`. All'interno della funzione `main`, il primo passo fondamentale è l'inizializzazione di questa barriera tramite `pthread\_barrier\_init`. Questa funzione imposta la barriera affinché richieda l'arrivo di `NUM\_THREAD` thread (definito come 3 nel file header) prima di sbloccarli. Il controllo del valore di ritorno permette di gestire eventuali errori di inizializzazione. Successivamente, viene eseguito un ciclo per creare i `NUM\_THREAD` thread. La funzione `pthread\_create` è utilizzata per questo scopo, associando a ciascun nuovo thread la funzione `routine` (che vedremo tra poco) come punto di ingresso. Anche qui, è buona norma controllare l'esito della creazione. Dopo aver avviato tutti i thread, il thread principale entra in un secondo ciclo, questa volta utilizzando `pthread\_join`. Questa funzione serve per attendere che ciascuno dei thread creati termini la propria esecuzione. È essenziale attendere tutti i thread prima di procedere, specialmente prima di distruggere risorse condivise come la barriera. Infine, una volta che tutti i thread sono terminati, la funzione `pthread\_barrier\_destroy` viene chiamata per rilasciare le risorse allocate per la barriera. Un messaggio finale indica la conclusione del programma.
+\\ \noindent
+Vediamo ora il codice della funzione `routine`, contenuta nel file `routine.c`, che rappresenta il lavoro svolto da ciascun thread.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente routine.c (Funzione Eseguita dai Thread)}, label={lst:barrier_routine}]
+#include "function.h"
+
+void *routine (void* args) {
+    printf("Sono bloccato dalla barriera\n");
+    pthread_barrier_wait(&barrier); // qui e' il punto dove tutti i thread attendono
+    printf("Sono riuscito a superare la barriera!\n");
+
+    return NULL;
+}
+\end{lstlisting}
+\noindent
+La funzione `routine` definisce il comportamento di ogni thread creato. Stampa quindi un messaggio che segnala il suo arrivo al punto di sincronizzazione. Il passaggio cruciale è la chiamata a `pthread\_barrier\_wait(\&barrier)`. Questa funzione fa esattamente ciò che il nome suggerisce: fa attendere il thread sulla barriera specificata. Il thread rimarrà bloccato su questa riga finché non sarà soddisfatta la condizione di inizializzazione della barriera (cioè, finché `NUM\_THREAD` thread non avranno chiamato `pthread\_barrier\_wait`). Quando l'ultimo thread necessario arriva, la barriera si "rompe" e tutti i thread bloccati su di essa vengono risvegliati e possono proseguire l'esecuzione. È interessante notare il valore di ritorno di `pthread\_barrier\_wait`. Infine, la funzione termina l'esecuzione del thread chiamante tramite `pthread\_exit(NULL)`.
+\\ \noindent
+Perché il codice sia compilabile in moduli separati, è necessario un file header, `function.h`, che contenga le dichiarazioni comuni.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente function.h (Header Comune per la Barriera)}, label={lst:barrier_header}]
+#ifndef FUNCTION_H
+#define FUNCTION_H
+
+// Definisce _XOPEN_SOURCE con valore >= 600 per garantire la visibilita' delle definizioni relative alle barriere (pthread_barrier_t, etc.) 
+#define _XOPEN_SOURCE 600 
+#include <pthread.h> // Libreria principale per Pthreads
+#include <stdio.h>   // Per funzioni di Input/Output (printf, perror)
+#include <stdlib.h>  // Per funzioni standard (exit, etc.)
+#include <unistd.h>  // Per funzioni POSIX (sleep, etc.)
+
+#define NUM_THREAD 3 
+
+extern pthread_barrier_t barrier;
+
+void *routine (void *arg);
+
+#endif // FUNCTION_H
+\end{lstlisting}
+\noindent
+Il file header `function.h` svolge un ruolo essenziale nell'organizzazione modulare. Innanzitutto, utilizza le guardie di inclusione (`\#ifndef`, `\#define`, `\#endif`) per prevenire problemi derivanti da inclusioni multiple dello stesso header in un singolo file sorgente. Include poi le librerie standard necessarie (`pthread.h`, `stdio.h`, etc.). La definizione `\#define \_XOPEN\_SOURCE 600` è importante per la portabilità, assicurando che le definizioni delle barriere Pthreads siano disponibili durante la compilazione su diversi sistemi Unix-like. Viene definita la costante `NUM\_THREAD` come 3. Segue la dichiarazione `extern pthread\_barrier\_t barrier;`. La parola chiave `extern` è cruciale qui: indica che `barrier` è una variabile globale definita in un altro modulo (nel nostro caso, `barrier.c`) e che i file che includono questo header devono solo essere a conoscenza della sua esistenza e del suo tipo, senza definirla nuovamente. Infine, viene fornito il prototipo della funzione `void *routine(void *arg);`, che permette al compilatore di verificare la correttezza delle chiamate a `routine` (come quella in `pthread\_create`) anche prima di aver incontrato la sua definizione effettiva nel file `routine.c`.
+\\ \noindent
+Infine, per compilare questi moduli e creare l'eseguibile, utilizziamo un `Makefile`.
+
+\begin{lstlisting}[style=makestyle, caption={Makefile per Compilare il Programma della Barriera}, label={lst:barrier_makefile}]
+# Makefile per il progetto Barriera
+
+# Definisce il compilatore C da utilizzare (GNU GCC)
+CC = gcc
+
+# Definisce i flag da passare al compilatore:
+# -g:      Include informazioni di debug nell'eseguibile.
+# -Wall:   Abilita un set completo di warning utili per identificare potenziali problemi.
+# -pthread: Istruisce il compilatore (e il linker) a collegare la libreria Pthreads.
+CFLAGS = -g -Wall -pthread
+
+# Definisce il nome dell'eseguibile finale che vogliamo produrre.
+TARGET = barrier
+
+# Definisce l'elenco dei file oggetto (.o) necessari per creare l'eseguibile.
+# Questi derivano dai nostri file sorgente .c.
+OBJS = barrier.o routine.o
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+# Regola Pattern per compilare un file sorgente .c in un file oggetto .o
+%.o: %.c function.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Regola 'clean': serve per rimuovere i file generati dalla compilazione.
+# 'rm -f' rimuove i file specificati ('$(OBJS)' e '$(TARGET)') senza chiedere conferma.
+# Il comando '@echo' stampa un messaggio informativo (la '@' iniziale ne sopprime l'eco).
+clean:
+	rm -f $(OBJS) $(TARGET)
+	@echo "File compilati rimossi."
+
+# Dichiarazione di target 'PHONY': indica a 'make' che 'all' e 'clean' non sono  # nomi di file reali da creare, ma solo etichette per sequenze di comandi.
+.PHONY: all clean
+\end{lstlisting}
+\noindent
+Il `Makefile` automatizza il processo di compilazione. Definisce variabili come `CC` per il compilatore, `CFLAGS` per i flag di compilazione (includendo `-pthread` essenziale per linkare la libreria pthreads), `TARGET` per il nome dell'eseguibile e `OBJS` per i file oggetto intermedi. La regola `all` è quella predefinita e dipende dal target finale `\$(TARGET)`. La regola per costruire `\$(TARGET)` mostra come i file oggetto `\$(OBJS)` vengano collegati insieme usando il compilatore per produrre l'eseguibile. La regola pattern `\%\.o: \%.c function.h` è molto potente: definisce come creare un qualsiasi file `.o` a partire dal corrispondente file `.c`, specificando anche una dipendenza dal file `function.h`. Questo assicura che se l'header viene modificato, i file sorgente che lo includono vengano ricompilati. L'opzione `-c` del compilatore è fondamentale qui, poiché indica di generare solo il file oggetto senza tentare il linking. Infine, la regola `clean` permette di rimuovere facilmente tutti i file generati (`.o` e l'eseguibile) con il comando `make clean`. I target `.PHONY` sono dichiarati per convenzione, per indicare che `all` e `clean` sono nomi di azioni, non di file.
+
+\subsubsection{Output Atteso e Discussione}
+Eseguendo il programma compilato (ad esempio, con `./barrier` dopo aver eseguito `make`), ci aspettiamo di osservare un comportamento specifico che riflette l'azione della barriera. L'output mostrerà innanzitutto i messaggi di avvio dal `main`. Poi, man mano che i thread vengono schedulati dal sistema operativo, ciascuno dei 3 thread stamperà il suo messaggio "Sono arrivato alla barriera, attendo...". È importante notare che l'ordine in cui questi tre messaggi appaiono può variare ad ogni esecuzione, poiché dipende dallo scheduling dei thread. Tuttavia, quello che è garantito dalla barriera è che *nessuno* dei thread stamperà il messaggio "Barriera superata!" finché *tutti e tre* non avranno stampato il primo messaggio e raggiunto la chiamata `pthread\_barrier\_wait`. Solo quando il terzo thread invoca `pthread\_barrier\_wait`, la barriera si sblocca e tutti e tre i thread possono procedere. A questo punto, verranno stampati i messaggi di superamento ("Barriera superata!" o "... sono il thread seriale ..."). Anche l'ordine di questi tre messaggi finali può variare, ma saranno sempre successivi ai tre messaggi di arrivo. Infine, il `main`, dopo che `pthread\_join` ha terminato per tutti i thread, stamperà i messaggi finali di distruzione della barriera e termine del programma.
+\\ \noindent
+Un esempio di output potrebbe essere:
+
+\begin{verbatim}
+Creazione di 3 thread...
+Attesa del completamento dei thread...
+Sono arrivato alla barriera, attendo...
+Sono arrivato alla barriera, attendo...
+Sono arrivato alla barriera, attendo...
+Barriera superata!
+Sono il thread seriale designato, barriera superata!
+Barriera superata!
+Barriera distrutta. Programma terminato.
+\end{verbatim}
+\noindent
+Questo output dimostra chiaramente l'effetto sincronizzante della barriera: l'esecuzione viene messa in pausa al punto di attesa fino al raggiungimento del quorum necessario.
+
+\subsection{Coordinamento Produttore-Consumatore con Semafori e Mutex}
+
+Passiamo ora al secondo esercizio, l'implementazione del modello produttore-consumatore con un buffer di dimensione 1, utilizzando semafori per la gestione flusso e un mutex per la protezione dei dati.
+\\ \noindent
+Il file `main.c` si occupa dell'inizializzazione delle strutture di sincronizzazione, della creazione dei thread produttore e consumatore, e della gestione finale delle risorse.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente main.c (Setup Produttore-Consumatore)}, label={lst:pc_main}]
+#include "function.h"
+
+// Buffer condiviso (1 slot)
+int buffer;
+
+sem_t full;     // Indica quanti elementi sono disponibili nel buffer
+sem_t empty;    // Indica quanti slot vuoti sono disponibili nel buffer
+pthread_mutex_t mutex; // Per evitare la race condition
+
+int main() {
+    srand(time(NULL));  // Inizializza il generatore di numeri casuali
+
+    pthread_t t_produttore, t_consumatore;
+
+    // Inizializza i semafori
+    sem_init(&full, 0, 0);    // Nessun elemento nel buffer
+    sem_init(&empty, 0, 1);   // Uno slot disponibile
+    pthread_mutex_init(&mutex, NULL); // Mutex standard
+
+    // Crea i thread
+    pthread_create(&t_produttore, NULL, produttore, NULL);
+    pthread_create(&t_consumatore, NULL, consumatore, NULL);
+
+    // Attende la fine dei thread
+    pthread_join(t_produttore, NULL);
+    pthread_join(t_consumatore, NULL);
+
+    // Libera le risorse
+    sem_destroy(&full);
+    sem_destroy(&empty);
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
+\end{lstlisting}
+\noindent
+Nel `main` del produttore-consumatore, notiamo la dichiarazione delle variabili globali: `buffer` (un semplice `int`), i due semafori `full` e `empty`, e il mutex `mutex`. La funzione `main` inizia inizializzando il generatore di numeri casuali con `srand(time(NULL))`. Poi procede all'inizializzazione delle primitive di sincronizzazione. `sem\_init(\&full, 0, 0)` imposta il semaforo `full` a 0, indicando che inizialmente non ci sono elementi nel buffer. `sem\_init(\&empty, 0, 1)` imposta il semaforo `empty` a 1, indicando che c'è uno slot vuoto disponibile (poiché il buffer ha dimensione 1). Il secondo argomento, 0, specifica che il semaforo è condiviso tra thread dello stesso processo (e non tra processi diversi). `pthread\_mutex\_init(\&mutex, NULL)` inizializza il mutex con attributi predefiniti. Vengono poi creati i due thread, `t\_produttore` associato alla funzione `produttore` e `t\_consumatore` associato alla funzione `consumatore`, usando `pthread\_create`. Similmente al caso della barriera, il `main` attende la terminazione di entrambi i thread tramite `pthread\_join`. Questo garantisce che tutte le operazioni di produzione e consumo siano completate prima di procedere alla distruzione delle risorse. Infine, `sem\_destroy` viene chiamata per `full` ed `empty`, e `pthread\_mutex\_destroy` per `mutex`, liberando le risorse associate.
+\\ \noindent
+Analizziamo ora il comportamento del thread produttore, definito nel file `produttore.c`.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente produttore.c (Logica del Produttore)}, label={lst:pc_producer}]
+#include "function.h"
+
+void* produttore(void* arg) {
+    for (int i = 0; i < 5; i++) {
+        int dato = rand() % 100;  // Genera un dato casuale da 0 a 99
+
+        sem_wait(&empty);         // Attende che ci sia uno slot libero e blocca il produttore se il buffer e' pieno
+        pthread_mutex_lock(&mutex);  // Entra nella sezione critica
+
+        buffer = dato; // Salvo il sato nel buffer e lo stampo
+        printf("Produttore ha prodotto: %d\n", dato); 
+
+        pthread_mutex_unlock(&mutex);  // Esce dalla sezione critica
+        sem_post(&full);               // Segnala che ora c'e' un dato nel buffer da consumare
+
+        sleep(1);  // Simula tempo di produzione, 1 secondo
+    }
+    pthread_exit(NULL);
+}
+\end{lstlisting}
+\noindent
+Il thread `produttore` esegue un ciclo `for` per produrre 5 elementi. All'interno di ogni iterazione, la logica segue uno schema preciso dettato dalla sincronizzazione. Prima di tutto, chiama `sem\_wait(\&empty)`. Questa è l'attesa condizionale: il produttore può procedere solo se c'è almeno uno slot vuoto nel buffer (cioè, se `empty > 0`). Se il buffer è pieno (`empty == 0`), questa chiamata blocca il produttore finché il consumatore non consuma un elemento e chiama `sem\_post(\&empty)`. Una volta superato `sem\_wait(\&empty)` (significa che c'è spazio e il semaforo `empty` è stato decrementato), il produttore deve accedere al buffer condiviso. Per farlo in sicurezza, acquisisce il mutex con `pthread\_mutex\_lock(\&mutex)`. Questo garantisce che, mentre il produttore scrive nel buffer, il consumatore non possa accedervi contemporaneamente. La sezione tra `pthread\_mutex\_lock` e `pthread\_mutex\_unlock` è chiamata "sezione critica". Qui, il produttore scrive il dato generato (`rand() \% 100`) nella variabile `buffer`. Subito dopo aver scritto, rilascia il mutex con `pthread\_mutex\_unlock(\&mutex)`, rendendo il buffer potenzialmente accessibile ad altri (al consumatore). Avendo prodotto un nuovo dato, il produttore deve segnalarlo. Lo fa chiamando `sem\_post(\&full)`. Questa operazione incrementa il contatore `full`, indicando che ora c'è un elemento in più nel buffer. Se il consumatore era bloccato in attesa su `sem\_wait(\&full)`, questa `sem\_post` lo sbloccherà. Infine, `sleep(1)` simula un ritardo, rappresentando il tempo necessario per produrre l'elemento successivo o altre attività. Completato il ciclo, il thread termina.
+\\ \noindent
+Vediamo ora il codice complementare del consumatore nel file `consumatore.c`.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente consumatore.c (Logica del Consumatore)}, label={lst:pc_consumer}]
+#include "function.h"
+
+void* consumatore(void* arg) {
+    for (int i = 0; i < 5; i++) {
+        sem_wait(&full);              // Attende che ci sia un elemento da consumare
+        pthread_mutex_lock(&mutex);   // Entra nella sezione critica
+
+        int dato = buffer;
+        printf("Consumatore ha consumato: %d\n", dato);
+
+        pthread_mutex_unlock(&mutex); // Esce dalla sezione critica
+        sem_post(&empty);             // Segnala che ora c'e' uno slot vuoto
+
+        sleep(2);  // Simula tempo di consumo, 2 secondi
+    }
+    pthread_exit(NULL);
+}
+\end{lstlisting}
+\noindent
+Il thread `consumatore` opera in modo simmetrico al produttore. Anch'esso esegue un ciclo 5 volte per consumare gli elementi prodotti. La prima azione all'interno del ciclo è `sem\_wait(\&full)`. Qui, il consumatore attende finché non c'è almeno un elemento nel buffer (cioè, finché `full > 0`). Se il buffer è vuoto (`full == 0`), il consumatore si blocca in attesa che il produttore produca qualcosa e segnali con `sem\_post(\&full)`. Una volta che `sem\_wait(\&full)` ritorna (indicando che un dato è disponibile e il semaforo `full` è stato decrementato), il consumatore, come il produttore, deve accedere al buffer in modo esclusivo. Acquisisce quindi il mutex con `pthread\_mutex\_lock(\&mutex)`. Nella sezione critica, legge il valore dalla variabile `buffer` e lo memorizza nella variabile locale `dato`. Successivamente, rilascia il mutex con `pthread\_mutex\_unlock(\&mutex)`. Avendo consumato un elemento e quindi liberato uno slot nel buffer, il consumatore deve segnalarlo al produttore. Lo fa chiamando `sem\_post(\&empty)`, che incrementa il contatore degli slot vuoti. Se il produttore era bloccato su `sem\_wait(\&empty)`, questa `sem\_post` lo sbloccherà. Infine, `sleep(2)` simula il tempo necessario per elaborare il dato consumato. Notare che questo tempo è maggiore di quello del produttore (`sleep(1)`), il che implica che, dopo la prima iterazione, il produttore probabilmente finirà prima e dovrà attendere che il consumatore liberi lo slot. Terminato il ciclo, il thread si conclude con `pthread\_exit(NULL)`.
+\\ \noindent
+Anche per questo progetto, abbiamo un file header `function.h`.
+
+\begin{lstlisting}[style=cstyle, caption={Codice sorgente function.h (Header Comune Prod-Cons)}, label={lst:pc_header}]
+#ifndef FUNCTION_H
+#define FUNCTION_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h
+#include <semaphore.h>
+#include <unistd.h>
+#include <time.h>
+
+extern int buffer;
+
+extern sem_t full;
+extern sem_t empty;     
+
+extern pthread_mutex_t mutex;
+
+void *produttore (void *arg);
+void *consumatore (void *arg);
+
+#endif // FUNCTION_H
+\end{lstlisting}
+\noindent
+L'header `function.h` per il produttore-consumatore è simile a quello della barriera nel suo ruolo. Include le librerie necessarie, tra cui `semaphore.h` specifica per i semafori POSIX e `time.h` per `srand`/`time`. Dichiara `extern` tutte le variabili globali condivise: l'intero `buffer`, i due semafori `full` ed `empty`, e il mutex `mutex`. Questo permette a `produttore.c` e `consumatore.c` di utilizzarli pur essendo definiti in `main.c`. Infine, fornisce i prototipi per le funzioni `produttore` e `consumatore`, rendendoli noti al `main` per la chiamata a `pthread\_create`. Le guardie di inclusione prevengono inclusioni multiple.
+\\ \noindent
+Il `Makefile` per compilare questo progetto è molto simile al precedente, cambiando solo i file oggetto e il nome del target.
+
+\begin{lstlisting}[style=makestyle, caption={Makefile per Compilare il Programma Produttore-Consumatore}, label={lst:pc_makefile}]
+# Makefile per il progetto Produttore-Consumatore
+
+# Compilatore C
+CC = gcc
+
+# Flag di compilazione (gli stessi del progetto barriera)
+CFLAGS = -g -Wall -pthread
+
+# Nome dell'eseguibile finale
+TARGET = main # Cambiato rispetto a prima
+
+# Elenco dei file oggetto necessari (.o)
+OBJS = main.o produttore.o consumatore.o # Cambiato rispetto a prima
+
+# Regola di default 'all'
+all: $(TARGET)
+
+# Regola per creare l'eseguibile '$(TARGET)' (ora 'main')
+# Collega insieme main.o, produttore.o, consumatore.o
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) # Aggiunto LDFLAGS per completezza, 
+                                        # utile se servissero altre librerie (es. -lm)
+
+# Regola Pattern per compilare .c in .o (identica a prima)
+# Dipende anche da function.h
+%.o: %.c function.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Regola 'clean' per rimuovere i file generati (identica a prima)
+clean:
+	rm -f $(OBJS) $(TARGET)
+	@echo "File compilati rimossi."
+
+# Dichiarazione dei target 'PHONY' (identica a prima)
+.PHONY: all clean
+\end{lstlisting}
+\noindent
+Questo `Makefile` è strutturalmente identico a quello per il progetto della barriera. Le uniche differenze significative sono nel valore delle variabili `TARGET` (ora `main`) e `OBJS` (ora `main.o produttore.o consumatore.o`), riflettendo i nomi dei file sorgente e dell'eseguibile desiderato per questo specifico progetto. Le regole `all`, la regola di linking, la regola pattern per la compilazione dei file oggetto e la regola `clean` funzionano esattamente nello stesso modo descritto in precedenza.
+
+\subsubsection{Output Atteso e Discussione}
+L'esecuzione del programma `main` (compilato tramite `make`) produrrà un output che illustra l'interazione sincronizzata tra produttore e consumatore. Dato che il buffer ha dimensione 1, ci aspettiamo una stretta alternanza. Il produttore inizia, attende (`sem\_wait(\&empty)` che ha successo perché `empty` parte da 1), blocca il mutex, produce il primo dato, sblocca il mutex, segnala (`sem\_post(\&full)`), e si mette in pausa (`sleep(1)`). Nel frattempo, il consumatore, che era partito quasi contemporaneamente, probabilmente si sarà bloccato su `sem\_wait(\&full)` (perché `full` parte da 0). La `sem\_post(\&full)` del produttore lo sblocca. Il consumatore quindi procede, attende/ottiene il mutex, consuma il dato, rilascia il mutex, segnala (`sem\_post(\&empty)`), e si mette in pausa (`sleep(2)`). A questo punto, il produttore (che ha atteso solo 1 secondo) può ripartire immediatamente perché la `sem\_post(\&empty)` del consumatore ha reso lo slot di nuovo disponibile. Il ciclo continua. Poiché il `sleep` del consumatore è più lungo, dopo la prima iterazione, sarà tipicamente il produttore ad attendere che il consumatore finisca la sua pausa più lunga e chiami `sem\_post(\&empty)`.
+
+Un esempio di output potrebbe assomigliare a questo (i valori casuali varieranno):
+
+\begin{verbatim}
+Produttore ha prodotto: 3
+Consumatore ha consumato: 3
+Produttore ha prodotto: 86
+Consumatore ha consumato: 86
+Produttore ha prodotto: 24
+Consumatore ha consumato: 24
+Produttore ha prodotto: 31
+Consumatore ha consumato: 31
+Produttore ha prodotto: 48
+Consumatore ha consumato: 48
+\end{verbatim}
+\noindent
+Questo output dimostra come i semafori `full` ed `empty` orchestrino l'accesso al buffer limitato, forzando l'attesa quando necessario, e come il mutex garantisca che le operazioni di lettura/scrittura sul buffer non si sovrappongano mai.
+
+\subsection{Risposta alle Domande Specifiche (Semafori Produttore-Consumatore)}
+
+Riprendendo le domande specifiche sul ruolo dei semafori nel contesto del produttore-consumatore, possiamo fornire risposte più articolate basate sull'analisi del codice:
+\\ \noindent
+Il \textbf{consumatore}, nel suo ciclo operativo, deve assicurarsi di non tentare di prelevare dati da un buffer vuoto. Il meccanismo che implementa questa attesa condizionale è il semaforo `full`. Il consumatore invoca `sem\_wait(\&full)` all'inizio di ogni tentativo di consumo. Questa operazione controlla il valore del semaforo `full`: se è maggiore di zero, significa che c'è almeno un elemento prodotto nel buffer; il semaforo viene decrementato e il consumatore procede. Se, invece, il valore di `full` è zero, indica che il buffer è vuoto; la chiamata a `sem\_wait` blocca il consumatore. Il consumatore rimarrà in attesa \textit{finché} il produttore non avrà inserito un nuovo elemento e segnalato questo evento incrementando `full` tramite `sem\_post(\&full)`. Quindi, il consumatore attende quando il buffer è vuoto, e attende un segnale (`sem\_post(\&full)`) dal produttore.
+\\ \noindent
+Dopo aver completato con successo l'operazione di consumo (prelevando il dato dalla sezione critica protetta dal mutex), il consumatore ha reso disponibile uno slot nel buffer che prima era occupato. Deve quindi \textbf{segnalare} questa nuova disponibilità di spazio al produttore. Questo viene fatto invocando `sem\_post(\&empty)`. Questa operazione incrementa il valore del semaforo `empty`, che tiene traccia degli slot vuoti. Se il produttore era precedentemente bloccato su `sem\_wait(\&empty)` perché il buffer era pieno, questa `sem\_post` lo sbloccherà, permettendogli di procedere con la produzione.
+\\ \noindent
+Il \textbf{produttore}, d'altro canto, deve assicurarsi di non aggiungere dati a un buffer già pieno. Utilizza il semaforo `empty` per questa verifica. All'inizio di ogni ciclo di produzione, invoca `sem\_wait(\&empty)`. Se il valore di `empty` è maggiore di zero (c'è almeno uno slot vuoto), il semaforo viene decrementato e il produttore continua. Se, invece, `empty` è zero (il buffer è pieno), `sem\_wait` blocca il produttore. Il produttore rimarrà in attesa \textit{finché} il consumatore non avrà prelevato un elemento e segnalato lo spazio resosi disponibile tramite `sem\_post(\&empty)`. Pertanto, il produttore attende quando il buffer è pieno, e attende un segnale (`sem\_post(\&empty)`) dal consumatore.
+\\ \noindent
+Una volta che il produttore ha inserito con successo un nuovo dato nel buffer (all'interno della sezione critica protetta dal mutex), deve \textbf{segnalare} al consumatore che un nuovo elemento è pronto per essere consumato. Realizza ciò invocando `sem\_post(\&full)`. Questa chiamata incrementa il valore del semaforo `full`. Se il consumatore era bloccato su `sem\_wait(\&full)` in attesa di dati, questa `sem\_post` lo sbloccherà, permettendogli di procedere con il consumo.
+\\ \noindent
+In essenza, i semafori `full` ed `empty` fungono da "semafori stradali" coordinati per il flusso di dati attraverso il buffer, garantendo che né il produttore né il consumatore procedano quando le condizioni del buffer non lo permettono, mentre il mutex agisce come un "vigile" che dirige il traffico nell'accesso diretto alla risorsa condivisa (il buffer) per prevenire collisioni (race condition).
+
+\section{Conclusioni}
+Attraverso l'analisi dettagliata delle due implementazioni presentate, abbiamo esplorato l'applicazione pratica di meccanismi di sincronizzazione fondamentali nell'ambito della programmazione concorrente con Pthreads: le barriere e la combinazione di semafori e mutex.
+\\ \noindent
+L'esempio della \textbf{barriera} (`pthread\_barrier\_t`) ha dimostrato la sua utilità nel creare punti di sincronizzazione collettiva, essenziali in scenari di calcolo parallelo dove diverse fasi devono iniziare solo dopo il completamento della fase precedente da parte di tutti i thread coinvolti. La sua interfaccia semplice (`init`, `wait`, `destroy`) ne facilita l'impiego per questo specifico pattern di coordinamento.
+\\ \noindent
+L'implementazione del \textbf{produttore-consumatore} ha evidenziato la potenza e la flessibilità dei \textbf{semafori} (`sem\_t`) nel gestire condizioni di attesa basate sullo stato di risorse condivise (la disponibilità di dati o di spazio nel buffer). L'uso accoppiato dei semafori `full` ed `empty` permette di regolare elegantemente il flusso tra produttori e consumatori, prevenendo lo stallo dovuto a buffer vuoto o pieno. Contestualmente, l'importanza del \textbf{mutex} (`pthread\_mutex\_t`) è emersa chiaramente per garantire l'atomicità e l'esclusività dell'accesso diretto alla risorsa condivisa (il buffer), prevenendo le race condition che potrebbero corrompere i dati.
+\\ \noindent
+Entrambi gli esempi hanno beneficiato di una struttura del codice \textbf{modulare}, con una chiara separazione delle responsabilità tra file sorgente e l'uso di un file header per le dichiarazioni comuni. L'impiego di un `Makefile` ha ulteriormente dimostrato le buone pratiche di sviluppo, automatizzando il processo di compilazione e facilitando la gestione del progetto.
+\\ \noindent
+In conclusione, la padronanza di questi strumenti di sincronizzazione è indispensabile per lo sviluppo di applicazioni multithread corrette, efficienti e robuste. Comprendere quando e come utilizzare barriere, semafori e mutex permette di affrontare con successo le complessità intrinseche della concorrenza.
+
+\end{document}

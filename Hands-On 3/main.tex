@@ -1,0 +1,248 @@
+\documentclass[a4paper, 12pt]{scrartcl}
+\usepackage[utf8]{inputenc} % supporto caratteri UTF-8
+\usepackage[T1]{fontenc} % migliore gestione dei font
+\usepackage{newtxtext, newtxmath} % Font Times New Roman-like
+\usepackage[main=italian, english]{babel} % imposta l'italiano come lingua principale
+\usepackage{graphicx} % per l'inserimento di immagini
+\usepackage{hyperref} % per link nell'indice
+\usepackage{listings} % per codice sorgente
+\usepackage{xcolor} % per colorare il codice
+\usepackage{amsmath} % per formule matematiche complesse
+
+% formattazione codice sorgente
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    captionpos=b
+}
+
+% informazioni sulla relazione
+\title{Hands-On 3}
+\subtitle {MULTIPLEXING I/O}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Nome e CdL
+\date{\today}
+
+\begin{document}
+
+\maketitle % Genera la copertina con titolo, sottotitolo e autore
+
+\newpage
+\tableofcontents % Inserisce l'indice automatico
+\newpage
+
+\section{Introduzione}
+In questo documento verrà presentato un server TCP multi-client implementato in linguaggio C. Questo server è in grado di gestire più client simultaneamente senza l'uso di thread o processi separati. Utilizza la funzione \textit{select()} per monitorare più socket e gestire la comunicazione con i client. Il server è progettato per essere non bloccante, permettendo una gestione efficiente delle connessioni in tempo reale.
+\noindent
+Lo scopo di questa documentazione è fornire una spiegazione dettagliata di come funziona il server, come è stato implementato e come si comporta durante l'esecuzione, con esempi pratici.
+
+\section{Definizione del Problema}
+Il problema da risolvere è quello di creare un server che possa gestire più connessioni client contemporaneamente in modo efficiente e senza l'uso di thread o processi separati. Tradizionalmente, i server che devono supportare più client simultaneamente adottano un modello basato su multithreading o multiprocessing, assegnando un thread o un processo dedicato a ciascuna connessione. Tuttavia, questo approccio presenta alcune limitazioni significative, come l'elevato consumo di risorse di sistema e la complessità nella gestione della concorrenza e della sincronizzazione tra i vari thread o processi.
+\noindent
+Per superare queste problematiche, si desidera implementare un server che utilizzi un modello di programmazione concorrente basato su operazioni di I/O non bloccanti. In particolare, il codice sfrutta la funzione 	extit{select()}, che consente di monitorare simultaneamente molteplici socket e rilevare quali di essi siano pronti per operazioni di lettura o scrittura. Questo approccio permette di ottimizzare l'utilizzo delle risorse e garantire una gestione efficiente delle connessioni, evitando il sovraccarico legato alla creazione e alla gestione di molteplici thread o processi.
+
+\section{Metodologia}
+La metodologia utilizzata nel codice è la seguente:
+\begin{itemize}
+    \item Creazione di un socket TCP per il server.
+    \item Impostazione del socket del server come non bloccante per evitare che l'esecuzione del programma si fermi in attesa di nuove connessioni o dati.
+    \item Utilizzo della funzione \textit{select()} per monitorare più socket simultaneamente.
+    \item Gestione delle connessioni e dei dati ricevuti dai client.
+    \item Gestione della disconnessione dei client e rimozione dei loro socket dalla lista.
+\end{itemize}
+
+\newpage
+\section{Creazione del Socket del Server e Configurazione}
+La prima parte del codice riguarda la creazione del socket del server, l'assegnazione dell'indirizzo e della porta e la messa in ascolto del socket. 
+
+\begin{lstlisting}[caption={Creazione del socket del server}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <sys/select.h>
+
+#define PORT 8080
+#define BUFFER_SIZE 256
+#define MAX_CLIENTS 10
+
+// funzione per impostare un socket come non bloccante
+void set_nonblocking(int sockfd) {
+
+    int flags = fcntl(sockfd, F_GETFL, 0); // con F_GETFL, ottengo lo stato attuale del file descriptor
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);  // imposto il socket come non bloccante
+}
+
+int main() {
+    /*
+    sockfd, descrittore del socket del server
+    newsockfd, descrittore del socket che viene usato per i client
+    max_sd, valore massimo per il descrittore
+    client_sockets, e' un array che contiene i descrittori
+    */
+    int sockfd, newsockfd, max_sd, client_sockets[MAX_CLIENTS];
+    struct sockaddr_in serv_addr, cli_addr;
+    socklen_t clilen = sizeof(cli_addr);
+    char buffer[BUFFER_SIZE];
+    fd_set read_fds; // tiene traccia dei socket che sono pronti per la lettura
+
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        client_sockets[i] = 0;
+    }
+
+    // creo la socket con AF_INET per gli IPV4 e uso SOCK_STREAM per impostarla TCP
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket fallito");
+        exit(EXIT_FAILURE);
+    }
+
+    // collego la socket appena creata all'indirizzo ip tramite la bind
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(PORT); // converte la porta in formato di rete
+
+    // collega il socket all'indirizzo
+    if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("bind fallito");
+        exit(EXIT_FAILURE);
+    }
+
+    // metto in ascolto il socket
+    if (listen(sockfd, 5) < 0) {
+        perror("listen fallito");
+        exit(EXIT_FAILURE);
+    }
+
+    set_nonblocking(sockfd); // imposto il socket come non bloccante
+    printf("Server in ascolto su porta %d...\n", PORT);
+}
+\end{lstlisting}
+
+\subsection{Spiegazione}
+In questa parte del codice:
+\begin{itemize}
+    \item Viene creato un socket server tramite la chiamata \textit{socket(AF\_INET, SOCK\_STREAM, 0)}. Il tipo \textit{AF\_INET} indica che il server utilizza il protocollo IPv4, mentre \textit{SOCK\_STREAM} specifica che si tratta di un socket TCP.
+    \item Il socket viene legato a un indirizzo IP (\textit{INADDR\_ANY}) e a una porta definita nella variabile \textit{PORT}, utilizzando la funzione \textit{bind()}.
+    \item Il server viene messo in ascolto per le connessioni in entrata con \textit{listen()}.
+    \item Il socket viene configurato come non bloccante con la funzione \textit{set\_nonblocking()}, così che le operazioni di I/O non blocchino l'esecuzione del server.
+\end{itemize}
+
+\newpage
+\section{Monitoraggio dei Socket e Gestione delle Connessioni}
+La parte centrale del server è il ciclo che gestisce le connessioni dei client, utilizzando \textit{select()} per monitorare più socket in modo concorrente.
+
+\begin{lstlisting}[caption={Monitoraggio dei Socket e Gestione delle Connessioni}]
+    while (1) {
+        FD_ZERO(&read_fds); // pulisce e azzera il set di descrittori
+
+        FD_SET(sockfd, &read_fds); // aggiungo il descrittore del server alla lista di quelli da monitorare
+        max_sd = sockfd; // il descrittore massimo e' il socket del server
+
+        // aggiungo i client alla lista di quelli da monitorare
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (client_sockets[i] > 0) {
+                FD_SET(client_sockets[i], &read_fds);
+            }
+            if (client_sockets[i] > max_sd) {
+                max_sd = client_sockets[i]; // trova il massimo descrittore
+            }
+        }
+
+        /*
+        uso select per monitorare piu' socket e il risultato lo salvo in activity
+        max_sd +1, rappresenta il descriptor con il numero piu' alto +1
+        read_fds, sono i file descriptor che vogliamo monitorare
+        ho impostato NULL il parametro di scrittura, di eccezione e del timeout
+        impostando a NULL il timeout, ottengo una select bloccante, ovvero che aspettera' all'infinito fino a quando almeno un file non 
+        sara' pronto alla lettura
+        */
+        int activity = select(max_sd + 1, &read_fds, NULL, NULL, NULL);
+        if (activity < 0) {
+            perror("select error");
+            exit(EXIT_FAILURE);
+        }
+
+        /*
+        controllo se il socket e' pronto per una nuova connessione
+        se e' pronto, significa che c'e' una nuova connessione
+        */
+        if (FD_ISSET(sockfd, &read_fds)) {
+            if ((newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen)) < 0) {
+                perror("accept fallito");
+                exit(EXIT_FAILURE);
+            }
+
+            // trova un posto libero per il nuovo client
+            for (int i = 0; i < MAX_CLIENTS; i++) {
+                if (client_sockets[i] == 0) {
+                    client_sockets[i] = newsockfd;
+                    printf("Nuovo client connesso\n");
+                    break;
+                }
+            }
+        }
+\end{lstlisting}
+
+\subsection{Spiegazione}
+In questa parte del codice:
+\begin{itemize}
+    \item Il ciclo for aggiunge ogni socket client valido a \textit{read\_fds}.
+    \item Viene utilizzato \textit{select(max\_sd + 1, \&read\_fds, NULL, NULL, NULL)} per monitorare la disponibilità di lettura sui socket. Il parametro \textit{max\_sd + 1} è il numero di descrittori da monitorare, mentre \textit{read\_fds} contiene i descrittori stessi.
+    \item Se \textit{FD\_ISSET(sockfd, \&read\_fds)} restituisce vero, significa che ci sono nuove connessioni in arrivo, che vengono accettate con \textit{accept()}.
+    \item Quando una nuova connessione è accettata, il server trova il primo posto libero nell'array \textit{client\_sockets} e inserisce il nuovo socket.
+\end{itemize}
+
+\section{Gestione della Comunicazione con i Client}
+Una volta che un client è connesso, il server deve essere in grado di ricevere e inviare dati. Utilizza la funzione \textit{recv()} per leggere i dati dai client e \textit{send()} per inviare una risposta.
+
+\begin{lstlisting}[caption={Gestione della Comunicazione con i Client}]
+        // controlla i client per vedere se hanno inviato dei dati
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (client_sockets[i] > 0 && FD_ISSET(client_sockets[i], &read_fds)) {
+                int n = recv(client_sockets[i], buffer, BUFFER_SIZE - 1, 0);
+                if (n > 0) {
+                    buffer[n] = '\0';  // aggiunge il terminatore di stringa
+                    printf("Messaggio ricevuto da client %d: %s\n", i + 1, buffer);
+                    send(client_sockets[i], "ACK\n", 4, 0);  // invia un ack al client
+                } else if (n == 0) {
+                    printf("Client %d disconnesso\n", i + 1);
+                    close(client_sockets[i]);
+                    client_sockets[i] = 0;  // rimuove il client dalla lista
+                } else {
+                    if (errno != EWOULDBLOCK && errno != EAGAIN) {
+                        perror("recv fallito");
+                        close(client_sockets[i]);
+                        client_sockets[i] = 0;
+                    }
+                }
+            }
+        }
+    }
+\end{lstlisting}
+
+\subsection{Spiegazione}
+In questa parte del codice:
+\begin{itemize}
+    \item Viene eseguito un ciclo su tutti i client per verificare se uno di essi ha inviato dei dati. Questo viene fatto con la funzione \textit{FD\_ISSET()}.
+    \item La funzione \textit{recv()} legge i dati inviati dal client e li memorizza nel buffer. Se i dati vengono ricevuti correttamente, vengono inviati al client come risposta con \textit{send()}.
+    \item Se il client si disconnette (quando \textit{recv()} restituisce 0), il server chiude la sua connessione e rimuove il socket dalla lista.
+    \item Se si verifica un errore diverso da \textit{EWOULDBLOCK} o \textit{EAGAIN}, la connessione viene chiusa e il socket del client viene rimosso.
+\end{itemize}
+
+\section{Conclusione}
+Il codice implementa un server multi-client TCP che utilizza \textit{select()} per gestire più connessioni simultaneamente senza utilizzare thread o processi separati. L'approccio basato su socket non bloccanti e \textit{select()} consente di gestire efficientemente le connessioni concorrenti, facendo sì che il server rimanga reattivo durante l'elaborazione delle richieste.
+\noindent
+In sintesi, l'uso di \textit{select()} permette di monitorare più socket in modo semplice ed efficace, senza la necessità di complicate tecniche di gestione della concorrenza come il multithreading. Il codice può essere facilmente esteso per gestire un numero maggiore di client o per integrare funzionalità aggiuntive come la gestione dei timeout o la sicurezza delle connessioni.
+\end{document}

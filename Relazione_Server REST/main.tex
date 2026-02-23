@@ -1,0 +1,775 @@
+\documentclass[a4paper, 12pt, titlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{enumerate}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{makecell}
+\usepackage{multirow}
+\usepackage{tikz}
+\usepackage{comment}
+\usepackage{fancyhdr}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, calc, fit}
+
+
+\geometry{a4paper, top=3cm, bottom=3cm, left=2.5cm, right=2.5cm}
+
+\hypersetup{
+colorlinks=true,
+linkcolor=blue!70!black,
+urlcolor=blue!80!black,
+citecolor=red!70!black,
+pdftitle={Realizzazione di un Server REST concorrente in C},
+pdfauthor={Sandi Russo},
+}
+
+
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.96}
+
+\lstdefinestyle{mystyle}{
+backgroundcolor=\color{backcolour},
+commentstyle=\color{codegreen}\itshape,
+keywordstyle=\color{blue!80!black}\bfseries,
+numberstyle=\tiny\color{codegray},
+stringstyle=\color{codepurple},
+basicstyle=\ttfamily\small,
+breakatwhitespace=false,
+breaklines=true,
+captionpos=b,
+keepspaces=true,
+numbers=left,
+numbersep=5pt,
+showspaces=false,
+showstringspaces=false,
+showtabs=false,
+tabsize=2,
+frame=single,
+framerule=0.5pt,
+rulecolor=\color{black!20},
+xleftmargin=2em,
+xrightmargin=1em
+}
+\lstset{style=mystyle}
+
+
+\definecolor{makeblue}{rgb}{0.2, 0.2, 0.7}
+\definecolor{makegreen}{rgb}{0.1, 0.4, 0.1}
+\definecolor{backcolormake}{rgb}{0.96, 0.97, 1.0}
+
+\lstdefinestyle{makestyle}{
+backgroundcolor=\color{backcolormake},
+commentstyle=\color{makegreen}\itshape,
+keywordstyle=\color{makeblue}\bfseries,
+stringstyle=\color{codepurple},
+basicstyle=\ttfamily\small,
+frame=single,
+rulecolor=\color{black!20},
+numbers=left,
+numbersep=5pt,
+tabsize=4,
+showstringspaces=false,
+breaklines=true,
+morekeywords={CC, CFLAGS, LDFLAGS, TARGET, SRCS, OBJS, all, clean, re, .PHONY},
+xleftmargin=2em,
+xrightmargin=1em
+}
+
+\lstdefinestyle{bashstyle}{
+backgroundcolor=\color{backcolour},
+commentstyle=\color{codegreen}\itshape,
+keywordstyle=\color{blue!80!black}\bfseries,
+numberstyle=\tiny\color{codegray},
+stringstyle=\color{codepurple},
+basicstyle=\ttfamily\small,
+breaklines=true,
+captionpos=b,
+frame=single,
+rulecolor=\color{black!20},
+morekeywords={curl, -X, POST, GET, DELETE, -d, http},
+xleftmargin=2em,
+xrightmargin=1em
+}
+
+
+\lstdefinelanguage{C}{
+morekeywords={
+auto, break, case, char, const, continue, default, do, double, else, enum,
+extern, float, for, goto, if, int, long, register, return, short, signed,
+sizeof, static, struct, switch, typedef, union, unsigned, void, volatile, while,
+FILE, DIR, pid_t, pthread_t, ssize_t, size_t, socklen_t, sqlite3, sqlite3_stmt,
+epoll_event, epoll_ctl, epoll_wait, epoll_create1, EPOLLIN, EPOLLET, EPOLLONESHOT,
+__attribute__, __asm__, __volatile__
+},
+sensitive=true,
+morecomment=[l]//,
+morecomment=[s]{/*}{*/},
+morestring=[b]",
+morestring=[b]'
+}
+
+
+\titleformat{\section}
+{\normalfont\Large\bfseries\color{blue!60!black}}
+{\thesection}{1em}{}
+\titleformat{\subsection}
+{\normalfont\large\bfseries\color{black}}
+{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+{\normalfont\normalsize\bfseries\color{black!80}}
+{\thesubsubsection}{1em}{}
+
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{1cm}
+
+\Huge\bfseries
+Università degli Studi di Messina
+
+\vspace{1.5cm}
+
+\Large
+CdL in Scienze Informatiche \\
+Reti di calcolatori e sistemi distribuiti - Modulo B \\
+A.A. 2024/2025
+
+\vspace{2.5cm}
+
+\textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+\vspace{0.4cm}
+\Huge\bfseries
+Realizzazione di un Server REST\\ concorrente in C con backend Sqlite
+\vspace{0.4cm}
+\textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+
+\vspace{6cm}
+
+\Large
+\begin{tabular}{c}
+\textbf{Relazione a cura di:} \\
+\cmidrule(lr){1-1}
+\addlinespace
+Sandi Russo \qquad \texttt{553675} \\
+\end{tabular}
+
+
+\vfill
+
+\end{titlepage}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrule}{\color{blue!70!black}\hrule width \linewidth height 0.4pt}
+\lfoot{\color{black!75}Sandi Russo}
+\cfoot{%
+\raisebox{-0.5\normalbaselineskip}{\color{black!75}\thepage}%
+}
+
+
+\rfoot{\color{black!75}Reti di calcolatori e sistemi \\ distribuiti - Mod. B}
+\pagenumbering{roman}
+\fancypagestyle{plain}{%
+\fancyhf{}%
+\renewcommand{\headrulewidth}{0pt}%
+\renewcommand{\footrule}{\color{blue!70!black}\hrule width \linewidth height 0.4pt}%
+\lfoot{\color{black!65}Sandi Russo}%
+\cfoot{\color{black!65}\thepage}%
+\rfoot{\color{black!65}Reti di calcolatori e sistemi distribuiti - Mod. B}%
+}
+
+
+\begin{abstract}
+\noindent
+La presente relazione descrive la progettazione e l'implementazione di un server RESTful concorrente, scritto interamente in linguaggio C. L'obiettivo del progetto è stato quello di sviluppare un server web leggero e performante, capace di gestire richieste API REST per operazioni CRUD (Create, Read, Update, Delete) su una risorsa "utenti", con persistenza dei dati garantita da un backend \textbf{SQLite}.
+
+\bigskip\noindent
+Per affrontare la necessità di servire un elevato numero di client simultaneamente, è stato adottato un modello di concorrenza avanzato, che si discosta dal tradizionale "un thread per client". L'architettura si basa su un design event-driven che utilizza il multiplexing di I/O non bloccante tramite \textbf{epoll} (Linux API). Un thread principale gestisce tutti gli eventi di rete, accettando nuove connessioni e leggendo le richieste. L'elaborazione effettiva delle richieste (parsing HTTP, logica di business e query al database) è delegata a un \textbf{Thread Pool} di worker pre-allocati. Questo approccio, noto come modello Reactor/Proactor, minimizza l'overhead di creazione e distruzione dei thread, massimizzando la scalabilità e la reattività del server.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+\clearpage
+\pagenumbering{arabic}
+
+\section{Introduzione}
+\subsection{Contesto e Obiettivi}
+Nel panorama moderno dello sviluppo software, le API (Application Programming Interface) rappresentano il collante fondamentale che permette a sistemi distribuiti e microservizi di comunicare. Tra i vari stili architetturali per la creazione di API, \textbf{REST} (Representational State Transfer) si è imposto come standard de-facto per la sua semplicità, scalabilità e l'utilizzo dei protocolli standard del web, primo tra tutti l'HTTP.
+
+\bigskip\noindent
+Un'API RESTful modella le operazioni su entità di business come "risorse" (ad esempio, un utente) che possono essere manipolate tramite i metodi standard del protocollo HTTP:
+\begin{itemize}
+\item \textbf{GET}: per recuperare una risorsa.
+\item \textbf{POST}: per creare una nuova risorsa.
+\item \textbf{PUT/PATCH}: per aggiornare una risorsa esistente.
+\item \textbf{DELETE}: per eliminare una risorsa.
+\end{itemize}
+
+\bigskip\noindent
+L'obiettivo di questo progetto è stata la realizzazione \textit{from-scratch} di un server REST concorrente in C. La scelta del C, sebbene più complessa rispetto a linguaggi di alto livello, è motivata dalla volontà di ottenere il massimo controllo sulle risorse di sistema, sulla gestione della memoria e sulle performance di rete, realizzando un servizio estremamente leggero ed efficiente. Tale approccio permette inoltre di comprendere a fondo i meccanismi interni che regolano la comunicazione web e la gestione della concorrenza a basso livello, spesso astratti dai framework più moderni.
+
+\bigskip\noindent
+Gli obiettivi specifici del progetto sono:
+\begin{enumerate}
+\item Implementare un server HTTP basilare in grado di ricevere e rispondere a richieste.
+\item Gestire le richieste in modo concorrente e scalabile, utilizzando I/O non bloccante (\texttt{epoll}) e un thread pool.
+\item Realizzare un'API REST per le operazioni CRUD su una risorsa "utenti".
+\item Integrare un backend di database \textbf{SQLite} per la persistenza dei dati.
+\end{enumerate}
+
+\section{Definizione del Problema}
+\subsection{Analisi del Protocollo HTTP e REST}
+A differenza di protocolli più complessi come FTP (che richiede due canali distinti), l'architettura REST si appoggia interamente sul protocollo HTTP, un protocollo di richiesta-risposta testuale e senza stato (\textit{stateless}).
+
+\bigskip\noindent
+Ogni interazione è composta da:
+\begin{itemize}
+\item \textbf{Richiesta (Request)}: Inviata dal client al server. Contiene un \textit{metodo} (es. GET), un \textit{percorso} (es. /users/1), \textit{header} (metadati) e un eventuale \textit{body} (corpo della richiesta, es. per POST).
+\item \textbf{Risposta (Response)}: Inviata dal server al client. Contiene un \textit{codice di stato} (es. 200 OK, 404 Not Found), \textit{header} e un eventuale \textit{body} (es. i dati richiesti in formato JSON).
+\end{itemize}
+
+\bigskip\noindent
+Un server REST non fa altro che interpretare queste richieste HTTP, mappare il metodo e il percorso a un'azione specifica (es. una funzione C) ed eseguire tale azione (spesso interagendo con un database), per poi formattare una risposta HTTP adeguata.
+
+\subsection{Requisiti di Concorrenza: Il Modello Epoll + Thread Pool}
+Un server di rete robusto deve gestire migliaia di connessioni simultanee (il cosiddetto problema C10k). Il modello "un thread per client" (utilizzato nell'esempio FTP) è semplice da implementare ma non scala: ogni thread consuma risorse (memoria per lo stack) e il context switching tra migliaia di thread diventa un collo di bottiglia.
+
+\bigskip\noindent
+Per questo progetto è stata scelta un'architettura molto più performante, basata su due pilastri:
+\begin{enumerate}
+\item \textbf{I/O Multiplexing con \texttt{epoll} (Reactor)}: Il thread principale (il \textit{Reactor}) utilizza \texttt{epoll} per monitorare in modo efficiente e non bloccante migliaia di socket contemporaneamente. Invece di attendere (bloccarsi) su un singolo \texttt{read()} o \texttt{accept()}, il thread attende su \texttt{epoll\_wait()}, che lo risveglia solo quando c'è effettivamente un evento (una nuova connessione, o dati da leggere) su \textit{uno qualsiasi} dei socket monitorati.
+
+\item \textbf{Thread Pool (Proactor)}: L'elaborazione delle richieste può essere costosa (parsing, query al database). Se il thread principale di \texttt{epoll} si bloccasse per eseguire una query, tutte le altre connessioni rimarrebbero in attesa. Per evitare ciò, il thread principale delega il lavoro pesante. Quando \texttt{epoll} notifica una nuova richiesta, il thread principale si limita a leggerla e a impacchettarla come un "lavoro" (\textit{job}) che viene inserito in una coda. Un pool di \textbf{worker thread}, pre-allocati all'avvio (\textit{Proactors}), attende su questa coda. Non appena un lavoro è disponibile, un thread libero lo preleva e lo esegue (parsing HTTP, query SQLite, invio risposta), tornando poi in attesa di nuovi lavori.
+\end{enumerate}
+
+\bigskip\noindent
+Questo design separa nettamente la gestione (veloce) degli eventi I/O dal processamento (potenzialmente lento) della logica applicativa, garantendo massima reattività e scalabilità.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.9\textwidth}{!}{%
+\begin{tikzpicture}[
+    auto,
+    node distance=1cm and 1.5cm,
+    blocco/.style={rectangle, draw, fill=gray!15, minimum height=2.5em, minimum width=5em, rounded corners=3pt},
+    coda/.style={rectangle, draw, fill=blue!10, minimum height=8em, minimum width=2.5em, rounded corners},
+    worker/.style={rectangle, draw, fill=green!10, minimum height=1.8em, minimum width=4.5em, rounded corners=3pt, align=center},
+    db/.style={cylinder, shape border rotate=90, draw, fill=yellow!10, minimum height=2.2em, minimum width=1.8em, aspect=0.5},
+    arrow/.style={->, thick, >=Stealth}
+]
+% Carica la libreria 'calc' per calcolare le coordinate
+\usetikzlibrary{calc} 
+
+% --- Clienti ---
+\node[blocco, align=center] (client1) at (0, 3.5) {\small Client 1};
+\node[blocco, align=center] (client2) at (0, 1.5) {\small Client 2};
+\node[blocco, align=center] (clientN) at (0, -0.5) {\small Client N};
+\node at (0, 0.5) {\vdots};
+
+% --- Reactor ---
+\node[blocco, minimum height=8em, minimum width=6em, fill=red!10, align=center] (main) at (4.5, 1.5) {\small\textbf{Thread Principale} \\ \small(Reactor) \\ \small\texttt{epoll\_wait()}};
+
+\draw[arrow] (client1.east) -- (main.west);
+\draw[arrow] (client2.east) -- (main.west);
+\draw[arrow] (clientN.east) -- (main.west);
+
+% --- Coda Lavori ---
+\node[coda, align=center] (queue) at (8.5, 1.5) {\small Coda \\ \small Lavori};
+
+\draw[arrow] (main.east) -- (queue.west) node[midway, above, font=\scriptsize] {Sottomette};
+
+% --- Thread Pool ---
+% Spostato leggermente a destra (da 12.5 a 13)
+\node[worker, font=\small] (w1) at (13, 3.5) {Worker 1}; 
+\node[worker, font=\small] (w2) at (13, 1.5) {Worker 2};
+\node[worker, font=\small] (wN) at (13, -0.5) {Worker N};
+\node at (13, 0.5) {\vdots};
+\node[fit=(w1)(w2)(wN), draw, dashed, inner sep=0.3cm, label=above:{\small\textbf{Thread Pool}}] (pool) {};
+
+% --- Frecce Coda -> Worker (con "split") ---
+% 1. Definisco un punto di giunzione (junction) invisibile a destra della coda
+\coordinate (junction) at ($(queue.east) + (0.5, 0)$);
+
+% 2. Disegno un'unica freccia dalla coda al punto di giunzione
+\draw[thick] (queue.east) -- (junction);
+
+% 3. Disegno le tre frecce a partire dal punto di giunzione
+\draw[arrow] (junction) |- (w1.west);
+\draw[arrow] (junction) -- (w2.west) node[midway, above, font=\scriptsize] {Preleva};
+\draw[arrow] (junction) |- (wN.west);
+
+% --- Database ---
+% Spostato leggermente a destra (da 16 a 16.5)
+\node[db, label=below:{\scriptsize SQLite}] (db) at (16.5, 1.5) {}; 
+
+% --- Freccia Pool -> Database ---
+\draw[<->, thick] (pool.east) -- (db.west);
+
+\end{tikzpicture}
+}
+\caption{Architettura del server: Epoll + Thread Pool}
+\label{fig:architettura}
+\end{figure}
+
+\subsection{Requisiti Funzionali del Server}
+Per dimostrare il funzionamento dell'architettura, il server implementa un'API REST basilare per la gestione di una risorsa \texttt{users}. Le operazioni (endpoint) supportate sono:
+
+\begin{table}[H]
+\centering
+\caption{Endpoint dell'API REST implementati}
+\label{tab:comandi_ftp}
+\begin{tabular}{lll}
+\toprule
+\textbf{Metodo} & \textbf{Percorso (Path)} & \textbf{Scopo} \\
+\midrule
+\texttt{GET} & \texttt{/users} & Recupera l'elenco di tutti gli utenti. \\
+\addlinespace
+\texttt{GET} & \texttt{/users/\{id\}} & Recupera i dettagli di un singolo utente. \\
+\addlinespace
+\texttt{POST} & \texttt{/users} & Crea un nuovo utente. Il nome è passato nel body. \\
+\addlinespace
+\texttt{DELETE} & \texttt{/users/\{id\}} & Elimina un utente specifico. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+Tutti i dati sono resi persistenti su un database \textbf{SQLite}, memorizzato nel file \texttt{rest\_api.db}. Il server crea automaticamente la tabella \texttt{users} al primo avvio, se non esiste.
+
+\clearpage
+
+\section{Metodologia}
+Il progetto è stato suddiviso in moduli C, ognuno con una responsabilità specifica, per garantire manutenibilità e chiara separazione dei compiti.
+
+\subsection{Struttura del Progetto e Flusso di Esecuzione}
+
+\subsubsection{Il Punto di Ingresso: \texttt{server.c}}
+Il file \texttt{main.c} è responsabile dell'inizializzazione e del ciclo di vita del server (il Reactor).
+Le fasi principali sono:
+\begin{enumerate}
+\item Inizializzazione del database (\texttt{db\_init()}).
+\item Creazione del thread pool (\texttt{threadpool\_create()}).
+\item Creazione e setup del socket di ascolto (\texttt{socket}, \texttt{bind}, \texttt{listen}).
+\item Creazione dell'istanza \texttt{epoll} (\texttt{epoll\_create1()}).
+\item Aggiunta del socket di ascolto a \texttt{epoll} (\texttt{epoll\_ctl\_add}).
+\end{enumerate}
+
+\bigskip\noindent
+Il cuore del server è il loop \texttt{while(1)} che attende eventi su \texttt{epoll\_wait()}.
+
+\bigskip\noindent
+Questo blocco di codice mostra la prima metà del loop eventi. Il server attende su \texttt{epoll\_wait()} un evento. Se l'evento notificato appartiene al socket \texttt{server\_fd} principale, significa che è arrivata una nuova connessione. Il server quindi la accetta (\texttt{accept}), la imposta come non bloccante e la aggiunge all'istanza di \texttt{epoll} per monitorare futuri eventi di lettura.
+
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{server.c} - Loop eventi: gestione nuove connessioni (1/2)}]
+while (1) {
+    int n = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+    // ... gestione errori ...
+
+    for (int i = 0; i < n; i++) {
+        
+        // evento sul socket di ascolto -> Nuova connessione
+        if (events[i].data.fd == server_fd) {
+            int client_fd = accept(server_fd, ...);
+            // ... gestione errori ...
+            set_nonblocking(client_fd);
+
+            ev.events = EPOLLIN | EPOLLET | EPOLLONESHOT;
+            ev.data.fd = client_fd;
+            epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev);
+        }
+\end{lstlisting}
+
+\bigskip\noindent
+Questa è la seconda metà del loop \texttt{epoll}. Se l'evento non è una nuova connessione (blocco \texttt{else}), allora deve essere un evento di lettura su un client già connesso. Il thread principale (il Reactor) non esegue il lavoro direttamente; se lo facesse, operazioni potenzialmente bloccanti come il \texttt{read()} o le query al database congelerebbero l'intero server, impedendogli di gestire altri client. Prepara invece una struttura \texttt{RequestContext} che "impacchetta" tutte le informazioni necessarie (il file descriptor del client, l'istanza di epoll e la connessione al database) e la "sottomette" alla coda del thread pool tramite \texttt{threadpool\_add\_job()}. Questo passaggio segnala a un thread worker in attesa di svegliarsi, prendere in carico la richiesta ed eseguirla in parallelo, lasciando il thread principale immediatamente libero di tornare in \texttt{epoll\_wait} e servire nuove richieste. L'uso di \texttt{EPOLLONESHOT} (impostato alla \texttt{accept}) è fondamentale in questo design, poiché impedisce ad \texttt{epoll} di notificare nuovi eventi sullo stesso socket mentre un worker lo sta già processando, evitando così race condition.
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{server.c} - Loop eventi: sottomissione lavori (2/2)}]
+        // evento su un client socket -> Dati da leggere
+        else {
+            // prepara il contesto per il worker
+            RequestContext* ctx = malloc(sizeof(RequestContext));
+            ctx->client_fd = events[i].data.fd;
+            ctx->epoll_fd = epoll_fd;
+            ctx->db = db;
+
+            // sottomette il lavoro al pool
+            threadpool\_add\_job(pool, handle\_http\_request, ctx);
+        }
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Gestione della Concorrenza: \texttt{thread\_pool.c}}
+Questo modulo implementa un classico thread pool. La funzione \texttt{worker\_thread} è l'implementazione di ogni thread "operaio".
+
+\bigskip\noindent
+Ogni worker attende su una \textit{condition variable} finché la coda dei lavori non è vuota. Quando un nuovo lavoro è aggiunto (\texttt{threadpool\_add\_job}), la \textit{condition variable} viene segnalata, un worker si sveglia, estrae il lavoro dalla coda (protetto da \texttt{pthread\_mutex}) ed esegue la funzione.
+
+\bigskip\noindent
+La prima parte della funzione \texttt{worker\_thread} mostra come il thread gestisce l'attesa. Acquisisce un \texttt{mutex} per proteggere la coda dei lavori. Entra quindi in un ciclo \texttt{while} che, se la coda è vuota e non è in corso uno spegnimento, invoca \texttt{pthread\_cond\_wait()}. Questa funzione rilascia atomicamente il mutex e mette il thread in sonno, in attesa che un nuovo lavoro venga aggiunto.
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{thread\_pool.c} - Worker: attesa di un lavoro (1/2)}]
+static void* worker_thread(void* arg) {
+    ThreadPool* pool = (ThreadPool*)arg;
+
+    while (1) {
+        pthread_mutex_lock(&pool->mutex);
+
+        // aspetta fino a quando ci sono job, o e' richiesto lo shutdown
+        while (pool->queue_head == NULL && !pool->shutdown) {
+            pthread_cond_wait(&pool->cond, &pool->mutex);
+        }
+
+        // se e' shutdown e la coda e' vuota, esci
+        if (pool->shutdown && pool->queue_head == NULL) {
+            pthread_mutex_unlock(&pool->mutex);
+            break;
+        }
+\end{lstlisting}
+
+\bigskip\noindent
+Una volta che il thread si riattiva (e ri-acquisisce il mutex), esce dal ciclo di attesa. Estrae il primo lavoro (\texttt{JobNode}) dalla testa della coda. Un dettaglio cruciale è che rilascia il \texttt{mutex} \textit{prima} di eseguire il lavoro (\texttt{job->function(job->arg)}). Questo permette agli altri worker di accedere alla coda mentre questo thread è occupato, massimizzando la concorrenza del pool
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{thread\_pool.c} - Worker: esecuzione del lavoro (2/2)}]
+        // prendo il primo job dalla coda
+        JobNode* job = pool->queue_head;
+        if (job != NULL) {
+            pool->queue_head = job->next;
+            if (pool->queue_head == NULL) {
+                pool->queue_tail = NULL;
+            }
+        }
+        // rilascio il mutex prima di eseguire il job
+        pthread_mutex_unlock(&pool->mutex);
+
+        // eseguo il job
+        if (job != NULL) {
+            job->function(job->arg);
+            free(job);
+        }
+    }
+    return NULL;
+}
+\end{lstlisting}
+
+\subsection{Gestione delle Richieste HTTP: \texttt{http\_handler.c}}
+Questa è la funzione che viene eseguita da un worker thread. È il cuore della logica applicativa ed è stata suddivisa in tre fasi principali: preparazione, routing ed invio.
+
+\bigskip\noindent
+Questa è la prima fase eseguita da un worker thread. Il codice legge i dati grezzi della richiesta HTTP dal \texttt{client\_fd} e li memorizza in un buffer. Utilizza \texttt{sscanf} per un parsing basilare, estraendo il metodo (es. \texttt{GET}) e il percorso (es. \texttt{/users}). Infine, inizializza le variabili di default per la risposta (es. \texttt{200 OK}).
+\noindent\bigskip
+
+\begin{lstlisting}[language=C, caption={\textbf{http\_handler.c} - Fase 1: Lettura e Parsing (1/3)}]
+void handle_http_request(void* arg) {
+    RequestContext* ctx = (RequestContext*)arg;
+    char buffer[BUFFER_SIZE] = {0};
+
+    // legge la richiesta
+    ssize_t bytes_read = read(ctx->client_fd, buffer, 
+                              BUFFER_SIZE - 1);
+    
+    if (bytes_read <= 0) {
+        // ... gestione disconnessione ...
+        goto cleanup;
+    }
+
+    // parsing della richiesta
+    char method[16], path[256];
+    if (sscanf(buffer, "%15s %255s", method, path) != 2) {
+        send_response(ctx->client_fd, 400, "Bad Request", ...);
+        goto cleanup;
+    }
+
+    // setup variabili per la risposta
+    char* response_body = NULL;
+    int status_code = 200;
+    const char* status_text = "OK";
+    const char* content_type = "application/json";
+\end{lstlisting}
+
+\bigskip\noindent
+Questo blocco costituisce il "router" dell'applicazione. Attraverso una catena di \texttt{if-else if}, confronta il metodo e il percorso parsificati. Se trova una corrispondenza (es. \texttt{GET /users}), invoca la funzione appropriata del gestore database (es. \texttt{db\_get\_all\_users}). Questa è una forma di dispatching manuale che separa nettamente la logica HTTP dalla logica di accesso ai dati; infatti, il router non sa come il database funziona, ma solo quale funzione chiamare. Allo stesso modo, una richiesta \texttt{POST /users} viene instradata a \texttt{db\_create\_user}, mentre un \texttt{DELETE} su \texttt{/users/{id}} richiama \texttt{db\_delete\_user}. Il router è anche responsabile di mappare il risultato di queste operazioni ai corretti codici di stato HTTP, impostando \texttt{404 Not Found} per risorse non trovate o \texttt{201 Created} per una creazione avvenuta con successo.
+\bigskip\noindent
+\begin{lstlisting}[language=C, caption={\textbf{http\_handler.c} - Fase 2: Routing Logico (2/3)}]
+    // esempio: GET /users
+    if (strcmp(method, "GET") == 0 && 
+        strcmp(path, "/users") == 0) {
+        response_body = db_get_all_users(ctx->db);
+    } // esempio: GET /users/<id>
+    else if (strcmp(method, "GET") == 0 && 
+             strncmp(path, "/users/", 7) == 0) {
+        int user_id = atoi(path + 7);
+        response_body = db_get_user(ctx->db, user_id);
+        if (!response_body) {
+            status_code = 404;
+            status_text = "Not Found";
+        }
+    } // esempio: POST /users
+    else if (strcmp(method, "POST") == 0 && 
+             strcmp(path, "/users") == 0) {
+        char* body = extract_body(buffer);
+        if (body && db_create_user(ctx->db, body)) {
+            status_code = 201;
+            status_text = "Created";
+        } else {
+            status_code = 400;
+            status_text = "Bad Request";
+        }
+    }
+\end{lstlisting}
+
+\bigskip\noindent
+Nella fase finale, la funzione \texttt{send\_response} (non mostrata) viene chiamata per costruire e inviare la risposta HTTP completa al client. Dopo l'invio, la memoria allocata per il corpo della risposta viene liberata. Infine, l'etichetta \texttt{cleanup} gestisce la chiusura della connessione: il file descriptor viene rimosso dall'istanza \texttt{epoll} (\texttt{EPOLL\_CTL\_DEL}) e il socket viene chiuso.
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{http\_handler.c} - Fase 3: Risposta e Cleanup (3/3)}]
+    // invia la risposta al client
+    send_response(ctx->client_fd, status_code, status_text, 
+                  content_type, response_body);
+
+    if (response_body) free(response_body);
+
+cleanup:
+    // rimuove il fd da epoll e chiude la connessione
+    epoll_ctl(ctx->epoll_fd, EPOLL_CTL_DEL, 
+              ctx->client_fd, NULL);
+    close(ctx->client_fd);
+    free(ctx);
+}
+\end{lstlisting}
+
+\subsection{Interfacciamento al Database: \texttt{db\_handler.c}}
+Questo modulo agisce da Data Access Layer (DAL), incapsulando tutta la logica di interazione con SQLite e astraendola dal gestore HTTP.
+\noindent
+Questo frammento gestisce la richiesta per ottenere tutti gli utenti. La query SQL viene preparata in modo sicuro tramite \texttt{sqlite3\_prepare\_v2}, che previene attacchi di tipo SQL injection. Successivamente, viene allocato un buffer per contenere la stringa JSON di risposta e viene aggiunto il carattere di apertura dell'array (\texttt{[}).
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{db\_handler.c} - Read (GET /users): preparazione query (1/2)}]
+char* db_get_all_users(sqlite3* db) {
+    sqlite3_stmt* stmt;
+    const char* sql = "SELECT id, name FROM users;";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        fprintf(stderr, "Failed to prepare statement: %s\n", 
+                sqlite3_errmsg(db));
+        return NULL;
+    }
+    // alloca buffer e inizia a costruire il JSON
+    char* json_result = (char*)calloc(BUFFER_SIZE * 2, 
+                                      sizeof(char));
+    strcat(json_result, "[");
+    int first_row = 1;
+\end{lstlisting}
+
+\bigskip\noindent
+Qui, il codice itera su ogni riga restituita dalla query tramite un ciclo \texttt{while} su \texttt{sqlite3\_step()}. Per ogni riga (utente), formatta i dati in una stringa JSON (es. \texttt{\{"id":1, "name":"Sandi"\}}) usando \texttt{sprintf} e la concatena al risultato. Infine, aggiunge la parentesi chiusa (\texttt{]}) e rilascia le risorse della query.
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{db\_handler.c} - Read (GET /users): costruzione JSON (2/2)}]
+    // itera sui risultati
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        if (!first_row) strcat(json_result, ",");
+
+        char user_json[512];
+        sprintf(user_json, "{\"id\":%d, \"name\":\"%s\"}",
+                sqlite3_column_int(stmt, 0),
+                sqlite3_column_text(stmt, 1));
+
+        // concatena il JSON dell'utente al risultato
+        strcat(json_result, user_json);
+        first_row = 0;
+    }
+    strcat(json_result, "]");
+    sqlite3_finalize(stmt);
+    return json_result;}
+\end{lstlisting}
+
+\bigskip\noindent
+Questa funzione gestisce la creazione di un nuovo utente. Come prima, prepara una query SQL parametrizzata (\texttt{INSERT ... VALUES (?)}). Subito dopo, esegue un parsing molto semplificato del corpo della richiesta (che si aspetta in formato \texttt{name=...}) tramite \texttt{sscanf} per estrarre il nome da inserire.
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{db\_handler.c} - Create (POST /users): preparazione (1/2)}]
+int db_create_user(sqlite3* db, const char* name) {
+    sqlite3_stmt* stmt;
+    const char* sql = "INSERT INTO users (name) VALUES (?);";
+    
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
+        return 0;
+    }
+    // parsing basico del body: "name=Sandi"
+    char real_name[100];
+    sscanf(name, "name=%s", real_name);
+\end{lstlisting}
+
+\bigskip\noindent
+In questa parte finale, il nome estratto (\texttt{real\_name}) viene collegato (associato) in modo sicuro al segnaposto \texttt{?} nella query preparata, utilizzando \texttt{sqlite3\_bind\_text}. Questo è il passaggio che garantisce la protezione da SQL injection. Infine, la query viene eseguita con \texttt{sqlite3\_step} e la funzione restituisce un valore booleano che indica il successo dell'operazione.
+\noindent\bigskip
+\begin{lstlisting}[language=C, caption={\textbf{db\_handler.c} - Create (POST /users): esecuzione (2/2)}]
+    // sssocia il nome alla query
+    sqlite3_bind_text(stmt, 1, real_name, -1, SQLITE_STATIC);
+
+    // esegue la query
+    int rc = sqlite3_step(stmt);
+    
+    // rilascia le risorse
+    sqlite3_finalize(stmt);
+    
+    return (rc == SQLITE_DONE);
+}
+\end{lstlisting}
+
+
+\subsection{Definizione delle Interfacce e Processo di Compilazione}
+Il progetto è compilato tramite un \texttt{Makefile} che gestisce le dipendenze dei vari moduli e linka le librerie necessarie: \texttt{pthread} per il thread pool e \texttt{lsqlite3} per il database.
+
+\bigskip\noindent
+Il \texttt{Makefile} automatizza la compilazione. Definisce le variabili per il compilatore (\texttt{CC}), i flag (\texttt{CFLAGS} per la compilazione, \texttt{LDFLAGS} per il linking) e i sorgenti. Il target \texttt{all} compila separatamente ogni file \texttt{.c} in un file oggetto \texttt{.o} e poi li collega tutti insieme (\texttt{\$\^}) per creare l'eseguibile \texttt{TARGET}, includendo le librerie \texttt{-pthread} e \texttt{-lsqlite3}.
+\begin{lstlisting}[language=make, style=makestyle, caption={\textbf{Makefile} - Compilazione del progetto}]
+CC = gcc
+CFLAGS = -Wall -Wextra -g -pthread
+LDFLAGS = -pthread -lsqlite3
+
+TARGET = rest_server
+SRCS = server.c thread_pool.c http_handler.c db_handler.c
+OBJS = $(SRCS:.c=.o)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS)
+	@echo "Build completato: $(TARGET)"
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f $(OBJS) $(TARGET) rest_api.db
+
+re: clean all
+
+.PHONY: all clean re
+\end{lstlisting}
+
+\newpage
+\section{Presentazione dei Risultati}
+A differenza di un server FTP, che si testa con un client \texttt{ftp}, un'API REST si testa comunemente con strumenti come \texttt{curl} o Postman. Di seguito sono riportati i test eseguiti tramite \texttt{curl} dalla riga di comando.
+
+\subsection{Compilazione ed Esecuzione}
+Prima di tutto, si compila il server tramite \texttt{make} e lo si avvia. Il server si mette in ascolto sulla porta 8080 (definita in \texttt{common.h}).
+\noindent\bigskip
+\begin{lstlisting}[language=bash, style=bashstyle, caption={Compilazione ed avvio del server}]
+$ make re
+rm -f server.o thread_pool.o http_handler.o db_handler.o rest_server rest_api.db
+gcc -Wall -Wextra -g -pthread -c -o server.o server.c
+gcc -Wall -Wextra -g -pthread -c -o thread_pool.o thread_pool.c
+gcc -Wall -Wextra -g -pthread -c -o http_handler.o http_handler.c
+gcc -Wall -Wextra -g -pthread -c -o db_handler.o db_handler.c
+gcc -o rest_server server.o thread_pool.o http_handler.o db_handler.o -pthread -lsqlite3
+Build completato: rest_server
+
+$ ./rest_server
+Database inizializzato e tabella 'users' pronta.
+Thread pool creato con 4 workers.
+Server REST in ascolto sulla porta 8080...
+\end{lstlisting}
+
+\subsection{Test dell'API REST con \texttt{curl}}
+In un altro terminale, eseguiamo i comandi \texttt{curl} per interagire con l'API.
+
+\paragraph{Creazione di nuovi utenti (POST)}
+Creiamo due utenti. Usiamo \texttt{-X POST} per specificare il metodo e \texttt{-d} per inviare il body.
+\noindent\bigskip
+\begin{lstlisting}[language=bash, style=bashstyle, caption={Test: POST /users (Creazione utenti)}]
+$ curl -X POST -d "name=Sandi" http://localhost:8080/users
+{"status":"created"}
+
+$ curl -X POST -d "name=Mario" http://localhost:8080/users
+{"status":"created"}
+\end{lstlisting}
+
+\paragraph{Lettura di tutti gli utenti (GET)}
+Verifichiamo che gli utenti siano stati creati.
+\noindent\bigskip
+\begin{lstlisting}[language=bash, style=bashstyle, caption={Test: GET /users (Lettura tutti gli utenti)}]
+$ curl http://localhost:8080/users
+[{"id":1, "name":"Sandi"},{"id":2, "name":"Mario"}]
+\end{lstlisting}
+
+\paragraph{Lettura di un singolo utente (GET)}
+Recuperiamo l'utente con ID 2.
+\noindent\bigskip
+\begin{lstlisting}[language=bash, style=bashstyle, caption={Test: GET /users/2 (Lettura singolo utente)}]
+$ curl http://localhost:8080/users/2
+{"id":2, "name":"Mario"}
+\end{lstlisting}
+
+\paragraph{Tentativo di GET su utente non esistente}
+Se richiediamo un ID non valido, il server risponde correttamente con un errore 404.
+\noindent\bigskip
+\begin{lstlisting}[language=bash, style=bashstyle, caption={Test: GET /users/99 (Utente non trovato - 404)}]
+$ curl http://localhost:8080/users/99
+{"error":"User not found"}
+\end{lstlisting}
+
+\paragraph{Eliminazione di un utente (DELETE)}
+Eliminiamo l'utente con ID 1.
+\noindent\bigskip
+\begin{lstlisting}[language=bash, style=bashstyle, caption={Test: DELETE /users/1 (Eliminazione utente)}]
+$ curl -X DELETE http://localhost:8080/users/1
+{"status":"deleted"}
+\end{lstlisting}
+
+\paragraph{Verifica finale}
+Controlliamo di nuovo la lista completa per verificare l'avvenuta eliminazione.
+\noindent\bigskip
+\begin{lstlisting}[language=bash, style=bashstyle, caption={Test: GET /users (Verifica dopo eliminazione)}]
+$ curl http://localhost:8080/users
+[{"id":2, "name":"Mario"}]
+\end{lstlisting}
+
+\clearpage
+
+\section{Conclusioni}
+\subsection{Sintesi dei Risultati Ottenuti}
+Il progetto ha portato alla creazione di un server RESTful concorrente in C pienamente funzionante. Il risultato più significativo è l'implementazione di un'architettura di concorrenza scalabile e moderna, basata su \textbf{I/O multiplexing non bloccante (\texttt{epoll}) e un thread pool}. Questo design, che separa la gestione delle connessioni dall'elaborazione delle richieste, è alla base di server web ad alte prestazioni come Nginx e Node.js.
+
+\bigskip\noindent
+Il server è in grado di gestire le operazioni CRUD fondamentali (GET, POST, DELETE) e di garantirne la persistenza attraverso un'integrazione pulita con il database \textbf{SQLite}. L'approccio modulare (handler, thread pool, db handler) ha reso il codice gestibile e manutenibile.
+
+\subsection{Limitazioni e Criticità del Progetto}
+Data la natura del progetto, sono state fatte scelte implementative che privilegiano la semplicità concettuale, ma che presentano limitazioni in un contesto reale:
+
+\begin{itemize}
+    \item \textbf{Parsing HTTP ingenuo}: Il parser della richiesta, basato su \texttt{sscanf}, è estremamente fragile. Non gestisce header HTTP, connessioni keep-alive, chunked transfer-encoding, o body complessi (es. JSON). È sufficiente solo per questo specifico caso d'uso.
+    \item \textbf{Parsing del Body limitato}: La funzione \texttt{db\_create\_user} si aspetta un body in formato \texttt{name=valore} e lo parsifica con \texttt{sscanf}, una pratica non sicura e non estendibile.
+    \item \textbf{Generazione JSON manuale}: L'uso di \texttt{strcat} e \texttt{sprintf} per costruire stringhe JSON è pericoloso (rischio di buffer overflow) e inefficiente.
+    \item \textbf{Mancanza di Sicurezza}: Il server non implementa HTTPS (le comunicazioni sono in chiaro) né alcun tipo di autenticazione o autorizzazione.
+    \item \textbf{Gestione Connessioni}: Il server adotta un approccio HTTP/1.0, chiudendo la connessione dopo ogni richiesta. Manca il supporto al keep-alive (HTTP/1.1), fondamentale per le performance.
+\end{itemize}
+
+\subsection{Proposte per Sviluppi Futuri}
+Partendo dalla solida base di concorrenza, il progetto potrebbe essere esteso in diverse direzioni per renderlo "production-ready":
+
+\begin{itemize}
+    \item \textbf{Integrazione di un Parser HTTP}: Sostituire \texttt{sscanf} con una libreria di parsing HTTP robusta e ottimizzata, come \texttt{http-parser} di Node.js (scritta in C).
+    \item \textbf{Supporto JSON completo}: Integrare una libreria C per la gestione del JSON, come \texttt{jansson} o \texttt{cJSON}, per parsificare i body delle richieste POST in entrata e generare le risposte in modo sicuro.
+    \item \textbf{Supporto HTTPS}: Implementare la crittografia TLS/SSL utilizzando la libreria \texttt{OpenSSL} per garantire comunicazioni sicure.
+    \item \textbf{Autenticazione}: Aggiungere un livello di autenticazione, ad esempio tramite API key passate in un header (es. \texttt{Authorization: Bearer <token>}).
+    \item \textbf{Estensione dell'API}: Aggiungere il supporto ai metodi \texttt{PUT} o \texttt{PATCH} per l'aggiornamento degli utenti, completando l'intero set di operazioni CRUD.
+    \item \textbf{Connection pooling per SQLite}: Implementare un pool di connessioni al database per migliorare le performance in scenari ad alto carico.
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,113 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\geometry{margin=2cm}
+
+\title{Appunti di Sistemi Operativi}
+\author{Davide Froda \& Nino Signorino}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Il Kernel}
+Il kernel è il processo del sistema operativo che lavora a ring 0[cite: 3701]. Gestisce le risorse hardware del computer, garantendo che tutto funzioni in modo coordinato, protetto ed efficiente[cite: 3701].
+Esistono diverse architetture di kernel:
+\begin{itemize}
+    \item \textbf{Kernel Monolitico}: Tutto ciò che sta tra l'hardware e le system call (filesystem, scheduling CPU, management di sistema, ecc.) risiede nel kernel[cite: 3702].
+    \item \textbf{Microkernel}: Sposta quante più funzionalità possibili nello user-space, lasciando nel kernel solo quelle essenziali[cite: 3703]. Le comunicazioni avvengono tramite \textit{message passing}, comportando un elevato overhead per i context switch[cite: 3703].
+    \item \textbf{Architettura a strati}: Il sistema operativo è diviso in livelli (da 0 per l'hardware a N per l'interfaccia utente), dove ogni livello utilizza solo i servizi di quello inferiore[cite: 3703].
+    \item \textbf{Moduli Kernel Caricabili (LKM)}: Molti sistemi moderni caricano moduli al bisogno all'interno del kernel, garantendo flessibilità e un approccio orientato agli oggetti[cite: 3704].
+\end{itemize}
+
+
+\section{Strutture Dati del Kernel}
+Il kernel utilizza diverse strutture dati per la gestione delle informazioni[cite: 3705]:
+\begin{itemize}
+    \item \textbf{Liste}: Concatenate, doppiamente concatenate e circolari. La ricerca richiede lo scorrimento dell'intera lista[cite: 3705].
+    \item \textbf{Alberi di ricerca binari}: Utilizzati per velocizzare la ricerca di elementi[cite: 3705].
+    \item \textbf{Hash Map}: Struttura che trasforma una chiave in un valore indicante la posizione dell'elemento tramite una funzione di hash[cite: 3705].
+\end{itemize}
+
+\section{Dual-Mode e Sicurezza}
+I componenti del sistema operativo operano su due livelli[cite: 3709]:
+\begin{itemize}
+    \item \textbf{User-Mode}: Opera con memoria protetta e virtuale. Le interazioni con l'hardware richiedono chiamate di sistema e non è possibile interagire direttamente con il kernel o leggere dati di altri processi[cite: 3709, 3710, 3711].
+    \item \textbf{Kernel-Mode}: Accesso completo alla memoria e istruzioni privilegiate[cite: 3711, 3712].
+\end{itemize}
+La \textbf{Privilege Escalation} avviene quando un codice malevolo ottiene accesso alla Kernel-Mode per monitorare o tracciare dati sensibili[cite: 3713].
+
+\section{Sistemi Embedded e Real-Time}
+I sistemi embedded sono progettati per funzioni specifiche, spesso seguendo il paradigma \textit{System On a Chip} (SOC)[cite: 3723, 3724]. Utilizzano sistemi operativi con risorse limitate (\textit{resource constrained}) come FreeRTOS[cite: 3724, 3725].
+
+I sistemi \textbf{Real-Time} devono garantire l'esecuzione entro una scadenza (\textit{deadline})[cite: 3728]:
+\begin{itemize}
+    \item \textbf{Soft Real-Time}: Il sistema tenta di rispettare la deadline ma può occasionalmente fallire (es. videogiochi)[cite: 3728, 3729].
+    \item \textbf{Hard Real-Time}: Il mancato rispetto della deadline comporta il fallimento totale del sistema (es. airbag)[cite: 3729].
+\end{itemize}
+
+\section{Interfacce e Chiamate di Sistema}
+Le interfacce utente includono la \textbf{CLI} (Command Line Interface), che permette l'automazione tramite script, e la \textbf{GUI} (Graphical User Interface)[cite: 3729, 3730].
+
+Le \textbf{System Call} permettono ai programmi di accedere alle funzioni del kernel[cite: 3733]. Ogni chiamata comporta un cambiamento di contesto (\textit{context switch}) ed è associata a un numero identificativo salvato in una tabella[cite: 3734, 3735].
+
+\section{Processi e Threads}
+Un \textbf{Processo} è un programma in esecuzione a cui vengono assegnate risorse (tempo CPU, spazio di indirizzamento)[cite: 3786]. I processi comunicano tramite \textbf{IPC} (Inter Process Communication) come la memoria condivisa o il \textit{message passing}[cite: 3789, 3790].
+
+Il \textbf{Thread} è un'entità all'interno del processo che condivide la memoria con altri thread dello stesso processo, rendendo la creazione e la commutazione più veloci ed efficienti[cite: 3791, 3793, 3794].
+
+\section{Scheduling della CPU}
+Lo \textbf{scheduler} seleziona il prossimo task da eseguire tra quelli pronti nella \textit{ready queue}[cite: 3912, 3913].
+\begin{itemize}
+    \item \textbf{Scheduling Preemptivo}: Il controllo è tolto al processo dopo un tempo prestabilito (\textit{quantum})[cite: 3994].
+    \item \textbf{Scheduling Cooperativo}: Il processo rilascia volontariamente il controllo[cite: 3997].
+\end{itemize}
+
+\subsection{Algoritmi di Scheduling}
+\begin{itemize}
+    \item \textbf{FCFS (First Come First Served)}: I processi sono gestiti nell'ordine di arrivo[cite: 3999].
+    \item \textbf{SJF (Shortest Job First)}: Sceglie il processo con il CPU burst più breve[cite: 4007].
+    \item \textbf{Round Robin}: Ogni processo riceve una piccola unità di tempo (\textit{time slice}), terminata la quale il controllo passa al processo successivo in coda[cite: 4046, 4047].
+\end{itemize}
+
+
+\section{Sincronizzazione}
+La sincronizzazione previene le \textbf{Race Conditions}, situazioni in cui più processi accedono a risorse condivise senza coordinamento[cite: 4053, 4056].
+Vengono utilizzati strumenti come:
+\begin{itemize}
+    \item \textbf{Mutex}: Gestiscono l'accesso esclusivo tramite operazioni di \textit{lock} e \textit{unlock}[cite: 4091].
+    \item \textbf{Semafori}: Variabili intere utilizzate per la sincronizzazione più complessa (binari o contatori)[cite: 4097, 4098, 4101].
+    \item \textbf{Monitor}: Astrazioni ad alto livello che garantiscono che un solo processo sia attivo al loro interno alla volta[cite: 4110, 4111].
+\end{itemize}
+
+\section{Deadlock}
+Il \textbf{Deadlock} è una situazione in cui due o più processi sono bloccati in attesa di risorse detenute l'uno dall'altro[cite: 4115]. Le condizioni necessarie affinché si verifichi sono mutua esclusione, possesso e attesa, mancanza di preemption e attesa circolare[cite: 4118, 4119, 4120, 4121].
+
+\section{Gestione della Memoria}
+La \textbf{MMU} (Memory Management Unit) traduce gli indirizzi logici generati dalla CPU in indirizzi fisici in RAM[cite: 4146, 4147].
+\begin{itemize}
+    \item \textbf{Frammentazione}: Può essere esterna (spazio libero non contiguo) o interna (memoria allocata ma inutilizzata)[cite: 4182, 4183].
+    \item \textbf{Paginazione}: Divide la memoria fisica in \textit{frame} e quella logica in \textit{pagine}, eliminando la frammentazione esterna[cite: 4187, 4188, 4189].
+    \item \textbf{Memoria Virtuale}: Consente l'esecuzione di processi più grandi della memoria fisica disponibile tramite il \textit{demand paging}[cite: 4233, 4234, 4235, 4239].
+\end{itemize}
+
+
+\section{Storage e I/O}
+I dati sono conservati su \textbf{HDD} (magnetici) o \textbf{SSD} (stato solido)[cite: 4288]. Per lo storage di rete si utilizzano \textbf{NAS} (Network Attached Storage) o \textbf{SAN} (Storage Area Network)[cite: 4303, 4312].
+
+Il sistema \textbf{RAID} (Redundant Array of Independent Disks) migliora l'affidabilità e le prestazioni tramite ridondanza e \textit{striping}[cite: 4317, 4323, 4326].
+
+Le operazioni di I/O sono gestite tramite \textbf{DMA} (Direct Memory Access), che permette il trasferimento di dati tra periferiche e memoria principale senza sovraccaricare la CPU[cite: 4376, 4377].
+
+\section{Interrupt}
+Gli \textbf{Interrupt} segnalano eventi al processore[cite: 4404]. Possono essere hardware (es. I/O ready) o software (eccezioni come divisioni per zero o trap)[cite: 4408, 4410, 4411, 4414, 4415].
+
+\end{document}

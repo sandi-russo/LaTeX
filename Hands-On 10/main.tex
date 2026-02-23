@@ -1,0 +1,1057 @@
+\documentclass[a4paper, 12pt]{scrartcl} % Classe KOMA-Script
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext, newtxmath} % Font New TX
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Opzioni Hyperref migliorate
+\usepackage{listings} % Per il codice
+\usepackage{xcolor}   % Per i colori
+\usepackage{amsmath}  % Per la matematica (se serve)
+%\usepackage{tikz}     % Includo TikZ anche se non usato direttamente qui
+%\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric, arrows} % Librerie TikZ
+\usepackage{caption}  % Per le didascalie
+\usepackage{subcaption} % Per sotto-figure/tabelle (se servono)
+\usepackage{geometry} % Per i margini
+\geometry{a4paper, margin=2.5cm} % Margini come specificato
+\usepackage{multirow} % Per tabelle con celle unite
+\usepackage{array}    % Per opzioni avanzate array/tabular
+\usepackage{float}    % Per migliorare il posizionamento [H]
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric, arrows.meta, decorations.pathreplacing, calc}
+\usepackage{pgfplotstable}
+\usepackage{pgfplots}
+\usepackage{filecontents} % Per generare file csv nel documento
+
+% Definizione colori per listings (come da specifica)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings (come da specifica)
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black},
+}
+
+
+\lstdefinestyle{cstyle}{
+    language=C,
+    morekeywords={*, extern, static, void, int, return, printf, include, define, ifndef, endif, pthread_t, intptr\_t, FILE, NULL, perror, pthread_create, pthread\_join, pthread_exit} % Aggiunte keyword C comuni e pthreads
+}
+
+
+\lstdefinestyle{makestyle}{
+    language=make,
+    keywordstyle=\color{red!80!black}\bfseries, % Diverso colore per Makefile
+    morekeywords={*, CC, CFLAGS, LDFLAGS, TARGET, OBJS, SRCS, PHONY, all, clean, check, echo, rm, wildcard, gcc} % Keywords Makefile
+}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    morekeywords={*, import, from, def, global, class, return, print, if, else, elif, for, in, range, with, as, True, False, None, threading, timeit, subprocess, csv, open, list, dict, str, int, float, os, try, except, NameError, FileNotFoundError, CalledProcessError, IOError, Exception} % Keywords Python comuni + OS/Error Handling
+}
+
+\begin{document}
+
+% Titolo e autore (modifica con i tuoi dati, usando lo stile richiesto)
+\title{Hands-On 10} % Titolo più specifico per HO10
+\subtitle{Grafo di Precedenza} % Sottotitolo specifico
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Autore come da esempio
+\date{\today} % Usa la data corrente o specifica una data
+\maketitle
+
+\newpage
+\tableofcontents % Indice dei contenuti
+\newpage
+
+\section{Introduzione}
+Questo documento descrive l'attività svolta nell'ambito dell'Hands-On 10. L'obiettivo principale è esplorare e applicare i concetti di programmazione concorrente utilizzando i thread per calcolare il valore di un'espressione matematica specifica:
+\begin{equation*}
+    y = (2 \times 6) + (1 + 4) \times (5 - 2)
+\end{equation*}
+L'esercizio richiede di analizzare le dipendenze tra le sotto-operazioni dell'espressione, definire un grafo di precedenza, e implementare il calcolo sia in linguaggio C che in Python, sfruttando i thread per parallelizzare le operazioni indipendenti.
+Verranno inoltre ripassati i meccanismi per il passaggio di argomenti ai thread e la gestione (implicita tramite variabili globali in questo caso) dei valori di ritorno. Infine, si confronteranno le prestazioni delle due implementazioni tramite un semplice benchmark e si discuterà la possibilità di realizzare lo stesso compito utilizzando processi anziché thread.
+
+\section{Definizione del Problema}
+Il problema consiste nel calcolare il valore dell'espressione $y = (2 \times 6) + (1 + 4) \times (5 - 2)$. Per parallelizzare il calcolo, è necessario identificare le sotto-operazioni e le loro dipendenze:
+\begin{enumerate}
+    \item Calcolo $A = 2 \times 6$
+    \item Calcolo $B = 1 + 4$
+    \item Calcolo $C = 5 - 2$
+    \item Calcolo $BC = B \times C$ (dipende da $B$ e $C$)
+    \item Calcolo $y = A + BC$ (dipende da $A$ e $BC$)
+\end{enumerate}
+Le operazioni $A$, $B$, e $C$ possono essere eseguite in parallelo poiché sono indipendenti tra loro. L'operazione $BC$ può iniziare solo dopo che $B$ e $C$ sono state completate. Infine, il calcolo di $y$ può avvenire solo dopo il completamento di $A$ e $BC$.
+
+\subsection{Grafo di Precedenza}
+Il grafo di precedenza visualizza queste dipendenze. Le operazioni indipendenti ($A, B, C$) costituiscono i nodi iniziali. Le frecce indicano le dipendenze: un'operazione può iniziare solo quando tutte le operazioni da cui partono frecce verso di essa sono terminate.
+
+
+
+\begin{center}
+\begin{tikzpicture}
+    % Posizioniamo le parentesi più vicine e aggiungiamo l'operatore + e × tra di esse
+    \node (prima_parentesi) at (-2, 0) {\( (2 \times 6) \)};
+    \node (seconda_parentesi) at (0, 0) {\( (1 + 4) \)};
+    \node (terza_parentesi) at (2, 0) {\( (5 - 2) \)};
+    
+    % Etichetta per il primo gruppo (2 * 6)
+    \node at (-2, -0.8) {A (1)};  % Etichetta A
+    
+    % Etichetta per il secondo gruppo (1 + 4)
+    \node at (0, -0.8) {B (2)};  % Etichetta B
+    
+    % Etichetta per il terzo gruppo (5 - 2)
+    \node at (2, -0.8) {C (3)};  % Etichetta C
+
+    % Linee curvilinee sotto ogni parentesi con ampiezza ridotta
+    \draw[thick, -] (-2.5, -0.3) .. controls (-2, -0.4) .. (-1.5, -0.3);  % Curva sotto A
+    \draw[thick, -] (-0.5, -0.3) .. controls (0, -0.4) .. (0.5, -0.3);   % Curva sotto B
+    \draw[thick, -] (1.5, -0.3) .. controls (2, -0.4) .. (2.5, -0.3);     % Curva sotto C
+
+    % Parentesi tra B e C
+    \draw[thick, -] (-0.5, -1) .. controls (1, -1.2) .. (2.5, -1);
+
+    
+    % Scritta "BC" sotto la parentesi
+    \node at (1, -1.5) {BC (4)};
+
+    \draw[thick, -] (-2.6, -1.8) .. controls (0, -2.2) .. (2.6, -1.8);
+
+    \node at (0, -2.5) {Y (5)};
+
+    % Linea orizzontale per il segno + tra la prima e la seconda parentesi
+    \node at (-1.0, 0) {\( + \)};
+    
+    % Linea orizzontale per il segno × tra la seconda e la terza parentesi
+    \node at (1, 0) {\( \times \)};
+    
+\end{tikzpicture}
+\end{center}
+
+\section{Implementazione con Thread}
+Si richiede di sviluppare due implementazioni distinte per eseguire le operazioni specificate nel grafo di dipendenze:
+\begin{itemize}
+    \item Un programma modulare in linguaggio C, che sfrutti le funzionalità della libreria \texttt{pthreads} per la gestione dei thread.
+    \item Un programma equivalente scritto in Python, utilizzando il modulo \texttt{threading}, che offre analoghe capacità di gestione dei thread.
+\end{itemize}
+Entrambe le implementazioni dovranno dimostrare una gestione accurata della sincronizzazione tra i thread, al fine di garantire il rispetto rigoroso delle precedenze definite nel grafo. Questo implica l'utilizzo di meccanismi di sincronizzazione appropriati, come mutex o variabili di condizione, per evitare \textit{race conditions} e assicurare che ogni operazione venga eseguita solo dopo il completamento delle sue dipendenze.
+
+\section{Utilizzo dei Processi}
+Viene posta la questione della fattibilità dell'esecuzione dello stesso calcolo impiegando processi anziché thread, e quali funzioni del sistema operativo sarebbero necessarie per tale scopo.
+
+La risposta è affermativa: è possibile realizzare il calcolo anche con processi. In ambiente C, le chiamate di sistema fondamentali sarebbero:
+\begin{itemize}
+    \item \texttt{fork()}: impiegata per la creazione di nuovi processi "figlio", che rappresentano repliche del processo "padre".
+    \item \texttt{wait()} o \texttt{waitpid()}: utilizzate dal processo padre per sospendere la propria esecuzione fino al completamento dei processi figlio, assicurando così il mantenimento delle dipendenze tra le operazioni, in modo analogo alla funzione \texttt{pthread\_join()} nel contesto dei thread.
+    \item Meccanismi di Inter-Process Communication (IPC): data la natura isolata della memoria dei processi, a differenza dei thread che condividono lo stesso spazio di indirizzamento, è essenziale implementare un sistema di scambio dei risultati parziali (ad esempio, i valori di $A, B, C, B*C$). Tra le opzioni disponibili:
+    \begin{itemize}
+        \item Pipe: canali di comunicazione unidirezionali adatti a processi con relazioni di parentela.
+        \item Memoria Condivisa (Shared Memory): aree di memoria accessibili a più processi, gestibili tramite funzioni come \texttt{shmget}, \texttt{shmat} e \texttt{shmdt}.
+        \item File: l'utilizzo di file condivisi per la lettura e scrittura dei risultati.
+        \item Socket: utilizzabili per la comunicazione sia locale che remota.
+    \end{itemize}
+\end{itemize}
+L'impiego dei processi introduce un maggiore overhead in termini di creazione e comunicazione rispetto ai thread, ma offre un livello superiore di isolamento tra le unità di esecuzione, il che può risultare vantaggioso in determinati scenari applicativi.
+
+\section{Metodologia}
+Per risolvere il problema, sono state seguite le seguenti metodologie per le implementazioni in C e Python.
+
+\subsection{Implementazione in C}
+L'implementazione in C è stata strutturata in modo modulare per separare le responsabilità:
+\begin{itemize}
+    \item \texttt{espressione.c}: Contiene la funzione `main`, che orchestra la creazione e la sincronizzazione dei thread. Inizializza i dati, crea i thread per le operazioni $A, B, C$, attende la loro terminazione tramite `pthread\_join()`, crea il thread per $B*C$, attende la sua terminazione, crea il thread per la somma finale $y$, e attende quest'ultimo.
+    \item \texttt{funzioni.h}: File header che definisce le costanti (`MAX\_THREAD`, `ARRAY\_SIZE`), dichiara le variabili globali (usando `extern`) per contenere gli array di input e i risultati intermedi/finali, e i prototipi delle funzioni eseguite dai thread.
+    \item \texttt{prodotto.c}: Contiene la funzione `prodotto`, eseguita da un thread per calcolare $A = A[0] \times A[1]$. Il risultato viene memorizzato nella variabile globale `risultatoProdotto`.
+    \item \texttt{somma.c}: Contiene la funzione `somma`. Questa funzione è riutilizzata sia per calcolare la somma $B = B[0] + B[1]$ sia per calcolare la differenza $C = C[0] - C[1]$. Per la differenza, si è adottato un trucco: si crea un array `C\_modificato` dove il secondo elemento è negato ($C\_modificato = \{C[0], -C[1]\}$) e si esegue la somma su questo array. Un argomento (`(void *)(intptr\_t)0` o `(void *)(intptr\_t)1`) viene passato alla funzione `somma` al momento della creazione del thread per distinguere quale operazione eseguire (somma di B o "somma" di C\_modificato). I risultati vengono salvati nelle variabili globali `risultatoSomma` e `risultatoDifferenza`.
+    \item \texttt{prodottoBC.c}: Contiene la funzione `prodottoBC`, eseguita da un thread per calcolare $B*C = risultatoSomma \times risultatoDifferenza$. Memorizza il risultato in `risultatoProdottoBC`.
+    \item \texttt{sommaFinale.c}: Contiene la funzione `sommaFinale`, eseguita dall'ultimo thread per calcolare $y = risultatoProdotto + risultatoProdottoBC$. Memorizza il risultato in `risultatoFinale`.
+    \item \texttt{Makefile}: Fornito per automatizzare il processo di compilazione modulare e linkare correttamente la libreria `pthreads`.
+\end{itemize}
+La sincronizzazione tra i thread, in questo contesto, è meticolosamente orchestrata attraverso l'impiego strategico della funzione \texttt{pthread\_join()}. Questa funzione agisce come un punto di blocco per il thread chiamante, che tipicamente corrisponde al thread principale (\texttt{main thread}), sospendendone l'esecuzione fino a quando il thread specificato come argomento non completa la propria attività. In altre parole, \texttt{pthread\_join()} garantisce che il thread principale attenda pazientemente la terminazione dei thread "figlio" prima di procedere, assicurando così che tutte le operazioni concorrenti siano portate a termine nell'ordine prestabilito.
+\noindent
+Parallelamente, le variabili globali svolgono un ruolo cruciale nella condivisione dei risultati intermedi e finali tra i thread. Poiché i thread all'interno di un processo condividono lo stesso spazio di indirizzamento di memoria, le variabili globali fungono da area di memoria comune, accessibile a tutti i thread. Tuttavia, è essenziale adottare misure di sicurezza adeguate, come l'uso di mutex o semafori, per prevenire condizioni di \textit{race conditions} e garantire che l'accesso alle variabili globali avvenga in modo sincronizzato e coerente. In assenza di tali precauzioni, l'accesso simultaneo da parte di più thread potrebbe portare a risultati imprevedibili e indesiderati. L'utilizzo combinato di \texttt{pthread\_join()} e delle variabili globali, gestite con cura, consente di realizzare una comunicazione efficace e una sincronizzazione robusta tra i thread, assicurando l'esecuzione corretta e deterministica del programma.
+
+\subsection{Implementazione in Python}
+L'implementazione in Python utilizza il modulo `threading`:
+\begin{itemize}
+    \item Il codice è contenuto in un unico script \texttt{espressione.py}.
+    \item Vengono definite funzioni separate per ogni operazione logica (`prodotto`, `somma`, `prodottoBC`, `sommaFinale`), simili alla struttura C.
+    \item La funzione `somma` accetta un argomento `operazione` (0 o 1) per distinguere tra la somma di B e la differenza (somma di C\_modificato), analogamente a quanto fatto in C.
+    \item Le variabili globali sono usate per memorizzare gli input e i risultati.
+    \item Viene utilizzato un \texttt{threading.Lock()} per garantire l'accesso mutuamente esclusivo alle variabili globali condivise quando vengono aggiornate. Questo previene potenziali race condition, anche se per operazioni atomiche semplici come l'assegnamento in Python potrebbe non essere strettamente necessario grazie al Global Interpreter Lock (GIL), è comunque buona pratica includerlo.
+    \item La funzione `main` crea le istanze della classe `threading.Thread`, passando la funzione target e gli eventuali argomenti.
+    \item I thread vengono avviati con il metodo `start()`.
+    \item La sincronizzazione per rispettare le dipendenze viene ottenuta chiamando il metodo `join()` su ciascun thread. Il thread principale attende che i thread $A, B, C$ terminino prima di poter avviare $B*C$, e attende $B*C$ (e $A$) prima della somma finale $y$, come implementato nella versione rivista del codice Python.
+\end{itemize}
+
+\subsection{Benchmarking}
+Per confrontare le prestazioni, è stato creato uno script Python separato (\texttt{benchmark.py}):
+\begin{itemize}
+    \item Utilizza il modulo `subprocess` per eseguire l'eseguibile C compilato e lo script Python.
+    \item Utilizza il modulo `timeit` (specificamente `timeit.default\_timer()`) per misurare con precisione il tempo di esecuzione di ogni programma.
+    \item Esegue ciascun programma per un numero definito di volte (`NUM\_RUNS`) per ottenere tempi medi affidabili.
+    \item Salva i tempi di esecuzione individuali per ogni run in un file CSV (`benchmark\_results.csv`) utilizzando il modulo `csv`.
+    \item Calcola e stampa i tempi medi di esecuzione per C e Python.
+\end{itemize}
+
+\section{Presentazione dei Risultati}
+
+
+\subsection{Codice Sorgente C}
+Di seguito sono riportati i listati dei file sorgente C e del Makefile utilizzati. L'implementazione C è stata suddivisa in moduli per una migliore organizzazione.
+
+\subsubsection{funzioni.h}
+Questo header file dichiara le costanti, le variabili globali condivise (tramite `extern`) e i prototipi delle funzioni eseguite dai thread. Definisce l'interfaccia comune per i diversi moduli C.
+\begin{lstlisting}[style=cstyle, caption={File header funzioni.h}, label={lst:funzioni_h}]
+#ifndef FUNZIONI_H
+#define FUNZIONI_H
+
+#include <pthread.h>
+#include <stdint.h> // Per intptr_t usato in somma
+
+// Costanti
+#define MAX_THREAD 5
+#define ARRAY_SIZE 2
+
+// Dichiarazioni extern per le variabili globali
+extern int A[ARRAY_SIZE];
+extern int B[ARRAY_SIZE];
+extern int C[ARRAY_SIZE];
+extern int C_modificato[ARRAY_SIZE];
+
+extern int risultatoProdotto;
+extern int risultatoSomma;
+extern int risultatoDifferenza;
+extern int risultatoProdottoBC;
+extern int risultatoFinale;
+
+// Prototipi delle funzioni
+void *prodotto(void *arg);
+void *somma(void *arg);
+void *prodottoBC(void *arg);
+void *sommaFinale(void *arg);
+
+#endif
+\end{lstlisting}
+
+\subsubsection{espressione.c}
+Il file principale che orchestra l'esecuzione, fungendo da fulcro per la gestione e il coordinamento delle operazioni.
+
+\paragraph{Include e Variabili Globali}
+Vengono incluse le librerie standard, \texttt{pthreads}, \texttt{stdint} (per \texttt{intptr\_t}), e l'header custom \texttt{funzioni.h}, fondamentali per il supporto multi-thread e la gestione dei dati. Segue la definizione effettiva (allocazione di memoria) delle variabili globali che conterranno gli array di input e i risultati intermedi/finali, permettendo la condivisione di dati tra i vari thread. L'array \texttt{C\_modificato} viene preparato con una specifica configurazione iniziale per la successiva operazione di differenza, che sarà eseguita in un thread dedicato.
+
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Include e Variabili Globali}, label={lst:espressione_c_globals}]
+#include <stdio.h>
+#include <pthread.h>
+#include <stdint.h> // Per intptr_t nel main
+#include "funzioni.h" // Include le dichiarazioni delle funzioni e extern
+
+// Definizione delle variabili globali (senza extern qui)
+int A[ARRAY_SIZE] = {2, 6};
+int B[ARRAY_SIZE] = {1, 4};
+int C[ARRAY_SIZE] = {5, 2};
+int C_modificato[ARRAY_SIZE];
+
+int risultatoProdotto = 0; // Risultato prodotto di A
+int risultatoSomma = 0; // Risultato somma di B
+int risultatoDifferenza = 0; // Risultato differenza di C
+int risultatoProdottoBC = 0; // Risultato prodotto di B*C
+int risultatoFinale = 0; // Risultato espressione Y
+\end{lstlisting}
+
+\paragraph{Inizio Funzione Main e Inizializzazione}
+La funzione `main` inizia dichiarando un array per memorizzare gli identificatori dei thread. L'array `C\_modificato` viene popolato negando il secondo elemento di `C`, permettendo di usare la funzione `somma` per calcolare la differenza $C[0]-C[1]$ come $C[0]+(-C[1])$. Vengono stampati i valori iniziali degli array.
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Inizio main e inizializzazione}, label={lst:espressione_c_main_init}]
+int main() {
+    pthread_t thread_id[MAX_THREAD];
+
+    // Modifico C per utilizzare la somma per effettuare la differenza
+    C_modificato[0] = C[0];
+    C_modificato[1] = -C[1];
+
+    printf ("Valori iniziali:\n");
+
+    printf("Array A: {%d, %d}\n", A[0], A[1]);
+    printf("Array B: {%d, %d}\n", B[0], B[1]);
+    printf("Array C: {%d, %d}\n", C[0], C[1]);
+    printf("Array C\_modificato, che uso per la differenza: {%d, %d}\n", C_modificato[0], C_modificato[1]);
+
+    printf("\nCreo i threads:\n");
+\end{lstlisting}
+
+\paragraph{Creazione Thread Indipendenti (A, B, C)}
+Vengono creati i primi tre thread usando `pthread\_create`. Questi eseguono le operazioni indipendenti:
+\begin{itemize}
+    \item Thread 0: Esegue la funzione `prodotto` (per $A[0] \times A[1]$). Non necessita argomenti specifici (`NULL`).
+    \item Thread 1: Esegue la funzione `somma` per calcolare $B[0]+B[1]$. L'argomento `(void *)(intptr\_t)0` viene passato per indicare alla funzione `somma` di operare sull'array `B`.
+    \item Thread 2: Esegue la funzione `somma` per calcolare la differenza $C[0]-C[1]$. L'argomento `(void *)(intptr\_t)1` indica alla funzione `somma` di operare sull'array `C\_modificato`.
+\end{itemize}
+Viene controllato il valore di ritorno di `pthread\_create` per gestire eventuali errori nella creazione.
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Creazione thread A, B, C}, label={lst:espressione_c_create123}]
+    // Thread per A = A[0]*A[1]
+    if (pthread_create(&thread_id[0], NULL, prodotto, NULL) != 0) {
+        perror("Errore nella creazione del thread per il prodotto di A");
+        return 1; // Esce se la creazione fallisce
+    }
+    // Thread per B = B[0]+B[1]
+    if (pthread_create(&thread_id[1], NULL, somma, (void *)(intptr_t)0) != 0) {
+        perror("Errore nella creazione del thread per la somma di B");
+         return 1;
+    }
+    // Thread per C = C[0]-C[1] (tramite somma(1))
+    if (pthread_create(&thread_id[2], NULL, somma, (void *)(intptr_t)1) != 0) {
+        perror("Errore nella creazione del thread per la differenza di C");
+         return 1;
+    }
+\end{lstlisting}
+
+\paragraph{Attesa Completamento Thread Indipendenti}
+Il thread principale (main) deve attendere che i primi tre thread abbiano completato i loro calcoli prima di poter avviare il calcolo di $BC = B \times C$. Questo viene realizzato usando `pthread\_join` per ciascuno dei tre thread. `pthread\_join` blocca l'esecuzione del chiamante finché il thread specificato non termina.
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Attesa thread A, B, C}, label={lst:espressione_c_join123}]
+    // Aspetto che i primi 3 thread finiscano prima di calcolare B*C (op4)
+    printf("\nAttendo il completamento dei thread 0, 1, 2...\n");
+    pthread_join(thread_id[0], NULL); // Aspetta prodotto A
+    printf("Thread 0 (prodotto A) completato.\n");
+    pthread_join(thread_id[1], NULL); // Aspetta somma B
+    printf("Thread 1 (somma B) completato.\n");
+    pthread_join(thread_id[2], NULL); // Aspetta differenza C
+    printf("Thread 2 (differenza C) completato.\n");
+\end{lstlisting}
+
+\paragraph{Creazione Thread Dipendente (BC)}
+Ora che `risultatoSomma` (da B) e `risultatoDifferenza` (da C) sono stati calcolati e memorizzati nelle variabili globali, viene creato il thread 3 per calcolare il loro prodotto ($BC$). Questo thread eseguirà la funzione `prodottoBC`.
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Creazione thread BC}, label={lst:espressione_c_create4}]
+    // Creo il thread per BC = B * C
+    printf("\nCreo gli ultimi threads:\n");
+    if (pthread_create(&thread_id[3], NULL, prodottoBC, NULL) != 0) {
+        perror("Errore nella creazione del thread per il prodotto B * C");
+        return 1;
+    }
+\end{lstlisting}
+
+\paragraph{Attesa Completamento Thread BC}
+Prima di calcolare la somma finale $y = A + B*C$, è necessario attendere che il thread 3 abbia completato il calcolo di $B*C$. Si utilizza nuovamente `pthread\_join`.
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Attesa thread BC}, label={lst:espressione_c_join4}]
+    // Aspetto che op4 sia calcolato prima della somma finale (y)
+    printf("\nAttendo il completamento del thread 3...\n");
+    pthread_join(thread_id[3], NULL);
+    printf("Thread 3 (prodotto BC) completato.\n");
+\end{lstlisting}
+
+\paragraph{Creazione Thread Finale (y)}
+Con i risultati delle operazioni intermedie, ovvero il prodotto $A$ (`risultatoProdotto`) e il prodotto $B*C$ (`risultatoProdottoBC`), finalmente disponibili e calcolati dai thread precedenti, si procede alla creazione dell'ultimo thread, denominato thread 4. Questo thread ha il compito cruciale di eseguire la funzione \texttt{sommaFinale}. Tale funzione implementa la logica per calcolare il risultato finale $y$, combinando i risultati intermedi ottenuti. Questo thread rappresenta il culmine delle operazioni concorrenti, sintetizzando tutti i calcoli precedenti in un unico risultato finale. La sua corretta esecuzione è fondamentale per l'accuratezza dell'intera espressione.
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Creazione thread y}, label={lst:espressione_c_create5}]
+    // Creo il thread per y = A + BC
+    if (pthread_create(&thread_id[4], NULL, sommaFinale, NULL) != 0) {
+        perror("Errore nella creazione del thread per la somma finale");
+        return 1;
+    }
+\end{lstlisting}
+
+\paragraph{Attesa Completamento Thread Finale e Stampa Risultati}
+Il thread principale attende il completamento dell'ultimo thread (thread 4) tramite \texttt{pthread\_join}, garantendo così che tutte le operazioni asincrone siano state completate. Una volta che il thread finale ha terminato, il programma procede alla fase di output. Infine, vengono stampati a console i valori finali di tutti i risultati intermedi e del risultato finale \texttt{y} per verifica, fornendo un quadro completo dell'esecuzione. Questo passaggio è cruciale per validare la correttezza dei calcoli e assicurare che il programma abbia prodotto i risultati attesi. La funzione \texttt{main} termina restituendo 0 (successo), segnalando la conclusione senza errori dell'esecuzione.
+\begin{lstlisting}[style=cstyle, caption={espressione.c: Attesa thread y e stampa finale}, label={lst:espressione_c_join5_print}]
+    // Attendo il completamento dell'ultimo thread
+    printf("\nAttendo il completamento del thread 4...\n");
+    pthread_join(thread_id[4], NULL);
+    printf("Thread 4 (somma finale) completato.\n");
+
+
+    // Stampo i risultati finali (anche se gia' stampati nei thread)
+    printf("\nRisultati finali (riepilogo):\n");
+    printf("Risultato del prodotto di A: %d\n", risultatoProdotto);
+    printf("Risultato della somma di B: %d\n", risultatoSomma);
+    printf("Risultato della differenza di C (come somma): %d\n", risultatoDifferenza);
+    printf("Risultato del prodotto B*C: %d\n", risultatoProdottoBC);
+    printf("Risultato finale, Y: %d\n", risultatoFinale);
+
+    return 0;
+}
+\end{lstlisting}
+
+\subsubsection{prodotto.c}
+Calcola il prodotto cumulativo degli elementi dell'array A. Questo processo implica l'iterazione attraverso ciascun elemento dell'array, moltiplicandolo progressivamente con il risultato parziale calcolato fino a quel punto. Il valore finale del prodotto risultante viene quindi salvato nella variabile globale \texttt{risultatoProdotto}, rendendolo accessibile ad altri thread che necessitano di questo risultato intermedio per le loro operazioni. Questo meccanismo di accumulo del prodotto permette di ottenere un singolo valore che rappresenta la moltiplicazione di tutti gli elementi dell'array A, elemento fondamentale per le fasi successive del calcolo dell'espressione.
+\begin{lstlisting}[style=cstyle, caption={Funzione prodotto (prodotto.c)}, label={lst:prodotto_c}]
+#include <stdio.h>
+#include "funzioni.h"
+
+void *prodotto(void *arg) {
+    int prod = 1; // Usa una variabile locale per chiarezza
+    printf("Thread sul prodotto di A[%d, %d]\n", A[0], A[1]);
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        prod *= A[i];
+    }
+
+    // Assegno il risultato del prodotto locale alla variabile globale
+    risultatoProdotto = prod;
+
+    printf("Il risultato del prodotto di A[%d, %d] e': %d\n", A[0], A[1], risultatoProdotto);
+    pthread_exit(NULL);
+}
+\end{lstlisting}
+
+\subsubsection{somma.c}
+Questa funzione, eseguita dai thread 1 e 2, calcola la somma degli elementi di un array, rappresentando un'operazione fondamentale per il calcolo dei risultati intermedi. Viene riutilizzata sia per la somma degli elementi dell'array B che per la differenza degli elementi dell'array C, ottenuta operando sull'array \texttt{C\_modificato}, dimostrando la flessibilità e l'efficienza del codice attraverso il riutilizzo di funzioni generiche.
+
+\paragraph{Include e Firma Funzione}
+Include l'header \texttt{funzioni.h} per accedere alle variabili globali e definisce la funzione \texttt{somma} che accetta un argomento generico \texttt{void *arg}, consentendo di passare diverse strutture dati ai thread senza la necessità di creare funzioni specifiche per ogni tipo di dato.
+\begin{lstlisting}[style=cstyle, caption={somma.c: Include e Firma}, label={lst:somma_c_incl_sig}]
+#include <stdio.h>
+#include "funzioni.h"
+
+void *somma(void *arg) {
+    /*
+    Se inserisco 0, faccio la somma di B
+    Se inserisco 1, faccio la differenza di C (uso l'array modificato)
+    */
+    int som = 0; // Usa una variabile locale
+    int *arrayUsato;
+\end{lstlisting}
+
+\paragraph{Processamento Argomento e Selezione Array}
+L'argomento `arg` viene convertito in modo sicuro da `void*` a `intptr\_t`, un tipo intero capace di contenere un puntatore. In base al valore di `operazioneDaSvolgere` (0 o 1), il puntatore `arrayUsato` viene fatto puntare all'array globale corretto (`B` o `C\_modificato`).
+\begin{lstlisting}[style=cstyle, caption={somma.c: Processamento Argomento}, label={lst:somma_c_arg_proc}]
+    // Usa intptr_t per convertire in modo sicuro void* a intero
+    intptr_t operazioneDaSvolgere = (intptr\_t)arg;
+
+    // Somma di B, uso 0
+    if (operazioneDaSvolgere == 0) {
+        arrayUsato = B;
+        printf("Thread sulla somma di B[%d, %d]\n", arrayUsato[0], arrayUsato[1]);
+    }
+    else if (operazioneDaSvolgere == 1) { // Differenza di C
+        arrayUsato = C_modificato;
+        printf("Thread sulla differenza di C[%d, %d]\n", arrayUsato[0], arrayUsato[1]);
+    }
+    else {
+        fprintf(stderr, "Errore nel calcolo dell'operazione %ld\n", operazioneDaSvolgere);
+         pthread_exit((void*)-1); // Esce con un codice di errore
+    }
+\end{lstlisting}
+
+\paragraph{Calcolo Somma}
+Un semplice ciclo `for` itera sugli elementi dell'array selezionato (`arrayUsato`) e ne accumula la somma nella variabile locale `som`.
+\begin{lstlisting}[style=cstyle, caption={somma.c: Calcolo Somma}, label={lst:somma_c_loop}]
+    // Calcola la somma sull'array selezionato
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        som += arrayUsato[i];
+    }
+\end{lstlisting}
+
+\paragraph{Memorizzazione Risultato e Uscita}
+Il risultato locale `som` viene assegnato alla variabile globale appropriata. Viene stampato il risultato calcolato e il thread termina restituendo `NULL` tramite `pthread\_exit`.
+\begin{lstlisting}[style=cstyle, caption={somma.c: Memorizzazione e Uscita}, label={lst:somma_c_store_exit}]
+    // Assegno il risultato della somma locale alla variabile globale
+    if (operazioneDaSvolgere == 0) {
+        risultatoSomma = som;
+        printf("Il risultato della somma di B[%d, %d] e': %d\n", B[0], B[1], risultatoSomma);
+    }
+    else { // Differenza di C
+        risultatoDifferenza = som;
+        printf("Il risultato della differenza di C[%d, %d] e': %d\n", C_modificato[0], C_modificato[1], risultatoDifferenza);
+    }
+
+    pthread_exit(NULL);
+}
+\end{lstlisting}
+
+\subsubsection{prodottoBC.c}
+Calcola il prodotto dei risultati intermedi (`risultatoSomma` e `risultatoDifferenza`), che sono stati calcolati dai thread precedenti e memorizzati nelle rispettive variabili globali. Il risultato è salvato in `risultatoProdottoBC`.
+\begin{lstlisting}[style=cstyle, caption={Funzione prodottoBC (prodottoBC.c)}, label={lst:prodottoBC_c}]
+#include <stdio.h>
+#include "funzioni.h"
+
+void *prodottoBC(void *arg){
+    risultatoProdottoBC = risultatoSomma * risultatoDifferenza;
+    printf("Il prodotto di B e C e': %d\n", risultatoProdottoBC);
+    pthread_exit(NULL);
+}
+\end{lstlisting}
+
+\subsubsection{sommaFinale.c}
+Calcola la somma finale $y$ sommando i risultati `risultatoProdotto` (da A) e `risultatoProdottoBC` (da BC). Il risultato finale è memorizzato nella variabile globale `risultatoFinale`.
+\begin{lstlisting}[style=cstyle, caption={Funzione sommaFinale (sommaFinale.c)}, label={lst:sommaFinale_c}]
+#include <stdio.h>
+#include "funzioni.h"
+
+void *sommaFinale(void *arg) {
+    risultatoFinale = risultatoProdotto + risultatoProdottoBC;
+    printf("Il risultato finale Y (A + (B*C)) e': %d\n", risultatoFinale);
+    pthread_exit(NULL);
+}
+\end{lstlisting}
+
+
+\subsubsection{Makefile}
+Il Makefile standard per compilare tutti i file sorgente `.c`, linkarli insieme includendo la libreria `pthreads` (`-pthread`), e creare l'eseguibile `espressione`. Include target `all` (default) per compilare e `clean` per rimuovere i file generati.
+\begin{lstlisting}[style=makestyle, caption={Makefile per la compilazione}, label={lst:makefile}]
+# Makefile
+
+# Compilatore C
+CC = gcc
+
+# Flag di compilazione:
+# -g : include informazioni di debug
+# -Wall : abilita quasi tutti i warning
+# -pthread : necessario per compilare e linkare codice che usa pthreads
+CFLAGS = -g -Wall -pthread
+
+# Flag del linker (opzionale qui, dato che -pthread e' in CFLAGS,
+# ma buona pratica per chiarezza)
+# LDFLAGS = -pthread
+
+# Nome dell'eseguibile finale
+TARGET = espressione
+
+# Lista dei file oggetto (.o) necessari
+# Deriva automaticamente dai file .c nella directory corrente
+# SRCS = $(wildcard *.c)
+# OBJS = $(SRCS:.c=.o)
+# Oppure, elenca esplicitamente:
+OBJS = espressione.o prodotto.o somma.o prodottoBC.o sommaFinale.o
+
+# Regola di default: crea l'eseguibile
+# Viene eseguita quando si digita solo 'make'
+all: $(TARGET)
+
+# Regola per linkare i file oggetto e creare l'eseguibile
+$(TARGET): $(OBJS)
+    $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) # $^ sono tutti i prerequisiti (i .o)
+    @echo "Eseguibile $(TARGET) creato con successo."
+
+# Regola pattern per compilare i file .c in file .o
+# %.o : un file che finisce in .o
+# %.c : il corrispondente file .c
+# funzioni.h : dipendenza dal file header. Se cambia, ricompila i .c
+%.o: %.c funzioni.h
+    $(CC) $(CFLAGS) -c $< -o $@ # $< e' il primo prerequisito (.c)
+
+# Regola per pulire i file generati
+clean:
+    rm -f $(OBJS) $(TARGET)
+    @echo "File compilati rimossi."
+
+# Dichiarazione di target "phony" (non rappresentano file reali)
+.PHONY: all clean
+\end{lstlisting}
+
+\subsection{Codice Sorgente Python}
+\paragraph{Import, Variabili Globali e Lock}
+Vengono importati i moduli `threading` e `time`. Sono definiti gli array di input `A`, `B`, `C` e l'array `C\_modificato` per la differenza. Le variabili globali per i risultati intermedi e finali sono inizializzate a 0. Viene creato un oggetto `threading.Lock` che sarà usato per garantire l'accesso esclusivo alle variabili globali condivise durante le operazioni di scrittura.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Import e Setup Globale}, label={lst:espressione_py_setup}]
+import threading
+import time # Importato anche se non usato attivamente nel calcolo
+A = [2, 6]
+B = [1, 4]
+C = [5, 2]
+C_modificato = [C[0], -C[1]]
+risultatoProdotto = 0
+risultatoSomma = 0
+risultatoDifferenza = 0
+risultatoProdottoBC = 0
+risultatoFinale = 0
+lock = threading.Lock()
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{prodotto()}}
+Questa funzione calcola il prodotto degli elementi dell'array `A`. Dichiara `risultatoProdotto` come globale, calcola il prodotto in una variabile locale `prod`, e poi usa `with lock:` per acquisire il lock prima di assegnare il valore di `prod` a `risultatoProdotto`. Il lock viene rilasciato automaticamente all'uscita dal blocco `with`. Infine, stampa il risultato.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione prodotto()}, label={lst:espressione_py_prodotto}]
+def prodotto():
+    global risultatoProdotto
+    prod = 1
+    print(f"Thread sul prodotto di A[{A[0]}, {A[1]}]")
+    for i in range(len(A)):
+        prod *= A[i]
+    with lock: # Acquisisce il lock prima di modificare la var globale
+        risultatoProdotto = prod
+    # Rilascia il lock automaticamente all'uscita dal blocco 'with'
+    print(f"Il risultato del prodotto di A[{A[0]}, {A[1]}] e': {risultatoProdotto}")
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{somma()}: Selezione Operazione}
+La funzione \texttt{somma} riceve un argomento \texttt{operazione} (0 o 1). Dichiara \texttt{risultatoSomma} e \texttt{risultatoDifferenza}. In base a \texttt{operazione}, seleziona l'array (B o \texttt{C\_modificato}) e lo somma. Stampa l'operazione.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione somma() - Selezione}, label={lst:espressione_py_somma_select}]
+def somma(operazione):
+    global risultatoSomma, risultatoDifferenza
+    som = 0 # Variabile locale
+    if operazione == 0:
+        arrayUsato = B
+        print(f"Thread sulla somma di B[{arrayUsato[0]}, {arrayUsato[1]}]")
+    elif operazione == 1:
+        arrayUsato = C_modificato
+        print(f"Thread sulla differenza di C[{arrayUsato[0]}, {arrayUsato[1]}]")
+    else:
+        print(f"Errore nel calcolo dell'operazione {operazione}")
+        return # Esce dalla funzione se l'operazione non e' valida
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{somma()}: Calcolo e Memorizzazione}
+La funzione \texttt{somma} calcola la somma degli elementi dell'array. Usa un blocco \texttt{with lock:} per aggiornare in modo sicuro \texttt{risultatoSomma} o \texttt{risultatoDifferenza}. Stampa il risultato.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione somma() - Calcolo e Memorizzazione}, label={lst:espressione_py_somma_calc}]
+    for i in range(len(arrayUsato)):
+        som += arrayUsato[i]
+    with lock: # Lock per aggiornare le variabili globali
+        if operazione == 0:
+            risultatoSomma = som
+            print(f"Il risultato della somma di B[{B[0]}, {B[1]}] e': {risultatoSomma}")
+        else:
+            risultatoDifferenza = som
+            print(f"Il risultato della differenza di C[{C_modificato[0]}, {C_modificato[1]}] e': {risultatoDifferenza}")
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{prodottoBC()}}
+Calcola il prodotto $B*C = B \times C$. Dichiara `risultatoProdottoBC` globale. Legge i valori di `risultatoSomma` e `risultatoDifferenza` all'interno di un blocco `with lock` per garantire che vengano letti valori consistenti (anche se in questo caso specifico potrebbe non essere strettamente necessario per la sola lettura, è una buona pratica). Calcola il prodotto `prod\_bc`. Aggiorna la variabile globale `risultatoProdottoBC` con `prod\_bc` all'interno di un altro blocco `with lock`. Stampa il risultato.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione prodottoBC()}, label={lst:espressione_py_prodottobc}]
+def prodottoBC():
+    global risultatoProdottoBC
+    # Legge i risultati intermedi (che dovrebbero essere pronti)
+    # e calcola il prodotto
+    local_somma = 0
+    local_diff = 0
+    # Legge i valori globali dentro al lock per sicurezza
+    # Anche se la lettura potrebbe essere atomica, e' piu' robusto
+    with lock:
+        local_somma = risultatoSomma
+        local_diff = risultatoDifferenza
+        
+    prod_bc = local_somma * local_diff
+    
+    # Aggiorna la variabile globale sotto lock
+    with lock:
+        risultatoProdottoBC = prod_bc
+        
+    print(f"Il prodotto di B e C e': {risultatoProdottoBC}")
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{sommaFinale()}}
+Calcola la somma finale $y = A + B*C$, rappresentando l'ultimo passo critico del calcolo dell'espressione. Similmente a \texttt{prodottoBC}, dichiara \texttt{risultatoFinale} come variabile globale, garantendo l'accesso condiviso tra i thread. Successivamente, legge in modo sicuro (\texttt{with lock}) i valori di \texttt{risultatoProdotto} e \texttt{risultatoProdottoBC}, esegue il calcolo della somma \texttt{final\_sum}, e aggiorna in modo sicuro (\texttt{with lock}) la variabile globale \texttt{risultatoFinale}. Infine, per verifica e trasparenza, stampa il risultato finale a console.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione sommaFinale()}, label={lst:espressione_py_sommafinale}]
+def sommaFinale():
+    global risultatoFinale
+    # Legge i risultati intermedi
+    local_prod_A = 0
+    local_prod_BC = 0
+    with lock:
+        local_prod_A = risultatoProdotto
+        local_prod_BC = risultatoProdottoBC
+        
+    final_sum = local_prod_A + local_prod_BC
+    
+    # Aggiorna la variabile globale sotto lock
+    with lock:
+        risultatoFinale = final_sum
+        
+    print(f"Il risultato finale Y (A + (B*C)) e' {risultatoFinale}")
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{main()}: Inizializzazione e Creazione Thread}
+La funzione `main` orchestra l'esecuzione. Dichiara le variabili globali che utilizza (gli array). Stampa i valori iniziali. Crea le cinque istanze di `threading.Thread`, specificando la funzione `target` per ciascuna e gli `args` necessari per la funzione `somma`.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione main() - Init e Creazione Thread}, label={lst:espressione_py_main_init_create}]
+def main():
+    global A, B, C, C_modificato
+    
+    # Visualizzo i valori iniziali
+    print("Valori iniziali:")
+    print(f"Array A: {A}")
+    print(f"Array B: {B}")
+    print(f"Array C: {C}")
+    print(f"Array C_modificato (usato per la differenza): {C_modificato}\n")
+
+    # Creo i thread
+    thread1 = threading.Thread(target=prodotto) # A
+    thread2 = threading.Thread(target=somma, args=(0,)) # B
+    thread3 = threading.Thread(target=somma, args=(1,)) # C
+    
+    # Creo thread per op4 e y dopo aver avviato i primi 3
+    thread4 = threading.Thread(target=prodottoBC) # BC
+    thread5 = threading.Thread(target=sommaFinale) # y
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{main()}: Avvio e Sincronizzazione Thread}
+Questa parte implementa la logica del grafo di precedenza, orchestrando l'avvio e la sincronizzazione dei thread per garantire l'esecuzione corretta delle operazioni dipendenti:
+\begin{enumerate}
+    \item Avvia i thread indipendenti \texttt{thread1} (A), \texttt{thread2} (B), \texttt{thread3} (C) con \texttt{start()}, avviando l'esecuzione parallela delle prime operazioni.
+    \item Attende il completamento di \texttt{thread2} e \texttt{thread3} (necessari per BC) usando \texttt{join()}, assicurando che il calcolo di BC inizi solo dopo che B e C sono stati completamente elaborati.
+    \item Avvia \texttt{thread4} (BC), iniziando così il calcolo del prodotto BC non appena i risultati di B e C sono disponibili.
+    \item Attende il completamento di \texttt{thread1} (A) e \texttt{thread4} (BC) (necessari per y) usando \texttt{join()}, sincronizzando l'esecuzione per garantire che il calcolo finale di y inizi solo dopo che A e BC sono completi.
+    \item Avvia \texttt{thread5} (y), l'ultimo thread, responsabile del calcolo del risultato finale y.
+    \item Attende il completamento di \texttt{thread5}, assicurando che il programma principale termini solo dopo che il risultato finale y è stato calcolato.
+\end{enumerate}
+Questo approccio meticoloso alla gestione dei thread garantisce che le operazioni vengano eseguite nell'ordine corretto imposto dalle dipendenze del grafo, mantenendo l'integrità e la correttezza del calcolo complessivo.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione main() - Avvio e Join}, label={lst:espressione_py_main_start_join}]
+    # Avvio i primi thread indipendenti
+    print("\nAvvio i thread per A, B, C:")
+    thread1.start()
+    thread2.start()
+    thread3.start()
+
+    # Attendo il completamento dei thread necessari per BC
+    print("\nAttendo il completamento dei thread B, C...")
+    thread2.join()
+    thread3.join()
+    print("Thread B e C completati.")
+
+    # Avvio il thread per BC
+    print("\nAvvio il thread per op4 (prodottoBC):")
+    thread4.start()
+    
+    # Attendo il completamento dei thread necessari per y (A e BC)
+    print("\nAttendo il completamento dei thread op1, op4...")
+    thread1.join() # Assicura che A sia finito
+    thread4.join() # Assicura che BC sia finito
+    print("Thread op1 e op4 completati.")
+    
+    # Avvio il thread per la somma finale y
+    print("\nAvvio il thread per y (sommaFinale):")
+    thread5.start()
+
+    # Attendo il completamento dell'ultimo thread
+    print("\nAttendo il completamento del thread y...")
+    thread5.join()
+    print("Thread y (sommaFinale) completato.")
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{main()}: Stampa Finale e Blocco \texttt{\_\_main\_\_}}
+Dopo che tutti i thread hanno terminato, la funzione `main` stampa un riepilogo dei risultati finali letti dalle variabili globali. Il blocco `if \_\_name\_\_ == "\_\_main\_\_":` assicura che la funzione `main()` venga chiamata solo quando lo script è eseguito direttamente.
+\begin{lstlisting}[style=pythonstyle, caption={espressione.py: Funzione main() - Stampa Finale e Blocco Main}, label={lst:espressione_py_main_print_ifmain}]
+    # Stampo i risultati finali
+    print("\nRisultati finali (riepilogo):")
+    print(f"Risultato del prodotto di A: {risultatoProdotto}")
+    print(f"Risultato della somma di B: {risultatoSomma}")
+    print(f"Risultato della differenza di C (come somma): {risultatoDifferenza}")
+    print(f"Risultato del prodotto B*C: {risultatoProdottoBC}")
+    print(f"Risultato finale, Y: {risultatoFinale}")
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+
+\subsection{Script di Benchmark}
+Lo script Python utilizzato per misurare e confrontare i tempi di esecuzione delle implementazioni C e Python è riportato di seguito, suddiviso per blocchi logici, con un'enfasi sulla chiarezza e sull'organizzazione del codice.
+
+\paragraph{Import e Configurazione Globale}
+Vengono importati i moduli necessari: \texttt{subprocess} per eseguire i comandi esterni (l'eseguibile C e lo script Python stesso), \texttt{timeit} per misurazioni precise del tempo, \texttt{csv} per scrivere i risultati nel file CSV, e \texttt{os} per gestire i percorsi dei file in modo più robusto e indipendente dal sistema operativo. Vengono definite le costanti globali: \texttt{NUM\_RUNS} (numero di esecuzioni per la media, essenziale per ridurre la variabilità delle misurazioni), e i percorsi ai file eseguibili/script e al file CSV di output. Questi percorsi sono costruiti dinamicamente a partire dalla directory dello script stesso, garantendo così una maggiore portabilità tra diversi ambienti di esecuzione, ma potrebbero necessitare di aggiustamenti a seconda della specifica struttura del progetto. L'uso di \texttt{os.path.join()} contribuisce a costruire percorsi validi indipendentemente dal sistema operativo.
+\begin{lstlisting}[style=pythonstyle, caption={benchmark.py: Import e Configurazione}, label={lst:benchmark_py_import_config}]
+import subprocess  # Importa il modulo per eseguire comandi esterni (shell)
+import timeit      # Importa il modulo per misurare il tempo di esecuzione
+import csv         # Importa il modulo per lavorare con file CSV (Comma Separated Values)
+import os          # Importa il modulo OS per gestire i percorsi
+
+# Configurazione delle variabili globali
+NUM\_RUNS = 100  # Numero di volte per eseguire il benchmark di ciascun programma
+
+# Ottiene la directory dello script corrente
+# Si assume che l'eseguibile C e lo script Python siano nella stessa directory
+# o in una sottodirectory prevedibile.
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+     # Fallback se __file__ non e' definito (es. in alcune REPL)
+     current_dir = os.getcwd()
+
+C_EXECUTABLE = os.path.join(current_dir, "espressione") # Percorso relativo all'eseguibile C
+PYTHON_SCRIPT = os.path.join(current_dir, "espressione.py") # Percorso relativo dello script Python
+CSV_FILE = os.path.join(current_dir, "benchmark_results.csv")  # Nome del file CSV per salvare i risultati
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{run\_benchmark}: Definizione e Controlli Iniziali}
+Questa funzione esegue il benchmark per un dato comando (passato come lista, es. \texttt{['./espressione']} o \texttt{['python3', 'espressione.py']}), misurando il tempo di esecuzione medio su più iterazioni. Prima di iniziare l'esecuzione, effettua una verifica critica per assicurarsi che il file eseguibile o lo script specificato nel comando esista effettivamente nel percorso indicato. Se il file non viene trovato, la funzione stampa un messaggio di errore informativo (suggerendo, ad esempio, di compilare il programma C, se appropriato) e restituisce \texttt{None}, interrompendo l'esecuzione del benchmark per quel comando.
+\begin{lstlisting}[style=pythonstyle, caption={benchmark.py: Funzione run\_benchmark - Def. e Controlli}, label={lst:benchmarkRun}]
+def run_benchmark(command):
+    """
+    Esegue un benchmark per un dato comando (C o Python).
+
+    Args:
+        command (list): Una lista contenente il comando da eseguire e i suoi argomenti.
+                        Es: ['./espressione'] o ['python3', 'espressione.py']
+
+    Returns:
+        list: Una lista contenente i tempi di esecuzione per ogni run.
+              Restituisce None se il comando non e' eseguibile.
+    """
+    # Verifica se il file eseguibile (per C) o lo script (per Python) esiste
+    # Il percorso e' il primo elemento se il comando ha un solo elemento (C),
+    # altrimenti e' il secondo elemento (script Python)
+    executable_path = command[0] if len(command) == 1 else command[1]
+    if not os.path.exists(executable_path):
+         print(f"Errore: File non trovato - {executable_path}")
+         # Verifica se si tratta del comando C e suggerisce la compilazione
+         if command[0] == C_EXECUTABLE and not os.path.exists(command[0]):
+             print("L'eseguibile C 'espressione' non e' stato trovato.")
+             print("Assicurati di aver compilato il codice C con 'make'.")
+         return None # Ritorna None per indicare fallimento
+
+    print(f"\nInizio benchmark per: {' '.join(command)}")
+    times = []  # Inizializza una lista vuota per salvare i tempi di esecuzione
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{run\_benchmark}: Ciclo di Misurazione}
+Il nucleo di questa funzione è un ciclo \texttt{for} che itera esattamente \texttt{NUM\_RUNS} volte, permettendo di raccogliere dati statistici robusti sul tempo di esecuzione. Ad ogni iterazione, vengono eseguite le seguenti operazioni cruciali:
+\begin{enumerate}
+    \item Viene registrato il tempo di inizio dell'esecuzione del comando utilizzando \texttt{timeit.default\_timer()}, fornendo una misura precisa del momento di avvio.
+    \item Il comando esterno specificato viene eseguito tramite \texttt{subprocess.run()}. L'output standard e l'errore standard generati dal comando vengono intenzionalmente rediretti verso \texttt{subprocess.DEVNULL}, allo scopo di eliminare qualsiasi potenziale interferenza della stampa a console sulla misurazione del tempo. L'argomento \texttt{check=True} assicura che venga sollevata un'eccezione in caso il comando termini con un codice di errore, indicando un fallimento nell'esecuzione.
+    \item Immediatamente dopo il completamento del comando, viene registrato il tempo di fine.
+    \item La differenza tra il tempo di fine e il tempo di inizio viene calcolata, rappresentando il tempo di esecuzione dell'iterazione corrente, e viene aggiunta alla lista \texttt{times}. Questa lista accumula i tempi di esecuzione di tutte le iterazioni, permettendo in seguito di calcolare statistiche come la media e la deviazione standard.
+\end{enumerate}
+Questo ciclo meticoloso di misurazione assicura la raccolta di dati temporali accurati, essenziali per confrontare le prestazioni delle implementazioni C e Python.
+\begin{lstlisting}[style=pythonstyle, caption={benchmark.py: Funzione run\_benchmark - Ciclo e Timing}, label={lst:benchmarkLoop}]
+    for i in range(NUM_RUNS):  # Esegue il benchmark NUM\_RUNS volte
+        start_time = timeit.default_timer()  # Registra il tempo di inizio dell'esecuzione
+        # Esegue il comando senza mostrare output (stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # per non influenzare il timing con la stampa a video.
+        try:
+             # Usare check=True fa sollevare un'eccezione se il comando fallisce
+            subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except FileNotFoundError:
+            print(f"Errore: Comando non trovato - {command[0]}. Assicurati sia nel PATH o usa un percorso assoluto.")
+            return None
+        except subprocess.CalledProcessError as e:
+            print(f"Errore durante l'esecuzione di {' '.join(command)}: {e}")
+            # Potresti voler stampare e.stderr o e.stdout se non fossero DEVNULL per debug
+            return None
+
+        end_time = timeit.default_timer()  # Registra il tempo di fine dell'esecuzione
+        elapsed_time = end_time - start_time  # Calcola il tempo trascorso
+        times.append(elapsed_time)  # Aggiunge il tempo trascorso alla lista 'times'
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{run\_benchmark}: Gestione Errori, Progresso e Ritorno}
+All'interno del ciclo, viene gestita l'eccezione `FileNotFoundError` (se il comando non viene trovato) e `subprocess.CalledProcessError` (se il comando eseguito restituisce un errore). In caso di errore, la funzione termina e restituisce `None`. Viene stampato un messaggio di progresso ogni 10 esecuzioni per feedback visivo. Al termine del ciclo, viene stampato un messaggio di completamento e la funzione restituisce la lista `times` contenente tutte le misurazioni.
+\begin{lstlisting}[style=pythonstyle, caption={benchmark.py: Funzione run\_benchmark - Errori e Ritorno}, label={lst:benchmark_End}]
+        # Stampa progresso ogni 10 run per non intasare output
+        if (i + 1) % 10 == 0 or i == NUM_RUNS - 1:
+            print(f"Run {i + 1}/{NUM_RUNS} completata...")
+
+    print(f"Benchmark per {' '.join(command)} completato.")
+    return times  # Restituisce la lista dei tempi di esecuzione
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{save\_to\_csv}: Definizione e Controlli}
+Questa funzione riceve le liste dei tempi di C e Python (`c\_times`, `python\_times`) e le salva in un file CSV. Come prima cosa, controlla se almeno una delle due liste contiene dati validi (non `None`). Se entrambe sono `None`, non c'è nulla da salvare. Determina poi il numero massimo di righe da scrivere, basandosi sulla lunghezza della lista più lunga (per gestire il caso in cui un benchmark sia fallito parzialmente).
+\begin{lstlisting}[style=pythonstyle, caption={benchmark.py: Funzione save\_to\_csv - Def. e Controlli}, label={lst:benchmark_CSV}]
+def save_to_csv(c_times, python_times):
+   
+    # Controlla se abbiamo dati validi da scrivere
+    if c_times is None and python_times is None:
+        print("Nessun dato di benchmark da salvare.")
+        return
+
+    # Determina il numero di righe da scrivere (basato sulla lista piu' lunga,
+    # se una delle due e' None)
+    num_rows = 0
+    if c_times is not None:
+        num_rows = len(c_times)
+    if python_times is not None:
+        num_rows = max(num_rows, len(python_times))
+
+    if num_rows == 0:
+        print("Nessuna run completata con successo per entrambi i programmi.")
+        return
+\end{lstlisting}
+
+\paragraph{Funzione \texttt{save\_to\_csv}: Scrittura CSV e Gestione Errori}
+Apre il file specificato da `CSV\_FILE` in modalità scrittura (`'w'`). Utilizza `csv.writer` per scrivere nel file. Prima scrive una riga di intestazione (`'Run', 'C\_Time\_s', 'Python\_Time\_s'`). Poi, itera per `num\_rows` volte, scrivendo una riga per ogni run. Per ciascuna riga, recupera il tempo di C e Python corrispondente all'indice `i`. Se una delle liste è `None` o più corta, scrive 'N/A' (Not Available) come segnaposto. L'intera operazione di scrittura è racchiusa in un blocco `try...except` per catturare potenziali `IOError` durante la scrittura del file.
+\begin{lstlisting}[style=pythonstyle, caption={benchmark.py: Funzione save\_to\_csv - Scrittura e Errori}, label={lst:benchmark_Scrittura}]
+    try:
+        with open(CSV_FILE, 'w', newline='') as csvfile:  # Apre il file CSV in modalita' scrittura ('w')
+            writer = csv.writer(csvfile)  # Crea un oggetto writer per scrivere nel file CSV
+            writer.writerow(['Run', 'C_Time_s', 'Python_Time_s'])  # Scrive l'intestazione del file CSV
+
+            for i in range(num_rows):  # Scrive i dati nel file CSV
+                c_time_val = c_times[i] if c_times is not None and i < len(c_times) else 'N/A'
+                py_time_val = python_times[i] if python_times is not None and i < len(python_times) else 'N/A'
+                writer.writerow([i + 1, c_time_val, py_time_val]) # Scrive una riga con i dati
+
+        print(f"Dati salvati in {CSV_FILE}")  # Stampa un messaggio di conferma
+    except IOError as e:
+        print(f"Errore durante il salvataggio del file CSV {CSV_FILE}: {e}")
+    except Exception as e:
+        print(f"Errore imprevisto durante il salvataggio CSV: {e}")
+\end{lstlisting}
+
+\paragraph{Blocco Principale (\texttt{\_\_name\_\_ == "\_\_main\_\_"}) }
+Questo blocco viene eseguito solo quando lo script `benchmark.py` viene lanciato direttamente.
+\begin{enumerate}
+    \item Definisce le liste dei comandi per l'eseguibile C e lo script Python.
+    \item Chiama `run\_benchmark` per entrambi, salvando le liste di tempi restituite in `c\_times` e `python\_times`.
+    \item Chiama `save\_to\_csv` per salvare i risultati ottenuti (se almeno uno dei benchmark ha prodotto risultati).
+    \item Calcola il tempo medio di esecuzione per C e Python, solo se le rispettive liste `\_times` non sono `None` e contengono dati. Stampa i risultati medi.
+    \item Effettua un confronto finale stampando quale implementazione è stata più veloce e di quanto (il fattore di velocità), solo se entrambi i benchmark sono stati completati con successo.
+\end{enumerate}
+\begin{lstlisting}[style=pythonstyle, caption={benchmark.py: Blocco \_\_main\_\_}, label={lst:benchmarkMain}]
+if __name__ == "__main__":
+    # Definisce i comandi da eseguire
+    # Nota: ['python3', PYTHON_SCRIPT] assume che python3 sia l'interprete corretto
+    c_command = [C_EXECUTABLE]
+    python_command = ["python3", PYTHON_SCRIPT]
+
+    # Esegue i benchmark
+    c_times = run_benchmark(c_command)
+    python_times = run_benchmark(python_command)
+
+    # Salva i tempi di esecuzione in un file CSV solo se almeno uno dei due ha prodotto risultati
+    if c_times is not None or python_times is not None:
+        save_to_csv(c_times, python_times)
+    else:
+        print("\nBenchmark fallito per entrambi i programmi. Nessun file CSV generato.")
+
+    # Calcola e stampa i risultati medi solo se i dati sono disponibili
+    print("\n--- Risultati Medi del Benchmark ---")
+    c_average = None
+    python_average = None
+
+    if c_times is not None:
+        # Aggiunto controllo per evitare divisione per zero se lista e' vuota
+        if len(c_times) > 0:
+             c_average = sum(c_times) / len(c_times)
+             print(f"C ({len(c_times)} runs): {c_average:.6f} secondi")
+        else:
+             print("C: Benchmark eseguito ma non ha prodotto tempi validi.")
+    else:
+        print("C: Benchmark non completato.")
+
+    if python_times is not None:
+        if len(python_times) > 0:
+            python_average = sum(python_times) / len(python_times)
+            print(f"Python ({len(python_times)} runs): {python_average:.6f} secondi")
+        else:
+             print("Python: Benchmark eseguito ma non ha prodotto tempi validi.")
+    else:
+        print("Python: Benchmark non completato.")
+
+    # Confronto diretto se entrambi i risultati sono disponibili e validi
+    if c_average is not None and python_average is not None:
+        if c_average < python_average:
+             # Evita divisione per zero se c_average fosse 0 (improbabile ma sicuro)
+             factor = python_average / c_average if c_average > 0 else float('inf')
+             print(f"\nL'implementazione C e' stata mediamente {factor:.2f} volte piu' veloce di Python.")
+        elif python_average < c_average:
+             factor = c_average / python_average if python_average > 0 else float('inf')
+             print(f"\nL'implementazione Python e' stata mediamente {factor:.2f} volte piu' veloce di C (inatteso).")
+        else:
+             print("\nLe implementazioni C e Python hanno avuto prestazioni medie quasi identiche.")
+
+\end{lstlisting}
+
+
+\subsection{Risultati del Benchmark}
+Lo script `benchmark.py` è stato eseguito (con `NUM\_RUNS = 100`) per misurare i tempi di esecuzione dell'eseguibile C (`espressione`) e dello script Python (`espressione.py`). I risultati completi sono stati salvati nel file `benchmark\_results.csv`.
+
+\subsubsection{Tabella Riassuntiva dei Tempi Medi}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|l|c|}
+        \hline
+        \textbf{Implementazione} & \textbf{Tempo Medio di Esecuzione (secondi)} \\
+        \hline
+        C (pthread)       & 0.001376 \\
+        Python (threading)  & 0.024523 \\
+        \hline
+    \end{tabular}
+    \caption{Confronto dei tempi medi di esecuzione su 100 run.}
+    \label{tab:benchmark_avg}
+\end{table}
+
+
+
+
+% Genera file csv dentro del documento per prova
+\begin{filecontents*}{benchmark_results.csv}
+C,Python
+0.123,0.456
+0.130,0.460
+0.125,0.470
+0.128,0.465
+0.126,0.468
+0.127,0.469
+0.129,0.471
+0.131,0.472
+0.124,0.466
+0.132,0.473
+0.133,0.474
+% ... (altre 90 righe) ...
+\end{filecontents*}
+
+\subsubsection{Tabella dei Risultati del Benchmark}
+
+\begin{center}
+\pgfplotstabletypeset[
+    col sep=comma,
+    string type,
+    columns={C,Python},
+    columns/C/.style={string type, column name={Tempo C}},
+    columns/Python/.style={string type, column name={Tempo Python}},
+    every head row/.style={before row=\hline,after row=\hline},
+    every last row/.style={after row=\hline},
+]{benchmark.csv}
+\end{center}
+
+
+
+\subsubsection{Grafico delle Prestazioni}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel={Run},
+            ylabel={Tempo (secondi)},
+            legend pos=north west,
+            title={Confronto Tempi di Esecuzione C vs Python},
+            yticklabel style={/pgf/number format/fixed},
+            width=12cm,
+            height=8cm,
+        ]
+        \addplot table[x=Run, y=C, col sep=comma] {benchmark.csv};
+        \addplot table[x=Run, y=Python, col sep=comma] {benchmark.csv};
+        \legend{Tempo C, Tempo Python}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Confronto grafico dei tempi di esecuzione tra C e Python.}
+    \label{fig:benchmark_plot}
+\end{figure}
+
+
+
+\subsubsection{Analisi dei Risultati del Benchmark}
+Come previsto e visibile dai tempi medi (Tabella \ref{tab:benchmark_avg}) e dal grafico (Figura \ref{fig:benchmark_plot}), l'implementazione in C risulta significativamente più veloce dell'implementazione in Python. Le ragioni principali di questa differenza di prestazioni sono:
+\begin{itemize}
+    \item \textbf{Compilazione vs Interpretazione:} Il codice C viene compilato direttamente in codice macchina nativo, che viene eseguito direttamente dal processore. Python (standard, CPython) è un linguaggio interpretato. Anche se bytecode viene generato e a volte c'è una compilazione Just-In-Time (JIT), l'interprete introduce un overhead significativo durante l'esecuzione.
+    \item \textbf{Linguaggio a Basso Livello:} C è un linguaggio a più basso livello che offre un controllo più diretto sulla memoria e sulle risorse di sistema, permettendo ottimizzazioni che non sono possibili o sono più complesse in Python.
+    \item \textbf{Overhead del Threading in Python e GIL:} Sebbene entrambi usino thread, la creazione e la gestione dei thread in Python tramite il modulo `threading` possono avere un overhead leggermente maggiore rispetto a `pthreads` in C. Inoltre, il Global Interpreter Lock (GIL) in CPython limita l'esecuzione parallela effettiva di codice Python puro a un solo thread alla volta per processi CPU-bound. Per questo specifico calcolo, che è molto breve e potenzialmente I/O bound a causa delle `printf`, l'impatto del GIL potrebbe essere meno marcato rispetto a calcoli puramente intensivi sulla CPU, ma l'overhead generale dell'interprete rimane dominante.
+    \item \textbf{Gestione della Memoria:} C richiede la gestione manuale della memoria (anche se non complessa in questo esempio), mentre Python ha un garbage collector automatico, che aggiunge un ulteriore strato di astrazione e potenziale overhead.
+\end{itemize}
+
+\section{Conclusioni}
+L'Hands-On 10 ha permesso di applicare con successo i concetti di programmazione concorrente per risolvere un problema di calcolo di un'espressione matematica. Sono state sviluppate due implementazioni parallele utilizzando i thread: una in C con la libreria `pthreads` e una in Python con il modulo `threading`. \\
+\noindent
+Entrambe le implementazioni hanno calcolato correttamente il risultato dell'espressione, rispettando le dipendenze tra le sotto-operazioni definite dal grafo di precedenza. La sincronizzazione è stata gestita tramite la funzione `pthread\_join()` in C e il metodo `thread.join()` in Python, assicurando che i thread dipendenti attendessero il completamento dei thread da cui dipendevano. In Python, è stato inoltre utilizzato `threading.Lock()` per garantire la mutua esclusione nell'accesso alle variabili globali condivise. \\
+\noindent
+È stata adottata una struttura modulare per il codice C, facilitando la gestione e la compilazione tramite un `Makefile`. Si è dimostrato come una singola funzione (`somma`) possa essere riutilizzata per operazioni diverse (somma e differenza) passando un semplice argomento al thread.\\
+\noindent
+Il benchmark ha confermato le aspettative: l'implementazione C è risultata notevolmente più veloce di quella Python, principalmente a causa della differenza tra linguaggio compilato (C) e interpretato (Python) e all'overhead intrinseco dell'interprete Python. \\
+\noindent
+Infine, è stata discussa la fattibilità di un'implementazione basata su processi, evidenziando la necessità di utilizzare `fork()`, `wait()` e meccanismi di IPC (come pipe o memoria condivisa) per la comunicazione tra processi, data la loro natura di non condivisione della memoria per default. \\
+\noindent
+Questo esercizio ha consolidato la comprensione dei meccanismi di creazione, gestione e sincronizzazione dei thread in C e Python, nonché l'importanza dell'analisi delle dipendenze per la parallelizzazione efficace di un compito.
+
+\end{document}

@@ -1,0 +1,511 @@
+\documentclass[a4paper, 12pt, titlepage]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, calc}
+
+\geometry{a4paper, top=3cm, bottom=3cm, left=2.5cm, right=2.5cm}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    urlcolor=blue!80!black,
+    citecolor=red!70!black,
+    pdftitle={Analisi Comparativa Oracle vs Neo4j},
+    pdfauthor={Sandi Russo},
+}
+
+\definecolor{codegreen}{rgb}{0,0.5,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.96}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{blue!80!black}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    framerule=0.5pt,
+    rulecolor=\color{black!20}
+}
+\lstset{style=mystyle}
+
+\lstdefinelanguage{SQL}{
+    morekeywords={SELECT,FROM,WHERE,JOIN,ON,GROUP,BY,HAVING,ORDER,AS,WITH,AND,OR,NOT,IN,CASE,WHEN,THEN,ELSE,END,DESC,ASC,IS,NULL,DISTINCT,COUNT,SUM,AVG,MAX,MIN,INTERVAL,ADD_MONTHS,TRUNC,SYSDATE,ROUND},
+    sensitive=false,
+    morecomment=[l]--,
+    morestring=[b]',
+    morestring=[b]"
+}
+\lstdefinelanguage{Cypher}{
+    morekeywords={MATCH,WHERE,WITH,RETURN,ORDER,BY,AS,UNWIND,COLLECT,COUNT,SUM,AVG,MAX,MIN,DISTINCT,OPTIONAL,CREATE,MERGE,SET,DELETE,REMOVE,ON,CREATE,START,DESC,ASC,AND,OR,NOT,IN,CASE,WHEN,THEN,ELSE,END,TRUE,FALSE,NULL,date,duration,toFloat,round,elementId},
+    sensitive=false,
+    morecomment=[l]//,
+    morestring=[b]',
+    morestring=[b]"
+}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{blue!60!black}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{black}}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\normalsize\bfseries}
+  {\thesubsubsection}{1em}{}
+
+\newcommand{\makeunilogo}{
+    \vspace{2cm}
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    
+    \makeunilogo
+    
+    \Huge\bfseries
+    Università degli Studi di Messina
+    
+    \vspace{1.5cm}
+    
+    \Large
+    CdL in Scienze Informatiche \\
+    Basi di Dati - Modulo NoSQL \\
+    A.A. 2024/2025
+    
+    \vspace{2.5cm}
+    
+    \textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+    \vspace{0.4cm}
+    \Huge\bfseries
+    Benchmark delle Prestazioni tra \\ Oracle (RDBMS) e Neo4j (Grafo) \\nell'Identificazione di Frodi IVA
+    \vspace{0.4cm}
+    \textcolor{blue!70!black}{\rule{\linewidth}{0.4mm}}
+    
+    \vspace{2cm}
+    
+    \Large
+    \textbf{Sandi Russo, 553675} \\
+    \vspace{0.5cm}
+
+    \vfill
+    
+    \Large
+    \today
+    
+\end{titlepage}
+
+\begin{abstract}
+\noindent
+Questo studio presenta un'analisi comparativa delle prestazioni tra un database relazionale, Oracle, e un database a grafo, Neo4j, nel contesto dell'identificazione di frodi IVA. Attraverso la generazione di un dataset sintetico su larga scala, sono state confrontate le performance dei due sistemi su quattro query archetipiche, progettate per simulare sia ricerche basate su proprietà aggregate sia l'analisi di pattern relazionali complessi come le triangolazioni. I risultati dimostrano la superiorità di Oracle nelle operazioni set-based a bassa profondità e il dominio di Neo4j nell'attraversamento di percorsi complessi. La relazione conclude che, sebbene nessuna tecnologia sia universalmente superiore, un'architettura ibrida che sfrutta i punti di forza di entrambi i paradigmi rappresenta la soluzione più efficace per un'analisi delle frodi completa in un contesto enterprise.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Problema Affrontato: le Frodi IVA}
+Le frodi sull'Imposta sul Valore Aggiunto (IVA), e in particolare le cosiddette \textit{frodi carosello}, costituiscono una delle maggiori fonti di perdita di gettito fiscale per gli Stati membri dell'Unione Europea e per le economie globali. Tali schemi fraudolenti si basano su catene di transazioni, spesso transnazionali, architettate con il solo scopo di evadere il pagamento dell'IVA e/o di ottenere indebiti rimborsi.
+
+Le caratteristiche principali di queste frodi sono:
+\begin{itemize}
+    \item \textbf{Complessità Relazionale:} Il cuore della frode non risiede in una singola transazione, ma in una rete complessa di rapporti tra più entità (aziende, persone, banche). L'individuazione richiede di analizzare non solo i dati, ma soprattutto le \textbf{connessioni} tra di essi.
+    \item \textbf{Società Cartiera (\textit{Missing Trader}):} Vengono create società fittizie che acquistano beni o servizi, addebitano l'IVA ai loro clienti, ma scompaiono senza versarla allo Stato.
+    \item \textbf{Triangolazioni e Flussi Anomali:} Il denaro e le merci seguono percorsi non lineari, spesso passando per intermediari in paesi con regimi fiscali differenti o paradisi fiscali, per offuscare l'origine e la destinazione dei flussi.
+    \item \textbf{Volume dei Dati:} Le autorità fiscali devono analizzare milioni di transazioni, anagrafiche e bilanci, rendendo l'analisi manuale impraticabile.
+\end{itemize}
+
+Questo studio si propone di valutare l'efficacia di due tecnologie di database antitetiche per affrontare questa sfida: \textbf{Oracle}, un database relazionale (RDBMS) maturo e leader di mercato, e \textbf{Neo4j}, il più popolare database a grafo nativo. L'obiettivo è determinare quale paradigma si presti meglio all'analisi di pattern di frode complessi, confrontando le loro prestazioni su un vasto dataset sintetico che simula uno scenario realistico.
+
+\subsection{Generazione e Scala del Dataset}
+Per condurre un'analisi rigorosa, è stato generato un dataset di base (profilo 100\%) con le seguenti cardinalità:
+\begin{itemize}
+    \item \textbf{Nazioni:} 190
+    \item \textbf{Banche:} 500
+    \item \textbf{Aziende:} 70.000
+    \item \textbf{Persone:} 150.000
+    \item \textbf{Carte di Credito:} 100.000
+    \item \textbf{Transazioni B2B:} 500.000
+\end{itemize}
+Da questo dataset sono stati derivati tre sottoinsiemi di dimensioni decrescenti (75\%, 50\%, 25\%) per valutare come le prestazioni dei due DBMS scalano al variare del volume dei dati.
+
+\section{Le Soluzioni DBMS a Confronto}
+La scelta del database è un fattore critico che influenza non solo le prestazioni, ma anche la facilità di modellazione del problema e l'espressività delle query.
+
+\subsection{Oracle e il Paradigma Relazionale}
+Oracle Database è l'archetipo del sistema di gestione di database relazionale (RDBMS). Il suo modello, basato sull'algebra relazionale, organizza i dati in \textbf{tabelle} bidimensionali composte da righe e colonne. Le relazioni tra le diverse tabelle sono logicamente definite tramite \textbf{chiavi primarie ed esterne}.
+
+\subsubsection{Architettura e Punti di Forza}
+\begin{itemize}
+    \item \textbf{Consistenza e Affidabilità (ACID):} Oracle è costruito attorno alle proprietà ACID (Atomicità, Consistenza, Isolamento, Durabilità). Questo garantisce che ogni transazione sia eseguita in modo affidabile, rendendolo la scelta d'elezione per sistemi critici come quelli finanziari e bancari.
+    \item \textbf{Potenza nelle Operazioni Set-Based:} Il linguaggio SQL e il motore di Oracle sono eccezionalmente ottimizzati per operazioni su insiemi di dati (\textit{set-based}). Query che richiedono di scansionare, filtrare, aggregare (\texttt{SUM}, \texttt{COUNT}) e ordinare grandi quantità di righe sono il suo punto di forza.
+    \item \textbf{Maturità ed Ecosistema:} Decenni di sviluppo hanno prodotto un sistema stabile, sicuro e con un ecosistema di strumenti, documentazione e competenze professionali senza pari.
+    \item \textbf{Ottimizzatore di Query Sofisticato:} L'ottimizzatore di Oracle è uno dei più avanzati al mondo, capace di analizzare una query SQL e di scegliere il piano di esecuzione più efficiente (es. quale indice usare, in che ordine eseguire i join).
+\end{itemize}
+
+\subsubsection{Limiti nel Contesto delle Frodi}
+Il principale svantaggio del modello relazionale emerge quando si analizzano relazioni complesse e percorsi lunghi. L'identificazione di una triangolazione \texttt{A -> B -> C} richiede in SQL una serie di operazioni di \texttt{JOIN}. Ogni \texttt{JOIN} è computazionalmente costoso, e il costo cresce esponenzialmente con la profondità della ricerca, poiché il database deve manipolare insiemi di risultati intermedi sempre più grandi.
+
+\subsection{Neo4j e il Paradigma a Grafo}
+Neo4j è un database a grafo \textbf{nativo}. A differenza dei sistemi relazionali, non modella le connessioni tramite puntatori logici (chiavi esterne), ma le tratta come elementi di prima classe. Il suo modello si fonda su:
+\begin{itemize}
+    \item \textbf{Nodi:} Rappresentano le entità (es. un'Azienda, una Nazione).
+    \item \textbf{Relazioni:} Connessioni dirette, tipizzate e direzionate tra i nodi (es. \texttt{[:REGISTRATA\_IN]}).
+    \item \textbf{Proprietà:} Coppie chiave-valore per arricchire nodi e relazioni con metadati.
+\end{itemize}
+
+\subsubsection{Architettura e Punti di Forza}
+\begin{itemize}
+    \item \textbf{Prestazioni nell'Attraversamento:} La sua caratteristica distintiva è l'\textit{Index-Free Adjacency}. Ogni nodo memorizza un puntatore fisico diretto alle sue relazioni e ai nodi adiacenti. Quando si esegue una query che segue un percorso (es. `(Azienda)->(Transazione)->(Azienda)`), Neo4j attraversa questi puntatori in memoria. La performance di questa operazione dipende solo dal numero di nodi attraversati nel percorso, non dalla dimensione totale del database. Questo rende le query su percorsi complessi e profondi estremamente veloci.
+    \item \textbf{Modellazione Intuitiva:} Il modello a grafo, spesso rappresentato su una lavagna come "bolle e frecce", si traduce quasi direttamente nello schema del database. Questo rende la modellazione di domini complessi come le frodi molto più naturale e comprensibile.
+    \item \textbf{Linguaggio Cypher:} Cypher è un linguaggio dichiarativo progettato per esprimere pattern di grafo in modo ASCII-art. Una query come \texttt{MATCH (a1)-[]->(a2)-[]->(a3)} è sia leggibile che potente.
+\end{itemize}
+
+\subsubsection{Limiti nel Contesto delle Frodi}
+Neo4j è meno efficiente quando deve rispondere a domande che non partono da un punto specifico del grafo ma richiedono di scansionare e aggregare proprietà su tutti i nodi di un certo tipo (es. "qual è l'importo medio di tutte le transazioni?"). In questi casi, un RDBMS che può eseguire una scansione tabellare ottimizzata è spesso più veloce.
+
+\newpage
+\section{Progettazione e Modellazione dei Dati}
+
+\subsection{Modello Relazionale (Oracle)}
+In Oracle, lo schema è stato definito tramite tabelle normalizzate per garantire l'integrità dei dati ed evitare ridondanze. Le relazioni sono implementate tramite vincoli di Fk
+
+\subsubsection{Schema Fisico}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Grafici/DIAGRAMMA_ORACLE.png}
+    \caption{Schema Entità-Relazione implementato in Oracle.}
+    \label{fig:schema_oracle}
+\end{figure}
+
+\subsubsection{Definizione delle Tabelle (DDL)}
+\begin{lstlisting}[language=SQL, caption=DDL per le tabelle principali in Oracle]
+CREATE TABLE Nazioni (
+    id_nazione NUMBER PRIMARY KEY,
+    nome VARCHAR2(100),
+    codice_iso_alpha2 CHAR(2) UNIQUE NOT NULL,
+    is_membro_ue CHAR(1) CHECK (is_membro_ue IN ('S', 'N')),
+    is_rischio_fiscale CHAR(1) CHECK (is_rischio_fiscale IN ('S', 'N'))
+);
+
+CREATE TABLE Banche (
+    id_banca NUMBER PRIMARY KEY,
+    nome VARCHAR2(100),
+    id_nazione NUMBER REFERENCES Nazioni(id_nazione)
+);
+
+CREATE TABLE Aziende (
+    id_azienda NUMBER PRIMARY KEY,
+    nome VARCHAR2(100),
+    partita_iva VARCHAR2(20) UNIQUE,
+    id_nazione NUMBER REFERENCES Nazioni(id_nazione)
+);
+
+CREATE TABLE Persone (
+    id_persona NUMBER PRIMARY KEY,
+    nome VARCHAR2(100),
+    cognome VARCHAR2(100),
+    codice_fiscale VARCHAR2(20) UNIQUE,
+    id_nazione_residenza NUMBER REFERENCES Nazioni(id_nazione)
+);
+
+CREATE TABLE CarteCredito (
+    id_carta NUMBER PRIMARY KEY,
+    numero_carta VARCHAR2(20) UNIQUE,
+    data_scadenza DATE,
+    id_persona NUMBER REFERENCES Persone(id_persona),
+    id_banca NUMBER REFERENCES Banche(id_banca),
+    limite_spesa_eur NUMBER(10,2),
+    flag_attiva CHAR(1) CHECK (flag_attiva IN ('S', 'N')),
+    flag_rubata_smarrita CHAR(1) CHECK (flag_rubata_smarrita IN ('S', 'N'))
+);
+
+CREATE TABLE Transazioni (
+    id_transazione NUMBER PRIMARY KEY,
+    id_azienda_emittente NUMBER REFERENCES Aziende(id_azienda),
+    id_azienda_destinataria NUMBER REFERENCES Aziende(id_azienda),
+    data_emissione DATE,
+    importo_eur NUMBER(10,2),
+    aliquota_iva NUMBER(5,2),
+    CONSTRAINT chk_trans_aziende_diverse CHECK (id_azienda_emittente <> id_azienda_destinataria)
+);
+\end{lstlisting}
+
+\subsection{Modello a Grafo (Neo4j)}
+In Neo4j, il modello si concentra sulla rappresentazione esplicita delle connessioni. Le entità diventano nodi e i legami diventano relazioni.
+
+\subsubsection{Struttura del Grafo}
+\begin{itemize}
+    \item \textbf{Nodi (Labels):} \texttt{:Azienda}, \texttt{:Nazione}, \texttt{:TransazioneB2B}, \texttt{:Persona}, \texttt{:CartaCredito}, \texttt{:Banca}.
+    \item \textbf{Relazioni (Types):}
+    \begin{itemize}
+        \item \texttt{(Azienda)-[:REGISTRATA\_IN]->(Nazione)}
+        \item \texttt{(TransazioneB2B)-[:EMESSA\_DA\_AZIENDA]->(Azienda)}
+        \item \texttt{(TransazioneB2B)-[:DESTINATA\_AD\_AZIENDA]->(Azienda)}
+        \item \texttt{(Persona)-[:RISIEDE\_IN]->(Nazione)}
+        \item \texttt{(CartaCredito)-[:POSSEDUTA\_DA]->(Persona)}
+        \item \texttt{(CartaCredito)-[:EMESSA\_DA\_BANCA]->(Banca)}
+        \item \texttt{(Banca)-[:SITUATA\_IN]->(Nazione)}
+    \end{itemize}
+\end{itemize}
+Questo approccio elimina la necessità dei \texttt{JOIN} computazionali. Per trovare le transazioni di un'azienda, si parte dal nodo \texttt{Azienda} e si seguono le relazioni.
+
+\subsubsection{Visualizzazione Grafica}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=3cm and 2.5cm,
+        % Stili per i diversi tipi di nodi
+        entityStyle/.style={
+            ellipse, 
+            thick,
+            minimum size=1.5cm,
+            font=\small\bfseries,
+            drop shadow={opacity=0.3}
+        },
+        % Stile per le etichette delle relazioni
+        relStyle/.style={
+            font=\tiny\ttfamily,
+            fill=white,
+            fill opacity=0.8,
+            text opacity=1,
+            inner sep=1.5pt,
+            rounded corners=1pt
+        },
+        % Stile per le frecce
+        arrow/.style={
+            -{Stealth[length=2mm, width=1.5mm]},
+            thick,
+            color=gray!70!black
+        }
+    ]
+    
+    % Definizione dei nodi
+    \node[entityStyle, draw=blue!60, fill=blue!10] (persona) at (0,4) {Persona};
+    \node[entityStyle, draw=red!60, fill=red!10] (carta) at (5,4) {CartaCredito};
+    \node[entityStyle, draw=teal!60, fill=teal!10] (banca) at (5,0) {Banca};
+    \node[entityStyle, draw=purple!60, fill=purple!10] (nazione) at (0,0) {Nazione};
+    \node[entityStyle, draw=orange!70, fill=orange!10] (azienda) at (-5,0) {Azienda};
+    \node[entityStyle, draw=green!60, fill=green!10] (trans) at (-5,4) {TransazioneB2B};
+   
+    % Definizione delle relazioni
+    \draw[arrow] (trans.south) edge[bend left=20] node[relStyle, above, sloped] {EMESSA\_DA\_AZIENDA} (azienda.north);
+    \draw[arrow] (trans.south) edge[bend right=20] node[relStyle, below, sloped] {DESTINATA\_AD\_AZIENDA} (azienda.north);
+    \draw[arrow] (azienda) edge node[relStyle, above, sloped] {REGISTRATA\_IN} (nazione);
+    \draw[arrow] (carta) edge node[relStyle, above] {POSSEDUTA\_DA} (persona);
+    \draw[arrow] (carta) edge node[relStyle, left=-20pt, sloped] {EMESSA\_DA\_BANCA} (banca);
+    \draw[arrow] (persona) edge node[relStyle, left=-15pt, sloped] {RISIEDE\_IN} (nazione);
+    \draw[arrow] (banca) edge node[relStyle, below] {SITUATA\_IN} (nazione);
+    
+    \end{tikzpicture}
+    \caption{Schema del grafo Neo4j con le principali entità e relazioni.}
+    \label{fig:schema_neo4j}
+\end{figure}
+
+\newpage
+\section{Metodologia Sperimentale}
+Tutti i test sono stati eseguiti sulla medesima macchina per garantire la coerenza dei risultati.
+
+\subsection{Ambiente di Test}
+Tutti i test sono stati eseguiti sulla medesima macchina per garantire la coerenza dei risultati.
+\begin{itemize}
+    \item \textbf{CPU:} AMD RYZEN 7-5700U
+    \item \textbf{RAM:} 16 GB
+    \item \textbf{Storage:} SSD NVMe da 1024 GB
+    \item \textbf{Sistema Operativo:} Windows 11 Pro / Ubuntu 22.04 LTS (su Docker)
+    \item \textbf{Software:} Oracle Database 21c, Neo4j Community Edition
+    \item \textbf{Librerie Chiave di Python:} oracledb, neo4j
+\end{itemize}
+
+\begin{itemize}
+    \item \textbf{Software:} Python per l'orchestrazione dei test, librerie `oracledb` per Oracle e `neo4j` per Neo4j.
+    \item \textbf{Procedura di Benchmark:} Per ogni coppia (query, dataset), sono state eseguite 50 interrogazioni.
+    \begin{itemize}
+        \item \textbf{Esecuzione a Freddo (Cold Run):} Tempo della prima esecuzione, a cache vuota.
+        \item \textbf{Esecuzione a Caldo (Hot Run):} Media aritmetica delle 49 esecuzioni successive, per valutare le prestazioni a regime, con le cache popolate.
+    \end{itemize}
+\end{itemize}
+
+
+\newpage
+\section{Analisi delle Query di Benchmark}
+
+\subsection{Query 1: Elenco Aziende in Nazioni a Rischio}
+\textbf{Obiettivo:} Estrarre un semplice elenco di aziende che si trovano in nazioni considerate a rischio fiscale e non appartenenti all'UE. Questa è una query di filtraggio con un singolo \texttt{JOIN}, tipica del reporting di base.
+
+\begin{lstlisting}[language=SQL, caption=Q1 in Oracle SQL]
+SELECT a.nome AS nome_azienda, n.nome AS nazione
+FROM Aziende a
+JOIN Nazioni n ON a.id_nazione = n.id_nazione
+WHERE n.is_rischio_fiscale = 'S' AND n.is_membro_ue = 'N'
+\end{lstlisting}
+
+\begin{lstlisting}[language=Cypher, caption=Q1 in Neo4j Cypher]
+MATCH (a:Azienda)-[:REGISTRATA_IN]->(n:Nazione {is_rischio_fiscale: 'S', is_membro_ue: 'N'})
+RETURN a.nome AS nome_azienda, n.nome AS nazione
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q1_PRIMA.png}
+    \caption{Q1 - Tempi di esecuzione a freddo.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q1_MEDIA.png}
+    \caption{Q1 - Tempi medi di esecuzione a caldo.}
+\end{figure}
+
+\paragraph{Analisi Q1:} \textbf{Oracle è vincitore.} Questa query rappresenta un caso d'uso classico per un RDBMS. L'operazione consiste nel filtrare la tabella `Nazioni` (un'operazione molto veloce, specialmente con un indice) e poi eseguire un \texttt{JOIN} con la tabella `Aziende`. Il motore SQL di Oracle è estremamente ottimizzato per queste operazioni \textit{set-based} su percorsi brevi. Neo4j è comunque efficiente, ma l'overhead della sua architettura per una query così semplice non gli consente di superare la specializzazione di Oracle.
+
+\newpage
+\subsection{Query 2: Individuazione di Triangolazioni Semplici}
+\textbf{Obiettivo:} Identificare percorsi di lunghezza 2 della forma \texttt{(Azienda1) -> (Azienda2) -> (Azienda3)}, che rappresentano la base per la ricerca di frodi carosello.
+
+\begin{lstlisting}[language=SQL, caption=Q2 in Oracle SQL]
+SELECT DISTINCT t1.id_azienda_emittente, t2.id_azienda_destinataria
+FROM Transazioni t1
+JOIN Transazioni t2 ON t1.id_azienda_destinataria = t2.id_azienda_emittente
+WHERE t1.id_azienda_emittente <> t2.id_azienda_destinataria
+\end{lstlisting}
+
+\begin{lstlisting}[language=Cypher, caption=Q2 in Neo4j Cypher]
+MATCH (a1:Azienda)<-[:EMESSA_DA_AZIENDA]-(:TransazioneB2B)-[:DESTINATA_AD_AZIENDA]->(:Azienda)<-[:EMESSA_DA_AZIENDA]-(:TransazioneB2B)-[:DESTINATA_AD_AZIENDA]->(a3:Azienda)
+WHERE a1 <> a3
+RETURN DISTINCT a1.nome, a3.nome
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q2_PRIMA.png}
+    \caption{Q2 - Tempi di esecuzione a freddo.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q2_MEDIA.png}
+    \caption{Q2 - Tempi medi di esecuzione a caldo.}
+\end{figure}
+
+\paragraph{Analisi Q2:} \textbf{Neo4j domina nettamente.} Questo è il caso d'uso per eccellenza di un database a grafo. La query SQL richiede un \textbf{self-join} sulla tabella `Transazioni`, che è potenzialmente enorme. Questa operazione è computazionalmente molto costosa per un RDBMS. Al contrario, la query Cypher descrive un pattern di attraversamento che il motore di Neo4j esegue in modo nativo ed efficiente grazie all'\textit{Index-Free Adjacency}, seguendo semplicemente i puntatori in memoria.
+
+\newpage
+\subsection{Query 3: Conteggio Transazioni Internazionali}
+\textbf{Obiettivo:} Trovare tutte le transazioni in cui l'azienda emittente e quella destinataria sono registrate in nazioni diverse. Questa query richiede di accedere a dati di entità collegate, ma non di esplorare percorsi profondi.
+
+\begin{lstlisting}[language=SQL, caption=Q3 in Oracle SQL]
+SELECT t.id_transazione
+FROM Transazioni t
+JOIN Aziende ae ON t.id_azienda_emittente = ae.id_azienda
+JOIN Aziende ad ON t.id_azienda_destinataria = ad.id_azienda
+WHERE ae.id_nazione <> ad.id_nazione
+\end{lstlisting}
+
+\begin{lstlisting}[language=Cypher, caption=Q3 in Neo4j Cypher]
+MATCH (ae:Azienda)-[:REGISTRATA_IN]->(ne:Nazione)
+MATCH (ad:Azienda)-[:REGISTRATA_IN]->(nd:Nazione)
+WHERE ne <> nd
+MATCH (ae)<-[:EMESSA_DA_AZIENDA]-(t:TransazioneB2B)-[:DESTINATA_AD_AZIENDA]->(ad)
+RETURN t.id_transazione
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q3_PRIMA.png}
+    \caption{Q3 - Tempi di esecuzione a freddo.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q3_MEDIA.png}
+    \caption{Q3 - Tempi medi di esecuzione a caldo.}
+\end{figure}
+
+\paragraph{Analisi Q3:} \textbf{Oracle risulta più performante.} Similmente alla Query 1, il carico di lavoro principale è una scansione della grande tabella `Transazioni`, seguita da \texttt{JOIN} per verificare una condizione sulle entità collegate. Sebbene richieda due \texttt{JOIN} alla tabella `Aziende`, la profondità di ricerca rimane bassa. L'ottimizzatore di Oracle è in grado di gestire questo scenario in modo molto efficiente, mentre la query Cypher, che deve risolvere più pattern, risulta leggermente più complessa per il motore a grafo.
+
+\newpage
+\subsection{Query 4: Ricerca Flussi tra UE e Paradisi Fiscali}
+\textbf{Obiettivo:} Individuare catene di transazioni che partono da un'azienda in un paese UE e terminano in un'azienda situata in un paese a rischio fiscale, un chiaro indicatore di potenziale evasione.
+
+\begin{lstlisting}[language=SQL, caption=Q4 in Oracle SQL]
+SELECT DISTINCT a1.nome, a3.nome
+FROM Transazioni t1
+JOIN Aziende a1 ON t1.id_azienda_emittente = a1.id_azienda
+JOIN Nazioni n1 ON a1.id_nazione = n1.id_nazione
+JOIN Transazioni t2 ON t1.id_azienda_destinataria = t2.id_azienda_emittente
+JOIN Aziende a3 ON t2.id_azienda_destinataria = a3.id_azienda
+JOIN Nazioni n3 ON a3.id_nazione = n3.id_nazione
+WHERE n1.is_membro_ue = 'S' AND n3.is_rischio_fiscale = 'S'
+\end{lstlisting}
+
+\begin{lstlisting}[language=Cypher, caption=Q4 in Neo4j Cypher]
+MATCH (a1:Azienda)-[:REGISTRATA_IN]->(:Nazione {is_membro_ue: 'S'}),
+      (a1)<-[:EMESSA_DA_AZIENDA]-(:TransazioneB2B)-[:DESTINATA_AD_AZIENDA]->(:Azienda)<-[:EMESSA_DA_AZIENDA]-(:TransazioneB2B)-[:DESTINATA_AD_AZIENDA]->(a3:Azienda),
+      (a3)-[:REGISTRATA_IN]->(:Nazione {is_rischio_fiscale: 'S'})
+RETURN DISTINCT a1.nome, a3.nome
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q4_PRIMA.png}
+    \caption{Q4 - Tempi di esecuzione a freddo.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{Grafici/Q4_MEDIA.png}
+    \caption{Q4 - Tempi medi di esecuzione a caldo.}
+\end{figure}
+
+\paragraph{Analisi Q4:} \textbf{Neo4j è di nuovo il vincitore assoluto.} Questa query è una versione più complessa e realistica della Query 2. In SQL, si traduce in una catena di ben 5 \texttt{JOIN} che attraversa sei tabelle logiche. Il costo computazionale è molto elevato. La query Cypher, invece, è un capolavoro di espressività ed efficienza: descrive l'intero pattern e permette al planner di Neo4j di partire dai punti più selettivi (le nazioni con le proprietà richieste) e di esplorare i percorsi tra di essi, risultando ordini di grandezza più veloce.
+
+% ######################################################################
+% #################### FINE SEZIONE QUERY AGGIORNATA #####################
+% ######################################################################
+
+\newpage
+\section{Conclusioni Finali}
+I risultati sperimentali confermano in modo inequivocabile le ipotesi teoriche sui punti di forza e di debolezza dei due paradigmi di database. La scelta della tecnologia ottimale non è assoluta, ma strettamente dipendente dalla natura del carico di lavoro.
+
+\paragraph{Oracle: il Re delle Operazioni Set-Based}
+Oracle si è dimostrato imbattibile nelle query (1 e 3) la cui logica si basa sulla \textbf{scansione e filtraggio di grandi insiemi di dati con relazioni a bassa profondità}. Il suo motore SQL, affinato in decenni di sviluppo, è progettato per gestire in modo estremamente efficiente operazioni su tabelle. Quando la domanda è "trova tutti gli X che soddisfano la condizione Y", e Y richiede pochi \texttt{JOIN}, Oracle è la scelta naturale
+
+\paragraph{Neo4j: il Maestro delle Connessioni}
+Neo4j ha mostrato una superiorità schiacciante nelle query (2 e 4) focalizzate sull'\textbf{analisi di pattern e sull'attraversamento di relazioni complesse}. La sua architettura nativa a grafo permette di esplorare percorsi e vicinanze con una performance che non degrada con la dimensione totale del dataset. Quando la domanda è "trova i percorsi tra A e C che rispettano certe regole", Neo4j fornisce una risposta più rapida e con un linguaggio (Cypher) più espressivo.
+
+\paragraph{Visione d'Insieme e Architetture Ibride}
+Nessuno dei due database è una "pallottola d'argento". Un'analisi delle frodi completa e moderna richiede entrambe le capacità: l'analisi aggregata su grandi volumi e l'analisi approfondita dei pattern di connessione.
+Questo porta alla conclusione che l'approccio più efficace in un contesto enterprise non è scegliere l'uno \textit{o} l'altro, ma utilizzarli entrambi in un'\textbf{architettura ibrida} (spesso definita \textit{Polyglot Persistence}):
+\begin{enumerate}
+    \item \textbf{Oracle} agirebbe come \textit{System of Record} (SOR), il database transazionale (OLTP) che immagazzina in modo sicuro e affidabile tutti i dati anagrafici e finanziari.
+    \item \textbf{Neo4j} verrebbe utilizzato come un sistema analitico specializzato. I dati rilevanti verrebbero periodicamente estratti da Oracle e caricati in Neo4j per consentire agli analisti di eseguire query complesse sui pattern di frode, sfruttando la sua velocità e la visualizzazione intuitiva.
+\end{enumerate}
+Questa sinergia permette di sfruttare il meglio di entrambi i mondi, combinando l'affidabilità e la potenza aggregata del mondo relazionale con la velocità e l'intuitività del mondo dei grafi per un'analisi delle frodi più efficace e completa.
+
+\end{document}

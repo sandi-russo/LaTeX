@@ -1,0 +1,350 @@
+\documentclass[a4paper, 12pt]{scrartcl} % Classe KOMA-Script
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsthm} % Per le definizioni
+\usepackage{newtxtext, newtxmath} % Font New TX
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Opzioni Hyperref migliorate
+\usepackage{listings} % Per il codice
+\usepackage{xcolor}      % Per i colori
+\usepackage{amsmath}     % Per la matematica (se serve)
+%\usepackage{tikz}        % Includo TikZ anche se non usato direttamente qui
+%\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric, arrows} % Librerie TikZ
+\usepackage{caption}     % Per le didascalie
+\usepackage{subcaption} % Per sotto-figure/tabelle (se servono)
+\usepackage{geometry} % Per i margini
+\geometry{a4paper, margin=2.5cm} % Margini come specificato
+\usepackage{multirow} % Per tabelle con celle unite
+\usepackage{array}       % Per opzioni avanzate array/tabular
+\usepackage{float}       % Per migliorare il posizionamento [H]
+
+\theoremstyle{definition}
+\newtheorem{definizione}{Definizione}[section] % Definizione numerata per sezione
+
+% Definizione colori per listings (come da specifica)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings (come da specifica)
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black},
+}
+
+% Stile per il linguaggio C
+\lstdefinestyle{cstyle}{
+    language=C,
+    morekeywords={*, extern, static, void, int, return, printf, include, define, ifndef, endif, pthread_t, pthread_cond_t, pthread_cond_wait, pthread_cond_signal, pthread_cond_broadcast, pthread_cond_destroy, pthread_mutex_t, pthread_mutex_init, PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, pthread_mutex_lock, pthread_mutex_unlock, pthread_mutex_destroy, sem_t, sem_init, sem_wait, sem_post, sem_destroy, intptr_t, FILE, NULL, perror, pthread_create, pthread_join, pthread_exit, srand, time, rand, sleep, pthread_self, PTHREAD_BARRIER_SERIAL_THREAD, NUM_THREADS} % Aggiunte keyword C comuni e pthreads/semaphores/barrier
+}
+
+% Stile per Makefile
+\lstdefinestyle{makestyle}{
+    language=make,
+    keywordstyle=\color{red!80!black}\bfseries, % Diverso colore per Makefile
+    morekeywords={*, CC, CFLAGS, LDFLAGS, TARGET, OBJS, SRCS, PHONY, all, clean, check, echo, rm, wildcard, gcc} % Keywords Makefile
+}
+
+\begin{document}
+
+% Titolo e autore (modifica con i tuoi dati, usando lo stile richiesto)
+\title{Hands-On 13: Esercizi di Sincronizzazione con Pthreads} % Titolo più generico
+\subtitle{Sostituzione di \texttt{pthread\_join} e Barriera con Condition Variables} % Sottotitolo per entrambi
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Autore come da esempio
+\date{\today} % Usa la data corrente o specifica una data
+\maketitle
+
+\newpage
+\tableofcontents % Indice dei contenuti
+\newpage
+
+% --- INIZIO ESERCIZIO 1 ---
+
+\section{Esercizio 1: Sostituzione di \texttt{pthread\_join}}
+
+\subsection{Introduzione (Esercizio 1)}
+Questo primo esercizio affronta il problema della sincronizzazione tra un thread padre e un thread figlio in C utilizzando le primitive POSIX Threads (Pthreads). Nello specifico, si illustra come impiegare un mutex e una condition variable per realizzare un'alternativa alla funzione \texttt{pthread\_join()}, con l'obiettivo di far attendere al thread padre la terminazione del thread figlio prima di proseguire la propria esecuzione.
+
+\subsection{Definizione del Problema (Esercizio 1)}
+L'esercizio richiede esplicitamente di implementare un meccanismo che permetta al thread padre di attendere la conclusione del thread figlio senza ricorrere alla funzione standard \texttt{pthread\_join()}. La sincronizzazione deve avvenire mediante l'uso di una \textit{condition variable}, attraverso la quale il figlio segnala la propria terminazione al padre. Un dettaglio importante è che non è necessario catturare un eventuale valore di ritorno del thread figlio.
+
+\subsection{Metodologia (Esercizio 1)}
+Il \textbf{mutex}, identificato dalla variabile \texttt{pthread\_mutex\_t lock}, serve a garantire l'accesso mutuamente esclusivo alle risorse condivise tra i thread e a proteggere la variabile di stato \texttt{condizione}.
+
+La \textbf{condition variable}, \texttt{pthread\_cond\_t q}, permette a un thread (il padre) di sospendersi in attesa che una determinata condizione logica diventi vera. Sarà compito di un altro thread (il figlio) segnalare il verificarsi di tale condizione, risvegliando così il thread in attesa.
+
+La \textbf{variabile di stato}, \texttt{int condizione}, agisce come un flag condiviso dove 0 indica che il figlio non ha ancora terminato, mentre 1 indica che ha finito. È cruciale che il thread padre controlli sempre il valore di questa variabile dopo essere stato risvegliato, per evitare di procedere erroneamente a causa dei cosiddetti "risvegli spurii" (\textit{spurious wakeups}), un fenomeno per cui un thread in attesa su una condition variable può risvegliarsi anche senza un segnale esplicito.
+
+Il flusso operativo si articola come segue: inizialmente, il thread padre si occupa dell'inizializzazione del mutex e della condition variable. Successivamente, crea il thread figlio. A questo punto, il padre acquisisce il lock sul mutex e controlla il valore di \texttt{condizione}. Se è 0, significa che il figlio è ancora in esecuzione, quindi il padre si mette in attesa chiamando \texttt{pthread\_cond\_wait(\&q, \&lock)}. Questa chiamata rilascia atomicamente il mutex \texttt{lock}, permettendo al figlio di procedere, e sospende il padre.
+
+Nel frattempo, il thread figlio esegue le sue operazioni (qui simulate da una \texttt{sleep()}). Una volta terminato il suo compito, acquisisce il lock sul mutex, imposta \texttt{condizione} a 1, e invia un segnale sulla condition variable \texttt{q} tramite \texttt{pthread\_cond\_signal(\&q)}. Questo segnale ha l'effetto di risvegliare il thread padre in attesa. Dopodiché, il figlio rilascia il lock e termina la sua esecuzione con \texttt{pthread\_exit()}.
+
+Il thread padre, risvegliato da \texttt{pthread\_cond\_wait()}, tenta di riacquisire il mutex \texttt{lock}, una volta ottenuto, riesegue il controllo sulla variabile \texttt{condizione} all'interno del ciclo \texttt{while}. Poiché ora \texttt{condizione} è 1, il ciclo termina. Il padre, avendo la certezza che il figlio ha concluso, rilascia il lock e può procedere con le operazioni successive. Questo schema assicura che il padre non termini prima del figlio, replicando l'effetto di attesa di \texttt{pthread\_join()}.
+
+\subsection{Presentazione dei Risultati (Esercizio 1)}
+\subsubsection{File Header (\texttt{header.h} - Esercizio 1)}
+
+\begin{lstlisting}[style=cstyle, caption={Codice del file header.h (Esercizio 1)}, label={lst:header1}]
+#ifndef HEADER_H
+#define HEADER_H 
+
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+extern pthread_mutex_t lock; // Mutex per la mutua esclusione
+extern pthread_cond_t q;     // Condition variable per l'attesa/segnale
+extern int condizione;       // Variabile di stato condivisa (flag)
+
+void* thread (void* arg);
+
+#endif // HEADER_H
+\end{lstlisting}
+\subsubsection{File Thread (\texttt{thread.c} - Esercizio 1)}
+
+\begin{lstlisting}[style=cstyle, caption={Codice del file thread.c (Esercizio 1)}, label={lst:thread1}]
+#include "header.h"
+
+// Funzione eseguita dal thread figlio
+void *thread (void* arg) {
+    // Acquisisce il lock sul mutex per accedere in modo sicuro alla variabile condivisa 'condizione'
+    pthread_mutex_lock (&lock);
+    sleep (1); // Simula un lavoro svolto dal thread
+    condizione = 1; // Imposta lo stato a 1 ("completato")
+    
+    // Invia un segnale alla condition variable 'q'.
+    // Questo risvegliera' uno dei thread (il padre) in attesa su 'q'.
+    pthread_cond_signal (&q);
+    
+    // Rilascia il lock sul mutex, permettendo ad altri thread di acquisirlo.
+    pthread_mutex_unlock (&lock);
+    pthread_exit (NULL);  // termino l'esecuzione del thread figlio
+    
+    return NULL; 
+}
+\end{lstlisting}
+
+\textbf{Spiegazione \texttt{thread.c} (Esercizio 1):}
+Il file \texttt{thread.c} definisce la funzione \texttt{thread} per il primo esercizio. Inizia includendo \texttt{"header.h"}. La prima azione è acquisire il mutex con \textbf{\texttt{pthread\_mutex\_lock(\&lock)}} per garantire l'accesso sicuro a \texttt{condizione}. Successivamente, \textbf{\texttt{sleep(1)}} simula il lavoro del thread. Al termine, imposta \textbf{\texttt{condizione = 1}} e invia un segnale al padre in attesa tramite \textbf{\texttt{pthread\_cond\_signal(\&q)}}. È importante che il rilascio del mutex con \textbf{\texttt{pthread\_mutex\_unlock(\&lock)}} avvenga dopo queste operazioni, per assicurare che il padre, una volta risvegliato, trovi lo stato aggiornato
+
+\subsubsection{File Main (\texttt{main.c} - Esercizio 1)}
+
+\begin{lstlisting}[style=cstyle, caption={Codice del file main.c (Esercizio 1)}, label={lst:main1}]
+#include "header.h"
+pthread_mutex_t lock; 
+pthread_cond_t q;
+int condizione = 0; // Stato iniziale: figlio non terminato
+
+int main () {
+    pthread_t th; // Identificatore per il thread figlio
+
+    // Crea il thread figlio che eseguira' la funzione 'thread'
+    pthread_create(&th, NULL, thread, NULL);
+
+    // Acquisisce il lock sul mutex prima di controllare la condizione
+    pthread_mutex_lock(&lock);
+
+    while(!condizione) { // Finche' la condizione e' 0 (figlio attivo)
+
+         /*Rilascia il mutex 'lock' e sospende l'esecuzione del thread padre
+         Quando un segnale arriva su q da pthread_cond_signal, dal figlio:
+         il thread padre viene risvegliato, riacquisisce il mutex 'lock' e la funzione ritorna */
+        pthread_cond_wait(&q, &lock);
+        
+        // Questo printf viene eseguito solo DOPO che wait ritorna e il padre ha riacquisito il lock.
+        printf("Segnale ricevuto \n");
+    }
+    
+    // A questo punto, siamo usciti dal while, significa che 'condizione' e' 1.
+    printf("Condizione verificata, il figlio ha terminato.\n");
+
+    // Rilascia il lock sul mutex ora che la condizione e' verificata
+    pthread_mutex_unlock(&lock);
+
+    pthread_mutex_destroy(&lock);
+    pthread_cond_destroy(&q);
+    
+    printf("Thread padre termina.\n");
+    return 0;
+}
+\end{lstlisting}
+
+\textbf{Spiegazione \texttt{main.c} (Esercizio 1):}
+Il file \texttt{main.c} definisce le \textbf{variabili globali} \texttt{lock}, \texttt{q} e \texttt{condizione}. All'interno della funzione \texttt{main}, crea il thread figlio con \textbf{\texttt{pthread\_create}}. Il cuore della sincronizzazione è l'acquisizione del mutex \textbf{\texttt{pthread\_mutex\_lock(\&lock)}} seguita dal ciclo \textbf{\texttt{while(!condizione)}}. Questo ciclo è essenziale per gestire i risvegli spurii. Dentro il ciclo, \textbf{\texttt{pthread\_cond\_wait(\&q, \&lock)}} rilascia atomicamente il lock, attende il segnale dal figlio (o un risveglio spurio) e riacquisisce il lock al risveglio. Una volta che \texttt{condizione} è 1, il ciclo termina, il padre rilascia il mutex \textbf{\texttt{pthread\_mutex\_unlock(\&lock)}} ed esegue la pulizia delle risorse con \textbf{\texttt{pthread\_mutex\_destroy}} e \textbf{\texttt{pthread\_cond\_destroy}}. L'attesa del figlio è così completata senza usare \texttt{pthread\_join}.
+\newpage
+
+\section{Esercizio 2: Barriera di Sincronizzazione}
+
+\subsection{Introduzione (Esercizio 2)}
+Questo esercizio richiede di realizzare una barriera per 4 thread utilizzando mutex e condition variables.
+
+\subsection{Definizione del Problema (Esercizio 2)}
+L'obiettivo è far sì che 4 thread, una volta creati, attendano a un punto di sincronizzazione (la barriera) e ripartano "contemporaneamente" solo dopo che tutti e 4 hanno raggiunto tale punto.
+
+\subsection{Metodologia (Esercizio 2)}
+Il flusso operativo previsto è il seguente:
+\begin{enumerate}
+    \item Il thread main inizializza mutex e condition variable
+    \item Il thread main crea i 4 thread.
+    \item Ogni thread, appena avviato, acquisisce il mutex, controlla la variabile \texttt{condizione} in un ciclo \texttt{while}. Poiché \texttt{condizione} è inizialmente 0, ogni thread chiama pthread\_cond\_wait(\&q, \&lock), rilasciando il mutex e mettendosi in attesa.
+    \item Il thread main, dopo aver creato tutti i thread, attende brevemente (tramite \texttt{sleep(1)})
+    \item Il thread main acquisisce il mutex, imposta \texttt{condizione = 1} (aprendo il "cancello") e chiama \textbf{\texttt{pthread\_cond\_broadcast(\&q)}}. La funzione `broadcast` risveglia \textit{tutti} i thread in attesa sulla condition variable \texttt{q}.
+    \item I thread, risvegliati, riacquisiscono uno alla volta il mutex, riverificano la condizione nel \texttt{while} (che ora è vera), escono dal ciclo, eseguono le loro operazioni post-barriera, incrementano \texttt{ritorno\_completo}, e segnalano al main se sono l'ultimo thread a terminare (\texttt{pthread\_cond\_signal}). Infine, rilasciano il mutex e terminano con \texttt{pthread\_exit}.
+    \item Il thread main, dopo il broadcast, entra in un altro ciclo \texttt{while} e attende (con \texttt{pthread\_cond\_wait}) finché \texttt{ritorno\_completo} non raggiunge il valore \texttt{NUM\_THREADS}, segnalato dall'ultimo thread che termina.
+    \item Una volta che tutti i thread hanno terminato, il main esce dal suo ciclo di attesa, rilascia il mutex.
+\end{enumerate}
+Questo meccanismo realizza la barriera facendo attendere tutti i thread su \texttt{pthread\_cond\_wait} e rilasciandoli simultaneamente con \texttt{pthread\_cond\_broadcast}.
+
+\newpage
+\subsection{Presentazione dei Risultati (Esercizio 2)}
+
+\subsubsection{File Header (\texttt{header.h} - Esercizio 2)}
+
+\begin{lstlisting}[style=cstyle, caption={Codice del file header.h (Esercizio 2)}, label={lst:header2}]
+#ifndef HEADER_H
+#define HEADER_H
+#define NUM_THREADS 4 // Definisce il numero di thread per la barriera
+
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+// Dichiarazioni extern per le variabili globali
+extern pthread_mutex_t lock ;
+extern pthread_cond_t q;
+extern int condizione ; // Flag per il rilascio dalla barriera
+extern int ritorno_completo; // Contatore dei thread terminati
+
+// Prototipo della funzione eseguita dai thread worker
+void* thread (void* arg);
+#endif // HEADER_H
+\end{lstlisting}
+
+\subsubsection{File Thread (\texttt{thread.c} - Esercizio 2)}
+
+Questo file contiene l'implementazione della funzione eseguita dai thread worker per la barriera.
+
+\begin{lstlisting}[style=cstyle, caption={Codice del file thread.c (Esercizio 2)}, label={lst:thread2}]
+#include "header.h"
+
+void *thread(void *arg)
+{
+    // Acquisisce il mutex prima di controllare la condizione della barriera
+    pthread_mutex_lock(&lock);
+
+    // Ciclo di attesa sulla barriera: attende finche' 'condizione' non diventa 1
+    while (!condizione)
+    {
+        // Rilascia il lock e attende il segnale (broadcast) dal main
+        pthread_cond_wait(&q, &lock);
+        // Al risveglio (segnale o spurio), riacquisisce il lock e ricontrolla
+        printf(" Signal ricevuto (Thread %lu)\n", pthread_self()); // Debug
+    }
+    // Uscito dal ciclo: la barriera e' stata superata
+
+    // Ottiene l'ID del thread per stamparlo
+    pthread_t thread_id = pthread_self();
+    printf(" Condizione del thread: %lu verificata (Barriera Superata) \n", thread_id);
+    printf("\n");
+
+    // Incrementa il contatore dei thread che hanno completato il loro lavoro post-barriera
+    ritorno_completo++;
+    
+    // Se questo e' l'ultimo thread a terminare, invia un segnale al main
+    if (ritorno_completo == NUM_THREADS)
+    {
+        pthread_cond_signal(&q); // Segnala al main che tutti hanno finito
+    }
+    
+    // Rilascia il mutex
+    pthread_mutex_unlock(&lock);
+    
+    // Termina il thread
+    pthread_exit(NULL);
+    return NULL; // Non raggiunto
+}
+\end{lstlisting}
+
+\textbf{Spiegazione \texttt{thread.c} (Esercizio 2):}
+La funzione \texttt{thread} implementa il comportamento di ciascun worker. Dopo aver incluso \texttt{"header.h"}, ogni thread acquisisce immediatamente il mutex \textbf{\texttt{pthread\_mutex\_lock(\&lock)}}. Entra poi nel ciclo \textbf{\texttt{while(!condizione)}}, che rappresenta il punto di attesa della barriera. Finché \texttt{condizione} è 0, il thread chiama \textbf{\texttt{pthread\_cond\_wait(\&q, \&lock)}}, sospendendosi e rilasciando il mutex. Quando il main imposta \texttt{condizione} a 1 e chiama \texttt{pthread\_cond\_broadcast}, tutti i thread in attesa vengono risvegliati. Essi riacquisiscono (uno alla volta) il mutex, verificano che \texttt{condizione} sia ora 1, ed escono dal ciclo \texttt{while}.
+
+A questo punto, il thread ha superato la barriera. Stampa un messaggio indicando il suo ID e che la condizione è verificata. Successivamente, incrementa il contatore globale \textbf{\texttt{ritorno\_completo}}. Questo incremento avviene all'interno della sezione critica protetta dal mutex, garantendone l'atomicità. Se il thread corrente è l'ultimo ad aver completato (cioè \textbf{\texttt{ritorno\_completo == NUM\_THREADS}}), invia un segnale \textbf{\texttt{pthread\_cond\_signal(\&q)}} al thread main, che è in attesa di questo evento per sapere che tutti i worker hanno finito. Infine, il thread rilascia il mutex con \textbf{\texttt{pthread\_mutex\_unlock(\&lock)}} e termina con \textbf{\texttt{pthread\_exit(NULL)}}.
+
+\subsubsection{File Main (\texttt{main.c} - Esercizio 2)}
+
+Il file \texttt{main.c} crea i thread, gestisce il rilascio dalla barriera e attende il completamento finale.
+
+\begin{lstlisting}[style=cstyle, caption={Codice del file main.c (Esercizio 2)}, label={lst:main2}]
+#include "header.h"
+
+// Inizializzazione statica di mutex e condition variable
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t q = PTHREAD_COND_INITIALIZER;
+int condizione = 0; // Stato iniziale barriera: chiusa
+int ritorno_completo = 0; // Contatore iniziale terminati: 0
+
+int main () {
+    pthread_t th[NUM_THREADS];
+
+    // Crea i NUM_THREADS thread worker
+    for(int i=0; i<NUM_THREADS; i++){
+        pthread_create(&th[i], NULL, thread, NULL);
+    }
+
+    sleep(1); 
+
+    pthread_mutex_lock(&lock); // Acquisisce il lock
+    condizione = 1; // Imposta la condizione a "vera" (apre la barriera)
+    // Risveglia TUTTI i thread in attesa sulla condition variable 'q'
+    pthread_cond_broadcast(&q); 
+    // uso broadcast invece di signal per sbloccarli tutti.
+    
+    while (ritorno_completo != NUM_THREADS) {
+        // Rilascia il lock e attende un segnale (dall'ultimo thread)
+        pthread_cond_wait(&q, &lock);
+        // Al risveglio, riacquisisce il lock e ricontrolla la condizione del while
+        printf("Segnale ricevuto");
+    }
+
+    // Rilascia il lock dopo che tutti i thread sono terminati
+    pthread_mutex_unlock(&lock);
+
+    pthread_mutex_destroy(&lock); 
+    pthread_cond_destroy(&q); 
+    printf("Tutti i thread hanno terminato.\n");
+    return 0;
+}
+\end{lstlisting}
+
+\textbf{Spiegazione \texttt{main.c} (Esercizio 2):}
+La funzione \texttt{main} per il secondo esercizio inizia definendo le variabili globali condivise e inizializzandole tramite initializer statici (PTHREAD\_MUTEX\_INITIALIZER, PTHREAD\_COND\_INITIALIZER). Il flag \texttt{condizione} è 0 (barriera chiusa) e \texttt{ritorno\_completo} è 0. Viene creato un array \texttt{th} per contenere gli ID dei \texttt{NUM\_THREADS} worker, che vengono poi creati in un ciclo \textbf{\texttt{for}}.
+
+Dopo la creazione, il main esegue una \textbf{\texttt{sleep(1)}}. L'intento è dare tempo ai worker di avviarsi e raggiungere la chiamata a \texttt{pthread\_cond\_wait}. Tuttavia, questo è un approccio \textit{non deterministico}: non c'è garanzia che 1 secondo sia sufficiente in tutte le condizioni operative. Una barriera più robusta richiederebbe un meccanismo esplicito per cui i worker segnalano di essere pronti prima che il main proceda al rilascio.
+
+Successivamente, il main esegue la logica di rilascio dalla barriera. Acquisisce il mutex \textbf{\texttt{pthread\_mutex\_lock(\&lock)}}, imposta \textbf{\texttt{condizione = 1}} (aprendo il "cancello"), e chiama \textbf{\texttt{pthread\_cond\_broadcast(\&q)}}. Questa funzione è cruciale per la barriera: risveglia \textit{tutti} i thread che erano in attesa su \texttt{q}, permettendo loro di verificare la nuova condizione e proseguire quasi simultaneamente (limitato solo dalla contesa per riacquisire il mutex).
+
+Dopo aver rilasciato i worker, il main non termina subito. Entra in un secondo meccanismo di attesa, utilizzando la stessa condition variable \texttt{q} e il contatore \texttt{ritorno\_completo}. Il ciclo \textbf{\texttt{while (ritorno\_completo != NUM\_THREADS)}} con \textbf{\texttt{pthread\_cond\_wait(\&q, \&lock)}} fa sì che il main attenda finché l'ultimo thread worker non ha completato il suo lavoro post-barriera e inviato il segnale (come visto in \texttt{thread.c}).
+
+Una volta che \texttt{ritorno\_completo} raggiunge \texttt{NUM\_THREADS}, il main esce dal ciclo, rilascia il mutex con \textbf{\texttt{pthread\_mutex\_unlock(\&lock)}}. La fase di pulizia nel codice fornito presenta delle criticità: viene chiamato \textbf{\texttt{pthread\_mutex\_destroy(\&lock)}}, ma manca la chiamata corrispondente \textbf{\texttt{pthread\_cond\_destroy(\&q)}} per deallocare la condition variable. Inoltre, la chiamata \texttt{pthread\_cond\_broadcast(\&q)} dopo aver rilasciato e distrutto il mutex è inutile e potenzialmente errata, in quanto le condition variable dovrebbero essere usate solo sotto la protezione del mutex associaAto. Infine, il main stampa il messaggio di completamento e termina.
+
+\end{document}

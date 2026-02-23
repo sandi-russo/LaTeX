@@ -1,0 +1,28 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{lipsum} % Pacchetto per generare testo fittizio
+\usepackage{multicol} % Pacchetto per gestire colonne multiple
+
+\begin{document}
+
+\begin{multicols}{2} % Inizio dell'ambiente per le colonne multiple
+
+\section{Titolo della sezioneeee}
+
+\lipsum[1-3] % Testo principale generato casualmente
+
+\subsection{Sottosezione}
+
+\lipsum[4][1-3] % Testo principale generato casualmente
+
+\columnbreak % Rompi la colonna qui
+
+\section*{Approfondimenti} % Intestazione per la colonna secondaria
+
+\lipsum[5][1-3] % Approfondimenti o note generati casualmente
+
+\end{multicols} % Fine dell'ambiente per le colonne multiple
+
+\lipsum[5][4-6] % Testo principale generato casualmente dopo le colonne
+
+\end{document}

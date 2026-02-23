@@ -1,0 +1,381 @@
+\documentclass[a4paper, 12pt]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext, newtxmath} % Font più moderni
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Migliorata opzione hyperref
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric, arrows}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{geometry} % Per margini personalizzati se necessario
+\geometry{a4paper, margin=2.5cm} % Esempio margini
+
+% Definizione colori per listings
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings
+\lstset{
+    language=Python,
+    backgroundcolor=\color{backcolour}, % Sfondo leggermente colorato
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black}, % Colore cornice
+    title=\lstname % Titolo opzionale (nome file)
+}
+
+\title{Hands-On 7: Interfacce Virtuali e Configurazioni Avanzate} % Titolo leggermente modificato
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduzione}
+
+La presente relazione documenta le attività svolte durante l'Hands-On 7, dedicato all'esplorazione approfondita delle interfacce virtuali e delle capacità di configurazione avanzate offerte da Mininet, un potente strumento di emulazione di reti, in combinazione con Python 3. Il percorso seguito si è basato sul walkthrough ufficiale disponibile sul sito di Mininet, adattandolo per investigare specifiche funzionalità e scenari di rete.
+\noindent
+L'obiettivo principale dell'esercitazione è stato quello di acquisire familiarità pratica con Mininet, comprendendo come utilizzarlo per creare, configurare e testare topologie di rete virtuali complesse in modo flessibile ed efficiente. A tal fine, sono stati impiegati diversi comandi fondamentali all'interno dell'ambiente Mininet:
+
+\begin{itemize}
+    \item \textbf{\texttt{xterm <nodo>}}: comando essenziale per aprire una finestra di terminale separata per un nodo specifico (host o switch) nella rete emulata. Questo permette di eseguire comandi direttamente su quel nodo come se fosse una macchina fisica distinta.
+    \item \textbf{\texttt{iperf}}: utility standard per la misurazione delle prestazioni di rete, in particolare la massima larghezza di banda TCP o UDP tra due host. È stato utilizzato per quantificare l'impatto delle configurazioni di rete.
+    \item \textbf{\texttt{pingall}}: comando specifico di Mininet che esegue un ping tra tutte le coppie di host definiti nella topologia, fornendo un rapido test di connettività generale.
+    \item \textbf{\texttt{ifconfig}} (o il più moderno \textbf{\texttt{ip addr}}): comandi standard di Linux per visualizzare e configurare le interfacce di rete su un host o router virtuale, permettendo di verificare indirizzi IP, maschere di sottorete e stato delle interfacce.
+    \item \textbf{\texttt{nodes}}: comando Mininet che elenca tutti i nodi (host, switch, controller, router) attualmente presenti nella topologia emulata.
+    \item \textbf{\texttt{links}}: comando Mininet che mostra i collegamenti attivi tra i nodi, specificando le interfacce coinvolte su ciascuna estremità del link.
+    \item \textbf{\texttt{net}}: comando Mininet che visualizza un riassunto completo della rete, includendo nodi, link e controller.
+    \item \textbf{\texttt{wget <URL>}}: utility per scaricare file tramite HTTP/HTTPS, utilizzata per testare la connettività a livello applicativo verso un server web (reale o emulato).
+\end{itemize}
+\noindent
+L'analisi delle tabelle di routing (tramite \texttt{route -n} o \texttt{ip route show} sui nodi) è stata cruciale per comprendere come i pacchetti vengono instradati tra diverse sottoreti, specialmente in presenza di router. Inoltre, l'esame dei processi in esecuzione sui nodi virtuali (usando \texttt{ps -a} o \texttt{ps aux}) ha fornito insight sul funzionamento interno degli host emulati e sull'isolamento dei processi garantito da Mininet.
+\noindent
+Per dimostrare la capacità di eseguire servizi di rete realistici, è stato avviato un semplice server HTTP su uno degli host virtuali utilizzando il modulo \texttt{http.server} di Python. Il comando \texttt{h1 python3 -m http.server 80 \&} ha eseguito il server sull'host \texttt{h1}, mettendolo in ascolto sulla porta standard HTTP (80) e facendolo operare in background (\texttt{\&}), permettendo così di continuare a interagire con la CLI di Mininet o il terminale di \texttt{h1}. Questo ha permesso di testare la raggiungibilità del servizio da altri host nella rete virtuale usando \texttt{wget} o un browser testuale come \texttt{lynx}.
+
+\section{Esercizio 1: Rete Base con Switch e Netcat}
+
+\subsection{Descrizione della Topologia}
+In questo primo esercizio pratico, è stata utilizzata la topologia di rete predefinita creata da Mininet all'avvio (solitamente una topologia minimale con due host, h1 e h2, connessi a un singolo switch, s1). L'obiettivo era stabilire una comunicazione diretta tra i due host utilizzando l'utility \texttt{netcat} (\texttt{nc}).
+
+\subsection{Implementazione e Test}
+Sono state aperte finestre di terminale separate per \texttt{h1} e \texttt{h2} tramite il comando \texttt{xterm h1 h2} dalla CLI di Mininet.
+\begin{enumerate}
+    \item Sul terminale di \texttt{h1}, è stato avviato un server \texttt{netcat} in modalità "listen" (\texttt{-l}) su una porta specifica (ad esempio, 5432):
+    \begin{verbatim}
+        nc -l 5432
+    \end{verbatim}
+    Questo comando mette \texttt{h1} in attesa di una connessione TCP in ingresso sulla porta 5432.
+    \item Sul terminale di \texttt{h2}, è stato utilizzato \texttt{netcat} per stabilire una connessione TCP verso l'indirizzo IP di \texttt{h1} (ottenuto ad esempio con \texttt{h1 ifconfig} o noto dalla configurazione, es. 10.0.0.1) sulla porta 5432:
+    \begin{verbatim}
+        nc 10.0.0.1 5432
+    \end{verbatim}
+\end{enumerate}
+Una volta stabilita la connessione, qualsiasi testo digitato su un terminale e seguito da Invio veniva visualizzato sull'altro, dimostrando la comunicazione bidirezionale attraverso lo switch virtuale.
+
+\subsection{Analisi del Traffico con Wireshark}
+Per osservare il traffico di rete generato, è stato avviato Wireshark sull'interfaccia di rete appropriata (spesso l'interfaccia di loopback \texttt{lo} o un'interfaccia specifica di Mininet come \texttt{s1-eth1} o \texttt{h1-eth0} se osservato dall'host fisico o all'interno di Mininet stesso, a seconda di come Wireshark viene eseguito). Filtrando per la porta TCP 5432 (\texttt{tcp.port == 5432}), è stato possibile visualizzare l'handshake TCP a tre vie (SYN, SYN-ACK, ACK) all'inizio della connessione, i pacchetti PSH-ACK contenenti i dati testuali scambiati e infine i pacchetti FIN o RST per la chiusura della connessione. Questa analisi ha confermato il funzionamento a livello di trasporto della comunicazione stabilita.
+
+\newpage
+\section{Esercizio 2: Rete con Router e Script Python}
+
+\subsection{Descrizione della Topologia}
+Questo esercizio introduce una topologia più complessa, non gestibile con i comandi base di Mininet, che richiede la definizione tramite uno script Python. La rete è composta da due host (\texttt{h1}, \texttt{h2}), ciascuno nella propria sottorete IP, collegati tramite un nodo router (\texttt{r1}) che instrada il traffico tra le due sottoreti. Questa configurazione simula uno scenario comune in cui due segmenti di rete distinti devono comunicare.
+
+\subsection{Codice Python e Spiegazione Dettagliata}
+
+Lo script Python utilizza l'API di Mininet per definire programmaticamente la topologia, configurare i nodi e avviare la rete. Analizziamo il codice sezione per sezione.
+
+\subsubsection{Importazioni e Setup Iniziale}
+\begin{lstlisting}[caption={Importazione dei moduli Mininet necessari}, label=lst:ex2_imports]
+from mininet.topo import Topo
+from mininet.net import Mininet
+from mininet.node import Node
+from mininet.log import setLogLevel, info
+from mininet.cli import CLI
+\end{lstlisting}
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item \texttt{Topo}: Classe base per definire topologie di rete personalizzate. Si eredita da questa classe per implementare il metodo \texttt{build}.
+    \item \texttt{Mininet}: Classe principale per creare, gestire e interagire con l'istanza della rete emulata.
+    \item \texttt{Node}: Classe base generica per i nodi della rete. Verrà usata come base per definire il nostro router personalizzato.
+    \item \texttt{setLogLevel, info}: Funzioni per controllare il livello di dettaglio dei messaggi di log prodotti da Mininet (\texttt{info} è un livello comune).
+    \item \texttt{CLI}: Classe che fornisce l'interfaccia a riga di comando interattiva di Mininet, utile per testare la rete dopo l'avvio.
+\end{itemize}
+
+\subsubsection{Definizione del Nodo Router}
+\begin{lstlisting}[caption={Definizione della classe GenericRouter}, label=lst:ex2_router_class]
+class GenericRouter(Node):
+    def config(self, params):
+        super(GenericRouter, self).config(params)
+        # Abilita il forwarding sul router
+        self.cmd('sysctl net.ipv4.ip_forward=1')
+
+    def terminate(self):
+        self.cmd('sysctl net.ipv4.ip_forward=0')
+        super(GenericRouter, self).terminate()
+\end{lstlisting}
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item Si definisce una classe \texttt{GenericRouter} che eredita da \texttt{Node}. Questo permette di personalizzare il comportamento di un nodo standard.
+    \item Il metodo \texttt{config()} viene sovrascritto. Questo metodo è chiamato da Mininet durante la configurazione del nodo. Dopo aver chiamato il metodo \texttt{config()} della classe padre (\texttt{super(...).config(...)}).
+    \item Il metodo \texttt{terminate()} viene anch'esso sovrascritto. È chiamato quando la rete Mininet viene fermata. Qui, si disabilita l'IP forwarding (\texttt{...ip\_forward=0}) per ripristinare lo stato predefinito e poi si chiama il metodo \texttt{terminate()} della classe padre. Viene aggiunto un messaggio informativo.
+\end{itemize}
+
+\subsubsection{Definizione della Topologia Personalizzata}
+\begin{lstlisting}[caption={Definizione della classe MyTopology}, label=lst:ex2_topo_class]
+class MyTopology(Topo):
+    def build(self):
+        # Indirizzo IP Router
+        r1_ip1 = '10.0.1.254/24'
+        r1_ip2 = '10.0.2.254/24'
+
+        # Aggiungo gli host
+        h1 = self.addHost('h1', ip='10.0.1.1/24', defaultRoute=f'via {r1_ip1.split("/")[0]}')  # Imposta IP e defaultRoute
+        h2 = self.addHost('h2', ip='10.0.2.1/24', defaultRoute=f'via {r1_ip2.split("/")[0]}')  # Imposta IP e defaultRoute
+
+        # Aggiungo i Router
+        r1 = self.addNode('r1', cls=GenericRouter, ip=r1_ip1)  # Imposta IP per la prima interfaccia
+
+        # Aggiungo i collegamenti
+        self.addLink(h1, r1, intfName1='h1-eth0', intfName2='r1-eth0',
+                     params2={'ip': r1_ip1})  # Imposta IP per r1-eth0
+        self.addLink(h2, r1, intfName1='h2-eth0', intfName2='r1-eth1',
+                     params2={'ip': r1_ip2})  # Imposta IP per r1-eth1
+\end{lstlisting}
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item Si definisce \texttt{MyTopology} ereditando da \texttt{Topo}.
+    \item Il metodo \texttt{build()} contiene la logica per costruire la rete.
+    \item Vengono definiti gli indirizzi IP che il router (\texttt{r1}) avrà sulle sue due interfacce, una per ciascuna sottorete (10.0.1.0/24 e 10.0.2.0/24).
+    \item \texttt{self.addHost()}: Aggiunge gli host \texttt{h1} e \texttt{h2}.
+        \begin{itemize}
+            \item \texttt{ip='...'}: Assegna l'indirizzo IP e la maschera di sottorete all'interfaccia principale dell'host (\texttt{hX-eth0}).
+            \item \texttt{defaultRoute='via ...'}: Imposta la rotta predefinita per l'host. Dice all'host di inviare tutto il traffico destinato a reti esterne (diverse dalla propria sottorete locale 10.0.1.0/24 o 10.0.2.0/24) all'indirizzo IP del router sulla stessa sottorete. \texttt{f'...'.split('/')[0]} estrae solo l'indirizzo IP dalla notazione CIDR.
+        \end{itemize}
+    \item \texttt{self.addNode()}: Aggiunge il nodo router \texttt{r1}.
+        \begin{itemize}
+            \item \texttt{cls=GenericRouter}: Specifica che questo nodo deve essere un'istanza della nostra classe \texttt{GenericRouter}, non un \texttt{Node} standard o uno \texttt{Switch}.
+            \item \texttt{ip=r1\_ip1}: Assegna l'indirizzo IP \texttt{r1\_ip1} alla prima interfaccia creata per questo nodo (che sarà \texttt{r1-eth0} a causa del primo \texttt{addLink}).
+        \end{itemize}
+    \item \texttt{self.addLink()}: Crea i collegamenti fisici virtuali tra i nodi.
+        \begin{itemize}
+            \item Collega \texttt{h1} a \texttt{r1}.
+                \item \texttt{intfName1}, \texttt{intfName2}: Permettono di specificare i nomi delle interfacce su ciascun nodo (es. \texttt{h1-eth0}, \texttt{r1-eth0}).
+                \item \texttt{params2={'ip': r1\_ip1}}: Questo è un modo alternativo (o aggiuntivo) per assegnare un IP all'interfaccia del secondo nodo specificato (\texttt{r1}). Assegna \texttt{r1\_ip1} a \texttt{r1-eth0}.
+            \item Collega \texttt{h2} a \texttt{r1}.
+                \item Notare \texttt{intfName2='r1-eth1'}: Specifica che questo link si connette alla *seconda* interfaccia del router.
+                \item \texttt{params2={'ip': r1\_ip2}}: Assegna l'indirizzo IP \texttt{r1\_ip2} a questa seconda interfaccia (\texttt{r1-eth1}). Ora il router ha un'interfaccia in ciascuna sottorete.
+        \end{itemize}
+     \item Sono stati aggiunti messaggi informativi (\texttt{info(...)}) per tracciare il processo di costruzione.
+\end{itemize}
+
+\subsubsection{Blocco di Esecuzione Principale}
+\begin{lstlisting}[caption={Script principale per avviare la rete}, label=lst:ex2_main]
+if __name__ == '__main__':
+    setLogLevel('info')
+
+    topo = MyTopology()
+    net = Mininet(topo=topo)
+
+    net.start()
+
+    CLI(net)
+    net.stop()
+\end{lstlisting}
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item \texttt{if \_\_name\_\_ == '\_\_main\_\_':}: Costrutto standard Python che assicura che questo blocco di codice venga eseguito solo quando lo script è lanciato direttamente (non quando è importato come modulo).
+    \item \texttt{setLogLevel('info')}: Configura Mininet per mostrare messaggi informativi durante l'esecuzione.
+    \item \texttt{topo = MyTopology()}: Crea un oggetto della nostra classe di topologia.
+    \item \texttt{net = Mininet(topo=topo)}: Crea l'oggetto rete principale, passandogli la topologia da costruire. In questa fase non viene ancora creato nulla a livello di sistema operativo.
+    \item \texttt{net.start()}: Questo è il comando che effettivamente costruisce la rete virtuale: crea i namespace per i nodi, le interfacce virtuali (veth pairs), configura gli IP, avvia gli switch/router (ed esegue il metodo \texttt{config} del nostro router).
+    \item \texttt{CLI(net)}: Lancia l'interfaccia a riga di comando di Mininet. Il programma si ferma qui, attendendo input dall'utente. Da qui si possono lanciare comandi come \texttt{pingall}, \texttt{h1 ping h2}, \texttt{r1 route -n}, ecc.
+    \item \texttt{net.stop()}: Viene eseguito dopo l'uscita dalla CLI. Chiama i metodi \texttt{terminate} dei nodi (disabilitando l'IP forwarding sul nostro router), termina i processi associati ai nodi, rimuove le interfacce virtuali e pulisce le configurazioni.
+\end{itemize}
+
+\subsection{Implementazione e Test}
+Per eseguire questo esercizio, lo script Python (salvato ad esempio come \texttt{router\_topo.py}) viene lanciato con privilegi di superutente:
+\begin{verbatim}
+    sudo python3 router_topo.py
+\end{verbatim}
+Una volta avviata la CLI di Mininet, la connettività e la configurazione sono state verificate con i seguenti comandi:
+\begin{itemize}
+    \item \texttt{nodes}: Verifica la presenza di h1, h2, r1.
+    \item \texttt{net}: Mostra la struttura completa della rete.
+    \item \texttt{h1 ifconfig} / \texttt{h2 ifconfig} / \texttt{r1 ifconfig}: Controlla gli indirizzi IP assegnati alle interfacce.
+    \item \texttt{h1 route -n} / \texttt{h2 route -n}: Verifica la presenza della rotta predefinita che punta al router.
+    \item \texttt{r1 route -n}: Verifica la tabella di routing del router, che dovrebbe mostrare le rotte dirette alle sottoreti 10.0.1.0/24 e 10.0.2.0/24.
+    \item \texttt{pingall}: Testa la connettività end-to-end. Dovrebbe mostrare successo tra h1 e h2 (0% dropped).
+    \item \texttt{h1 ping 10.0.2.1}: Ping specifico da h1 a h2.
+    \item \texttt{iperf h1 h2}: Misura la banda tra i due host attraverso il router.
+    \item Test con altri applicativi del "unix network toolkit" (come \texttt{traceroute}, \texttt{netcat}, ecc.) per esplorare ulteriormente il comportamento della rete. Ad esempio, \texttt{h1 traceroute 10.0.2.1} dovrebbe mostrare il passaggio attraverso l'IP del router \texttt{10.0.1.254}.
+\end{itemize}
+
+\subsection{Osservazioni}
+L'esecuzione di questo script e dei test successivi ha permesso di consolidare la comprensione dei seguenti concetti:
+\begin{itemize}
+    \item Routing IP: Come un router utilizza la sua tabella di routing per inoltrare pacchetti tra sottoreti diverse.
+    \item Default Gateway: Il ruolo del gateway predefinito nella configurazione di un host per raggiungere reti esterne.
+    \item IP Forwarding: La necessità di abilitare questa funzionalità su un nodo affinché agisca come router.
+    \item API Python di Mininet: La flessibilità offerta dall'API per creare topologie complesse e configurare nodi in modo programmatico.
+\end{itemize}
+Si è potuto osservare come i pacchetti da h1 a h2 vengano inviati prima a r1 (grazie alla default route su h1), e poi r1 li inoltri a h2 basandosi sulla sua tabella di routing e sull'indirizzo IP di destinazione.
+
+\section{Esercizio 3: Aggiunta di Delay e Limitazione di Banda}
+
+\subsection{Descrizione della Topologia}
+Questo esercizio parte dalla topologia definita nell'Esercizio 2 (due host collegati tramite un router) e introduce parametri di rete più realistici: un ritardo (delay/latenza) e una limitazione della larghezza di banda (bandwidth) sui collegamenti tra gli host e il router. Questo viene realizzato utilizzando la classe \texttt{TCLink} fornita da Mininet, che sfrutta internamente le funzionalità di Traffic Control (\texttt{tc}) di Linux.
+
+\subsection{Codice Python e Spiegazione Dettagliata}
+
+Lo script è molto simile a quello dell'Esercizio 2, con modifiche mirate all'importazione e all'uso di \texttt{TCLink}.
+
+\subsubsection{Importazioni Modificate}
+\begin{lstlisting}[caption={Importazioni per l'Esercizio 3, con aggiunta di TCLink}, label=lst:ex3_imports]
+from mininet.topo import Topo
+from mininet.net import Mininet
+from mininet.node import Node
+from mininet.log import setLogLevel, info
+from mininet.cli import CLI
+from mininet.link import TCLink  # Importa TCLink
+\end{lstlisting}
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item L'unica differenza rispetto all'Esercizio 2 è l'aggiunta di \texttt{from mininet.link import TCLink}. Questo rende disponibile la classe \texttt{TCLink}, necessaria per creare link con caratteristiche di performance controllate.
+\end{itemize}
+
+\subsubsection{Definizione del Router (Invariata)}
+La classe \texttt{GenericRouter} rimane identica a quella dell'Esercizio 2, poiché la sua funzione di abilitare l'IP forwarding non cambia.
+
+\begin{lstlisting}[caption={Definizione della classe GenericRouter (invariata)}, label=lst:ex3_router_class]
+class GenericRouter(Node):
+    def config(self, params):
+        super(GenericRouter, self).config(params)
+        # Abilito il forwarding del router
+        self.cmd('sysctl net.ipv4.ip_forward=1')
+
+    def terminate(self):
+        self.cmd('sysctl net.ipv4.ip_forward=0')
+        super(GenericRouter, self).terminate()
+
+\end{lstlisting}
+
+\subsubsection{Definizione della Topologia con Link Controllati}
+\begin{lstlisting}[caption={Definizione di MyTopology con TCLink}, label=lst:ex3_topo_class]
+class MyTopology(Topo):
+    def build(self):
+        # Indirizzi IP Router
+        r1_ip1 = '10.0.1.254/24'
+        r1_ip2 = '10.0.2.254/24'
+
+        # Aggiunta Host
+        h1 = self.addHost('h1', ip='10.0.1.1/24', defaultRoute=f'via {r1_ip1.split("/")[0]}')
+        h2 = self.addHost('h2', ip='10.0.2.1/24', defaultRoute=f'via {r1_ip2.split("/")[0]}')
+
+        # Aggiunta Router
+        r1 = self.addNode('r1', cls=GenericRouter, ip=r1_ip1)
+
+        # Add links with delay and bandwidth using TCLink
+        link_params = {'bw': 100, 'delay': '75ms'}  # Imposta larghezza di banda e delay
+
+        self.addLink(h1, r1, intfName1='h1-eth0', intfName2='r1-eth0',
+                     params2={'ip': r1_ip1}, cls=TCLink, link_params)
+        self.addLink(h2, r1, intfName1='h2-eth0', intfName2='r1-eth1',
+                     params2={'ip': r1_ip2}, cls=TCLink, link_params)
+\end{lstlisting}
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item La struttura del metodo \texttt{build} è simile, ma con modifiche chiave nell'aggiunta dei link.
+    \item \texttt{link\_params = {'bw': 100, 'delay': '75ms'}}: Viene creato un dizionario Python che contiene i parametri desiderati per i link:
+        \begin{itemize}
+            \item \texttt{'bw': 100}: Specifica una larghezza di banda massima di 100 Mbps.
+            \item \texttt{'delay': '75ms'}: Specifica un ritardo di propagazione unidirezionale di 75 millisecondi. Il Round Trip Time (RTT) atteso per un ping tra h1 e h2 sarà quindi influenzato da questo ritardo su entrambi i link (h1-r1 e r1-h2), prevedibilmente attorno a 4 * 75ms = 300ms (andata h1->r1, andata r1->h2, ritorno h2->r1, ritorno r1->h1), più eventuali ritardi di elaborazione.
+        \end{itemize}
+    \item Nella chiamata a \texttt{self.addLink()}:
+        \begin{itemize}
+            \item \texttt{cls=TCLink}: Questo argomento dice a Mininet di utilizzare la classe \texttt{TCLink} per creare questo collegamento, invece della classe predefinita (\texttt{Link}) che crea semplici pipe virtuali senza limitazioni o ritardi.
+            \item \texttt{link\_params}: Questa sintassi Python (unpacking di un dizionario) passa le chiavi e i valori del dizionario \texttt{link\_params} come argomenti keyword alla classe \texttt{TCLink}. È equivalente a scrivere \texttt{cls=TCLink, bw=100, delay='75ms'}.
+        \end{itemize}
+    \item Entrambi i link (h1-r1 e h2-r1) vengono creati usando \texttt{TCLink} con gli stessi parametri.
+    \item Messaggi informativi sono stati aggiunti per evidenziare l'uso di TCLink e i parametri applicati.
+\end{itemize}
+
+\subsubsection{Blocco di Esecuzione Principale (Modificato solo nell'istanziazione di Mininet)}
+\begin{lstlisting}[caption={Script principale per l'Esercizio 3}, label=lst:ex3_main]
+if __name__ == '__main__':
+    setLogLevel('info')
+
+    topo = MyTopology()
+    net = Mininet(topo=topo)
+
+    net.start()
+
+    CLI(net)
+
+    net.stop()
+\end{lstlisting}
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item La modifica cruciale qui è nel costruttore di \texttt{Mininet}:
+        \item \texttt{net = Mininet(topo=topo, link=TCLink)}: Oltre alla topologia, viene passato l'argomento \texttt{link=TCLink}. Questo informa Mininet che la classe di link predefinita da usare (se non specificato diversamente in \texttt{addLink}) è \texttt{TCLink}, e soprattutto, assicura che l'infrastruttura per gestire i parametri di \texttt{TCLink} (come \texttt{bw}, \texttt{delay}, \texttt{loss}, \texttt{jitter}, ecc.) sia correttamente inizializzata. Anche se abbiamo specificato \texttt{cls=TCLink} in \texttt{addLink}, è buona pratica (e spesso necessario) specificarlo anche qui.
+    \item Il resto del blocco (\texttt{setLogLevel}, \texttt{net.start}, \texttt{CLI}, \texttt{net.stop}) funziona come nell'Esercizio 2.
+\end{itemize}
+
+\subsection{Implementazione e Test}
+L'esecuzione avviene come per l'esercizio precedente, salvando il codice come \texttt{tclink\_topo.py} e lanciandolo con \texttt{sudo python3 tclink\_topo.py}.
+I test principali si focalizzano sull'osservazione dell'impatto dei parametri introdotti:
+\begin{itemize}
+    \item \textbf{\texttt{pingall} o \texttt{h1 ping h2}}: Ci si aspetta di osservare un Round Trip Time (RTT) significativamente più alto rispetto all'Esercizio 2. Con un delay unidirezionale di 75ms per link, l'RTT dovrebbe essere circa 300ms (75ms * 4). Eventuali piccole variazioni sono normali.
+    \item \textbf{\texttt{iperf h1 h2}}: Il test di larghezza di banda con \texttt{iperf} dovrebbe mostrare un throughput massimo vicino al limite impostato di 100 Mbps. A causa dell'overhead TCP e del ritardo elevato (che influenza la finestra di congestione TCP), il valore misurato potrebbe essere leggermente inferiore a 100 Mbps, ma dovrebbe essere chiaramente limitato rispetto alla banda potenzialmente molto più alta disponibile nell'Esercizio 2 (limitata solo dalla CPU).
+    \item \textbf{Test con applicativi Unix}: Strumenti come \texttt{traceroute} confermeranno il percorso, mentre l'uso di \texttt{netcat} o \texttt{wget} potrebbe apparire più "lento" a causa della latenza introdotta.
+\end{itemize}
+
+\subsection{Osservazioni}
+Questo esercizio dimostra efficacemente come Mininet, tramite \texttt{TCLink}, possa essere utilizzato per emulare condizioni di rete non ideali:
+\begin{itemize}
+    \item Impatto della Latenza: Si osserva direttamente come il parametro \texttt{delay} aumenti i tempi di risposta (RTT del ping).
+    \item Impatto della Larghezza di Banda: Si verifica come il parametro \texttt{bw} limiti il throughput massimo misurabile con \texttt{iperf}.
+    \item Realismo della Simulazione: L'aggiunta di questi parametri rende l'emulazione più vicina a scenari reali dove i link hanno latenza e capacità finite.
+    \item Controllo Granulare: Mininet permette di impostare questi parametri per singolo link, consentendo di creare scenari eterogenei.
+\end{itemize}
+I risultati dei test, confrontati con quelli dell'Esercizio 2, evidenziano quantitativamente l'effetto dell'introduzione di ritardi e limiti di banda sulle prestazioni della comunicazione end-to-end.
+
+\section{Confronto tra i Codici e le Prestazioni}
+
+Analizzando i tre esercizi, emerge una progressione nella complessità e nel realismo della simulazione: \\
+\noindent
+1.  Esercizio 1: Utilizzo base di Mininet con topologia predefinita e strumenti standard (\texttt{netcat}, \texttt{wireshark}). Utile per prendere confidenza con l'ambiente e l'analisi di base del traffico. Le prestazioni sono tipicamente limitate solo dalla CPU dell'host che esegue Mininet.
+2.  Esercizio 2: Introduzione della programmazione Python per definire una topologia personalizzata con routing. Il codice definisce nodi, link, indirizzi IP e rotte statiche. Dimostra la capacità di emulare reti multi-sottorete. Le prestazioni (\texttt{ping} RTT basso, \texttt{iperf} banda elevata) riflettono link virtuali "ideali" senza ritardi o limitazioni significative. Il codice chiave è la definizione della classe \texttt{GenericRouter} con abilitazione dell'IP forwarding e la corretta configurazione di IP e rotte predefinite tramite l'API \texttt{Topo}.
+3.  Esercizio 3: Estensione dell'Esercizio 2 con l'introduzione di \texttt{TCLink}. Il codice Python viene modificato minimamente per importare \texttt{TCLink} e per passarlo come classe (\texttt{cls=TCLink}) e come parametro al costruttore \texttt{Mininet} (\texttt{link=TCLink}), oltre a specificare i parametri \texttt{bw} e \texttt{delay} durante la creazione dei link (\texttt{addLink}). Questo permette di emulare condizioni di rete più realistiche. Le prestazioni misurate (\texttt{ping} RTT alto, \texttt{iperf} banda limitata) differiscono significativamente dall'Esercizio 2, dimostrando l'efficacia di \texttt{TCLink} nel modellare le caratteristiche fisiche dei collegamenti.
+\newpage
+\noindent
+\section{Conclusioni} % Sezione conclusioni (opzionale ma buona pratica)
+L'Hands-On 7 ha fornito una panoramica pratica ed efficace delle funzionalità di Mininet, partendo dall'interazione base tramite CLI fino alla definizione programmatica di topologie complesse con routing e caratteristiche di link realistiche tramite l'API Python. La capacità di definire classi di nodi personalizzate (come il \texttt{GenericRouter}) e di utilizzare \texttt{TCLink} per modellare ritardi e larghezza di banda si è rivelata fondamentale per creare scenari di emulazione significativi. Gli esercizi svolti hanno permesso di acquisire competenze pratiche nell'uso di Mininet come strumento per la sperimentazione e l'analisi di reti.
+
+\end{document}

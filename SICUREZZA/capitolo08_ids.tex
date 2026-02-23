@@ -1,0 +1,286 @@
+\chapter{Intrusion Detection System}
+
+\section{Introduzione}
+
+Gli Intrusion Detection System (IDS) sono strumenti di sicurezza progettati per monitorare e analizzare eventi all'interno di un sistema, con l'obiettivo di identificare in tempo reale o quasi, i tentativi di accesso non autorizzati.
+
+Un'intrusione di sicurezza è definita come qualsiasi evento in cui un intruso riesca, o tenti di riuscire, a ottenere accesso non autorizzato a un sistema o a una risorsa del sistema. Il rilevamento delle intrusioni, invece, si riferisce a un servizio che monitora tali eventi per fornire tempestivamente degli avvisi.
+
+\section{Struttura di un IDS}
+
+Un IDS è tipicamente strutturato in tre componenti principali:
+
+\begin{description}
+    \item[Sensori] Che raccolgono dati da varie parti del sistema come pacchetti di rete, file di log o chiamate di sistema. Queste informazioni vengono inoltrate agli analizzatori per un'ulteriore valutazione.
+    
+    \item[Analizzatori] Che hanno il compito di determinare se si è verificata un'intrusione. Possono anche suggerire azioni da intraprendere in seguito all'intrusione.
+    
+    \item[Interfaccia utente] La quale consente all'utente di visualizzare gli output del sistema e di controllare il comportamento dell'IDS.
+\end{description}
+
+\section{Configurazioni di IDS}
+
+Gli IDS si classificano in base alla fonte e al tipo di dati analizzati:
+
+\begin{description}
+    \item[Host-based IDS (HIDS)] Monitora le caratteristiche di un singolo host e gli eventi che vi accadono.
+    
+    \item[Network-based IDS (NIDS)] Analizza il traffico di rete su segmenti o dispositivi specifici, verificando protocolli di rete, di trasporto e applicativi per identificare attività anomale.
+    
+    \item[IDS distribuiti o ibridi] Combinano informazioni provenienti da più sensori, sia host-based che network-based, in un unico analizzatore centrale, migliorando l'identificazione e la risposta a attività intrusiva.
+\end{description}
+
+\section{Principi di Base di un IDS}
+
+Il principio fondamentale del rilevamento delle intrusioni è basato sull'assunto che il comportamento di un intruso differisca, in modo quantificabile, da quello di un utente legittimo. La progettazione di un IDS richiede un bilanciamento tra la capacità di rilevare intrusi e la necessità di minimizzare i falsi allarmi.
+
+Un'interpretazione ampia dei comportamenti sospetti può generare falsi positivi, mentre una definizione troppo rigida può portare a non rilevare attacchi reali. L'obiettivo ideale è quindi quello di avere un alto tasso di rilevamento (rapporto tra attacchi rilevati e attacchi totali) e un basso tasso di falsi allarmi (rapporto tra falsi positivi e uso normale del sistema).
+
+\section{Requisiti di un IDS}
+
+Per essere efficace, un IDS dovrebbe soddisfare determinati requisiti:
+
+\begin{itemize}
+    \item Funzionamento continuo con minima supervisione umana.
+    \item Tolleranza ai guasti, ovvero la capacità di recuperare da crash o riavvii del sistema.
+    \item Resistenza alla sovversione, ossia deve essere in grado di monitorare se stesso per rilevare eventuali modifiche da parte di un attaccante.
+    \item Basso impatto sulle prestazioni del sistema su cui è in esecuzione.
+    \item Configurabilità in base alle politiche di sicurezza del sistema monitorato.
+    \item Adattabilità alle variazioni del comportamento del sistema e degli utenti nel tempo.
+    \item Scalabilità per monitorare un numero elevato di host.
+    \item Degradazione graduale del servizio, in cui l'impatto sul sistema è minimizzato in caso di malfunzionamento di alcuni componenti dell'IDS.
+    \item Riconfigurabilità dinamica senza la necessità di riavviare il sistema.
+\end{itemize}
+
+\section{Analisi di un IDS}
+
+Gli Intrusion Detection System utilizzano diversi approcci per analizzare i dati dei sensori al fine di rilevare intrusioni.
+
+\subsection{Approcci di Analisi}
+
+\subsubsection{Rilevazione delle Anomalie}
+
+La rilevazione delle anomalie prevede la raccolta di dati sul comportamento degli utenti legittimi in un periodo di tempo specifico. I comportamenti osservati vengono confrontati con il modello costruito per stabilire, con un certo livello di sicurezza, se si tratta di un comportamento lecito o di un'intrusione. Tuttavia, la raccolta e l'analisi dei dati necessari per creare un modello accurato possono essere complesse e generare un alto tasso di falsi allarmi.
+
+\paragraph{Fasi del Processo}
+
+\begin{enumerate}
+    \item \textbf{Fase di addestramento:} si costruisce un modello del comportamento legittimo degli utenti, analizzando i dati raccolti dal sistema monitorato.
+    \item \textbf{Fase di rilevamento:} Il comportamento attuale viene confrontato con il modello precedentemente creato per classificare l'attività come lecita o anomala.
+\end{enumerate}
+
+\paragraph{Tecniche di Classificazione}
+
+Le principali tecniche di classificazione utilizzate sono:
+
+\begin{itemize}
+    \item \textbf{Approcci statistici:} Analizzano il comportamento utilizzando modelli univariati, multivariati o di serie temporali.
+    \item \textbf{Approcci basati sulla conoscenza:} Utilizzano un sistema esperto per classificare il comportamento osservato in base a un insieme di regole.
+    \item \textbf{Approcci di machine learning:} Utilizzano tecniche di data mining per determinare automaticamente un modello di classificazione dai dati di addestramento.
+\end{itemize}
+
+\subsubsection{Rilevazione tramite Firma o Euristica}
+
+Le tecniche basate su firma o euristica rilevano intrusioni osservando eventi nel sistema e applicando set di pattern di firma o regole euristiche. Questo approccio, noto anche come misuse detection, può identificare attacchi noti con efficienza, ma è inefficace contro attacchi zero-day.
+
+\paragraph{Approcci Basati su Firma}
+
+Questi metodi confrontano una vasta collezione di pattern di dati dannosi noti con i dati del sistema. Gli approcci basati su firma sono ampiamente utilizzati in prodotti antivirus e nel monitoraggio del traffico di rete. I vantaggi includono bassi costi in termini di tempo e risorse, ma richiedono un continuo aggiornamento delle firme per tenere traccia delle nuove minacce. Inoltre, non possono rilevare attacchi sconosciuti.
+
+\paragraph{Approcci Basati su Regole Euristiche}
+
+Le regole euristiche identificano penetrazioni note o attacchi che sfruttano vulnerabilità conosciute. Queste regole, spesso specifiche per macchine e sistemi operativi, vengono sviluppate analizzando strumenti e script d'attacco presenti online. Anche se efficaci, richiedono esperti di sicurezza per la creazione di regole accurate. Un esempio di IDS basato su regole è il sistema SNORT, che dispone di una vasta collezione di regole per il rilevamento di attacchi di rete.
+
+\section{Host-Based Intrusion Detection System}
+
+Tradizionalmente, i sistemi HIDS operavano in modalità autonoma su singoli sistemi. Tuttavia la difesa di una rete distribuita di host richiede un approccio coordinato che preveda la cooperazione tra diversi HIDS. Questo approccio distribuito è particolarmente utile per monitorare reti estese e rilevare minacce che potrebbero sfuggire a un singolo sistema.
+
+\subsection{Architetture Centralizzate vs Decentralizzate}
+
+Un HIDS distribuito può avere un'architettura centralizzata o decentralizzata:
+
+\begin{description}
+    \item[Centralizzata] Un unico punto centrale raccoglie e analizza tutti i dati dei sensori. Questo semplifica la correlazione degli eventi, ma introduce un punto di congestione e vulnerabilità.
+    
+    \item[Decentralizzata] Esistono più centri di analisi che devono coordinarsi e scambiarsi informazioni. Questo modello riduce i rischi di un singolo punto di fallimento ma richiede un'efficace sincronizzazione tra i vari nodi.
+\end{description}
+
+\subsection{Architettura di un HIDS Distribuito}
+
+L'architettura di un HIDS distribuito può essere suddivisa in tre componenti principali:
+
+\begin{enumerate}
+    \item \textbf{Agente host:} Un processo in background che raccoglie dati sugli eventi di sicurezza nel sistema monitorato. Questo modulo invia i dati raccolti al gestore centrale per l'analisi.
+    
+    \item \textbf{Agente LAN Monitor:} Funziona come l'agente host, ma si concentra sull'analisi del traffico di rete LAN, riportando i risultati al gestore centrale.
+    
+    \item \textbf{Gestore Centrale:} Riceve i report dagli agenti host e LAN e li elabora per rilevare eventuali intrusioni. Il gestore centrale dispone di un sistema esperto per trarre inferenze dai dati ricevuti e può interrogare i sistemi per ottenere copie dei dati audit degli host (HAR).
+\end{enumerate}
+
+Questa architettura è progettata per essere indipendente dal sistema operativo e dalle implementazioni di auditing, garantendo una flessibilità nella configurazione e gestione.
+
+\subsection{Processo di Rilevazione degli Eventi Sospetti}
+
+Il modulo agente host segue un processo specifico per rilevare attività sospette:
+
+\begin{enumerate}
+    \item \textbf{Cattura dei Dati di Audit:} L'agente cattura ogni record di audit prodotto dal sistema di raccolta nativo e applica un filtro che conserva solo i record rilevanti per la sicurezza.
+    
+    \item \textbf{Formattazione Standard:} I record vengono riformattati in un formato standard, il ``host audit record'' (HAR).
+    
+    \item \textbf{Analisi Basata su Template:} Utilizzando un modulo di logica basato su template, i record vengono analizzati per rilevare attività sospette a diversi livelli:
+    \begin{itemize}
+        \item \textbf{Eventi Isolati:} L'agente rileva eventi singoli di interesse, come accessi falliti ai file o modifiche nei permessi di accesso.
+        \item \textbf{Sequenze di Eventi:} L'agente riconosce sequenze di eventi che corrispondono a pattern di attacco noti.
+        \item \textbf{Comportamento Anomalo:} Confronta il comportamento attuale di un utente con il suo profilo storico, basato su metriche come il numero di programmi eseguiti o file accessibili.
+    \end{itemize}
+\end{enumerate}
+
+Quando viene rilevata un'attività sospetta, viene inviata un'allerta al gestore centrale, che può esaminare i dati raccolti per correlare eventuali anomalie.
+
+\subsection{Monitoraggio della LAN}
+
+L'agente monitor della LAN contribuisce fornendo informazioni sulla connessione tra host, i servizi utilizzati e il volume di traffico. Monitora eventi significativi, come improvvisi cambiamenti nel carico di rete o utilizzi sospetti di servizi, e segnala tali attività al gestore centrale.
+
+\section{Network-Based Intrusion Detection System}
+
+I Network-based Intrusion Detection System (NIDS) monitorano il traffico di rete per rilevare attività sospette analizzando i pacchetti che attraversano la rete.
+
+\section{IDS Distribuito}
+
+Un IDS distribuito centralizza le informazioni provenienti da fonti HIDS e NIDS, combinando così dati a livello di host con dati di eventi di rete.
+
+\subsection{Problemi Chiave per i Sistemi IDS}
+
+Due sono i problemi principali che affliggono gli IDS:
+
+\begin{enumerate}
+    \item \textbf{Riconoscimento di nuove minacce:} I sistemi di sicurezza tradizionali spesso non riescono a identificare nuove minacce o varianti radicalmente modificate di minacce esistenti.
+    
+    \item \textbf{Rapidità di aggiornamento:} È difficile aggiornare rapidamente i sistemi di sicurezza per rispondere ad attacchi che si diffondono in modo fulmineo.
+\end{enumerate}
+
+Inoltre, la difesa perimetrale, come i firewall, incontra sfide aggiuntive in un contesto in cui le aziende moderne non hanno confini ben definiti e i dispositivi possono entrare e uscire dalla rete, per esempio tramite connessioni wireless o dispositivi mobili.
+
+\subsection{Attacchi e Metodi di Intrusione Moderni}
+
+Gli attaccanti adottano tattiche che sfruttano le vulnerabilità dei sistemi. I metodi più tradizionali prevedono la diffusione di malware e attacchi DDoS (Distributed Denial of Service) per colpire con forza e rapidità, sfruttando la lentezza delle risposte difensive. Tuttavia, negli ultimi anni, sono emerse tattiche più sofisticate, come attacchi che si diffondono lentamente e che sono progettati per eludere il rilevamento dei sistemi di difesa convenzionali.
+
+\subsection{Sistemi Cooperativi e Rilevamento Distribuito}
+
+Per contrastare gli attacchi moderni, sono stati sviluppati sistemi di rilevamento cooperativi. In questi sistemi, i nodi della rete agiscono come sensori locali e utilizzano protocolli peer-to-peer per scambiarsi informazioni sugli attacchi sospetti. Ad esempio, un sistema può rilevare un comportamento insolito in un nodo locale e, invece di reagire immediatamente con il rischio di un falso positivo, può segnalare l'attività sospetta ai nodi vicini. Se la quantità di messaggi di sospetto raggiunge una soglia predefinita, il sistema assume che un attacco sia in corso e attiva una risposta.
+
+Un esempio concreto di questo approccio è Autonomic Enterprise Security, sviluppato da Intel. Questo sistema distribuito non si basa esclusivamente sulla difesa perimetrale (come i firewall) né su difese host-based individuali, ma considera ogni dispositivo di rete come un potenziale sensore. In questo modo, i sensori distribuiti collaborano per verificare lo stato della rete e determinare se è in corso un attacco.
+
+\subsection{Vantaggi del Rilevamento Distribuito}
+
+L'approccio distribuito presenta vari vantaggi:
+
+\begin{enumerate}
+    \item \textbf{Maggiore copertura e risposta più rapida:} IDS multipli che condividono informazioni possono rilevare attacchi diffusi in modo più efficace, specialmente quando si tratta di attacchi che si sviluppano lentamente.
+    
+    \item \textbf{Riduzione del traffico e miglioramento del rapporto segnale/rumore:} Il monitoraggio a livello host consente di analizzare il traffico locale, spesso ridotto rispetto al traffico globale analizzato da dispositivi di rete come i router, aumentando la visibilità dei modelli di attacco.
+    
+    \item \textbf{Utilizzo di dati specifici dell'host:} I rilevatori host-based possono usare un set di dati più ricco (ad esempio, dati delle applicazioni) come input per i classificatori locali.
+\end{enumerate}
+
+\subsection{Implementazione del Sistema IDS Ibrido}
+
+Un IDS distribuito o ibrido può essere costruito con prodotti di un singolo fornitore, progettati per condividere e scambiare dati tra loro, o utilizzando software specializzato di Security Information and Event Management (SIEM), che consente di importare e analizzare dati provenienti da varie fonti. Un approccio centralizzato semplifica il coordinamento dei sensori, ma può non essere la soluzione più economica o completa.
+
+\subsection{Comportamento del Sistema Centrale e Sensori Distribuiti}
+
+Il sistema centrale è configurato con un set di politiche di sicurezza predefinite, che vengono adattate sulla base dei dati provenienti dai sensori distribuiti. Le politiche possono includere azioni immediate o parametri da regolare e istruzioni di collaborazione tra i dispositivi. I principali input del sistema centrale sono:
+
+\begin{enumerate}
+    \item \textbf{Eventi di Riepilogo:} Eventi raccolti da vari punti della rete (come firewall e IDS) e sintetizzati per il sistema centrale.
+    
+    \item \textbf{Eventi DDI (Distributed Detection and Inference):} Allarmi generati quando il traffico di ``gossip'' permette ai nodi di concludere che è in corso un attacco.
+    
+    \item \textbf{Eventi PEP (Policy Enforcement Point):} Punti di applicazione delle politiche che risiedono su piattaforme fidate, capaci di correlare informazioni distribuite e decisioni locali per rilevare intrusioni.
+\end{enumerate}
+
+\section{Honeypot}
+
+Gli honeypot sono sistemi esca progettati per attirare gli attaccanti e distoglierli dai sistemi critici, raccogliendo al contempo informazioni utili sul loro comportamento.
+
+\subsection{Caratteristiche degli Honeypot}
+
+Gli honeypot sono caratterizzati da dati fittizi che sembrano preziosi ma che un utente legittimo non accederebbe mai, rendendo ogni tentativo di interazione sospetto. La loro funzione principale è di apparire vulnerabili per consentire agli amministratori di rilevare e tracciare gli attacchi senza mettere a rischio i sistemi produttivi.
+
+\subsection{Obiettivi degli Honeypot}
+
+Gli honeypot sono progettati per:
+
+\begin{itemize}
+    \item Deviare gli attacchi dai sistemi critici: attraggono l'attenzione degli aggressori verso risorse non produttive.
+    \item Raccogliere dati sugli attaccanti: registrano le attività malevole per analisi e miglioramento delle difese.
+    \item Permettere una risposta tempestiva: lasciano all'amministratore il tempo necessario per reagire e intervenire.
+\end{itemize}
+
+\subsection{Classificazione degli Honeypot}
+
+Gli honeypot si classificano in due categorie principali in base al livello di interazione con l'attaccante.
+
+\subsubsection{Honeypot a Bassa Interazione}
+
+Gli honeypot a bassa interazione rappresentano una soluzione di sicurezza che emula servizi o sistemi IT in modo limitato, offrendo un'interazione iniziale realistica senza implementare una versione completa del sistema. Questi strumenti sono progettati per identificare le prime fasi di un attacco con uno sforzo contenuto, sebbene non siano in grado di mantenere coinvolto l'attaccante per lunghi periodi.
+
+Un esempio tipico è la simulazione di servizi di rete come FTP, SSH o web server, dove l'interazione è minima e spesso limitata a risposte predefinite.
+
+\paragraph{Vantaggi e Svantaggi}
+
+\textbf{Vantaggi:}
+\begin{itemize}
+    \item Facili da implementare, richiedendo una configurazione minima e risorse contenute
+    \item Offrono un elevato livello di sicurezza grazie alla loro gamma ristretta di interazione
+    \item Necessitano di poca manutenzione e aggiornamenti
+\end{itemize}
+
+\textbf{Svantaggi:}
+\begin{itemize}
+    \item Forniscono informazioni meno dettagliate sugli attacchi
+    \item Possono essere più facilmente identificabili come honeypot da parte di attaccanti esperti
+\end{itemize}
+
+\subsubsection{Honeypot ad Alta Interazione}
+
+Gli honeypot ad alta interazione costituiscono sistemi completi dotati di un sistema operativo reale, servizi e applicazioni pienamente accessibili agli attaccanti. Questi sistemi più sofisticati offrono un'esperienza molto più realistica e sono in grado di trattenere l'attaccante per periodi più lunghi, permettendo di raccogliere informazioni più approfondite.
+
+Un esempio concreto è rappresentato da un honeypot che fornisce un vero sistema operativo, permettendo all'attaccante di eseguire comandi, caricare malware e condurre exploit complessi.
+
+\paragraph{Vantaggi e Svantaggi}
+
+\textbf{Vantaggi:}
+\begin{itemize}
+    \item Consentono una ricca raccolta di informazioni registrando ogni azione dell'attaccante
+    \item Offrono un elevato grado di realismo che rende più difficile il loro riconoscimento
+    \item Permettono lo studio approfondito di exploit sofisticati
+\end{itemize}
+
+\textbf{Svantaggi:}
+\begin{itemize}
+    \item Presentano un maggiore rischio di essere sfruttati per compromettere altre parti della rete
+    \item Richiedono una configurazione complessa e risorse significative
+    \item Necessitano di un monitoraggio continuo e una gestione della sicurezza impegnativa
+\end{itemize}
+
+\subsection{Evoluzione degli Honeypot}
+
+Inizialmente, gli honeypot consistevano in singoli computer con indirizzi IP progettati per attrarre hacker. Con il tempo, la ricerca si è concentrata sulla creazione di reti di honeypot che simulano intere infrastrutture aziendali con traffico e dati, consentendo un'osservazione più dettagliata e completa degli attacchi.
+
+\subsection{Posizionamento degli Honeypot nella Rete}
+
+La posizione degli honeypot all'interno della rete è un fattore cruciale per il loro funzionamento e la raccolta di dati. Diverse opzioni di distribuzione possono offrire vantaggi e svantaggi a seconda dell'uso desiderato.
+
+\subsubsection{Honeypot all'Esterno del Firewall}
+
+Un honeypot collocato all'esterno del firewall monitora i tentativi di connessione a indirizzi IP inutilizzati, riducendo i rischi per la rete interna. Sebbene sia efficace nel catturare gli attacchi esterni, ha un'efficacia limitata nell'identificazione di attacchi interni.
+
+\subsubsection{Honeypot nella DMZ}
+
+Un honeypot nella DMZ monitora l'accesso ai servizi esterni, come web e posta elettronica, ma richiede una sicurezza rigorosa per evitare che le attività generate compromettano gli altri sistemi della DMZ. L'efficacia può essere limitata dai filtri del firewall, che deve garantire un equilibrio tra sicurezza e monitoraggio.
+
+\subsubsection{Honeypot Interno}
+
+Un honeypot all'interno della rete aziendale è utile per rilevare attacchi interni e potenziali falle nei firewall. Tuttavia, richiede una configurazione attenta del firewall per evitare complicazioni nella gestione del traffico e ridurre il rischio di compromissioni.

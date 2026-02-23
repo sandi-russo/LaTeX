@@ -1,0 +1,86 @@
+\documentclass[12pt,a4paper]{report}
+
+% Pacchetti essenziali
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{verbatim}
+
+% Configurazione pagina
+\geometry{
+    top=2.5cm,
+    bottom=2.5cm,
+    left=3cm,
+    right=3cm
+}
+
+% Configurazione header e footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{15pt}
+
+% Configurazione listings per codice
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    captionpos=b
+}
+
+% Definizione del formato del capitolo
+\titleformat{\chapter}[hang]     % [hang] mantiene etichetta e titolo sulla stessa riga
+  {\Huge\bfseries}               % Stile del testo (Enorme e Grassetto)
+  {\thechapter\ -}               % L'etichetta (es: "1 -")
+  {0.5em}                        % Spazio orizzontale tra "1 -" e il titolo
+  {}                             % Codice prima del corpo del titolo (lascia vuoto)
+
+% Opzionale: Rimuove lo spazio verticale eccessivo sopra il capitolo
+\titlespacing*{\chapter}{0pt}{-30pt}{20pt}
+
+
+% Informazioni documento
+\title{
+    \Huge \textbf{Sicurezza dei Sistemi} \\
+    \vspace{1cm}
+    \Large Appunti del Corso
+    \author{}
+}
+\begin{document}
+
+% Frontespizio
+\maketitle
+
+% Indice
+\tableofcontents
+\newpage
+
+% Inclusione dei capitoli
+\include{capitolo01_fondamenti}
+\include{capitolo02_crittografia}
+\include{capitolo03_autenticazione}
+\include{capitolo04_controllo_accessi}
+\include{capitolo05_sql_injection}
+\include{capitolo06_malware}
+\include{capitolo07_dos}
+\include{capitolo08_ids}
+\include{capitolo09_firewall}
+\include{capitolo10_buffer_overflow}
+\include{capitolo11_protocolli_autenticazione}
+\include{capitolo12_wireless_mobile}
+
+\end{document}

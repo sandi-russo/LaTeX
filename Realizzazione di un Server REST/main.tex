@@ -1,0 +1,507 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+
+% Pacchetti base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage[italian]{babel}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, calc, fit}
+
+% Colori personalizzati
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.96}
+\definecolor{maincolor}{RGB}{0,51,102}
+
+% Stile per il codice
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{blue}\bfseries,
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{codegray},
+    numbersep=5pt,
+    showstringspaces=false,
+    tabsize=2,
+    morekeywords={function, while, if, for, return}
+}
+
+% Informazioni documento
+\title{Server REST Concorrente in C}
+\subtitle{Architettura ad Alte Prestazioni con Epoll e Thread Pool}
+\author{Sandi Russo, 553675}
+\institute{Università degli Studi di Messina\\Reti di Calcolatori e Sistemi Distribuiti}
+\date{A.A. 2024/2025}
+
+% Footer personalizzato
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=2.5ex,dp=1ex]{author in head/foot}%
+      \hbox to \paperwidth{%
+        \parbox[b][2.5ex][c]{.33\paperwidth}{\centering\usebeamerfont{author in head/foot}Sandi Russo}%
+        \parbox[b][2.5ex][c]{.34\paperwidth}{\centering\usebeamerfont{title in head/foot}Server REST Concorrente}%
+        \parbox[b][2.5ex][c]{.33\paperwidth}{\centering\usebeamerfont{page number in head/foot}\insertframenumber/\inserttotalframenumber}%
+      }%
+    \end{beamercolorbox}%
+  }%
+}
+
+\begin{document}
+
+% === SLIDE 1: Titolo ===
+\begin{frame}
+    \titlepage
+\end{frame}
+
+% === SLIDE 2: Indice ===
+\begin{frame}
+    \frametitle{Indice}
+    \tableofcontents
+\end{frame}
+
+% ============================================
+\section{Introduzione}
+% ============================================
+
+% === SLIDE 3: Obiettivi ===
+\begin{frame}
+    \frametitle{Obiettivi del Progetto}
+    \begin{block}{Server RESTful in C}
+        Implementare un server HTTP capace di gestire operazioni CRUD su una risorsa \texttt{/users}
+    \end{block}
+    \vspace{1em}
+    \begin{alertblock}{Focus: Gestione della Concorrenza}
+        \begin{itemize}
+            \item Gestire \textbf{migliaia di connessioni simultanee}
+            \item Architettura \textbf{scalabile} ed \textbf{efficiente}
+            \item Evitare blocchi e race condition
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+% === SLIDE 4: REST ===
+\begin{frame}
+    \frametitle{Architettura REST}
+    \begin{block}{Principi Chiave}
+        \textbf{RE}presentational \textbf{S}tate \textbf{T}ransfer
+    \end{block}
+    \vspace{1em}
+    \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+            \textbf{Metodi HTTP}
+            \begin{itemize}
+                \item GET: Leggi
+                \item POST: Crea
+                \item DELETE: Cancella
+            \end{itemize}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \textbf{Caratteristiche}
+            \begin{itemize}
+                \item Stateless
+                \item Client-Server
+                \item Interfaccia Uniforme
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    \vspace{1.5em}
+    \centering
+    \texttt{GET /users/1} $\rightarrow$ Restituisce utente con ID 1
+\end{frame}
+
+% === SLIDE 5: Stack Tecnologico ===
+\begin{frame}
+    \frametitle{Stack Tecnologico}
+    \begin{center}
+    \begin{tikzpicture}[
+        node distance=0.2cm,
+        layer/.style={rectangle, draw, rounded corners, minimum width=8cm, minimum height=1cm, align=center, thick, fill=blue!15}
+    ]
+        \node[layer, fill=blue!30] (lang) {\textbf{C}};
+        \node[layer, below=of lang] (thread) {\textbf{POSIX Threads} (pthread)};
+        \node[layer, below=of thread] (io) {\textbf{Epoll} (Linux I/O Multiplexing)};
+        \node[layer, fill=orange!20, below=of io] (db) {\textbf{SQLite3} (Database Embedded)};
+    \end{tikzpicture}
+    \end{center}
+    \vspace{1em}
+    \begin{block}{Dipendenze}
+        \centering
+        \texttt{sudo apt install sqlite3 libsqlite3-dev}
+    \end{block}
+\end{frame}
+
+% ============================================
+\section{Definizione del Problema}
+% ============================================
+
+% === SLIDE 6: Il Problema ===
+\begin{frame}
+    \frametitle{Limiti del Modello Sequenziale}
+    \begin{block}{Architettura Iterativa}
+        Un server iterativo accetta ed elabora una connessione alla volta mediante un ciclo \texttt{accept() $\rightarrow$ process() $\rightarrow$ close()}.
+    \end{block}
+    \vspace{1em}
+    \begin{alertblock}{Problematiche}
+        \begin{itemize}
+            \item \textbf{Serializzazione forzata}: impossibilità di gestire richieste concorrenti
+            \item \textbf{Blocco su I/O}: operazioni disco/rete bloccano l'intero server
+            \item \textbf{Throughput limitato}: latenza cumulativa proporzionale al numero di client
+            \item \textbf{Denial of Service}: un singolo client lento blocca tutti gli altri
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+% === SLIDE 7: Soluzioni ===
+\begin{frame}
+    \frametitle{Strategie di Concorrenza}
+    \begin{block}{1. Modello Thread-per-Connection}
+        \begin{itemize}
+            \item \textcolor{green!60!black}{$\boldsymbol{+}$} Implementazione immediata
+            \item \textcolor{red}{$\boldsymbol{-}$} Overhead di creazione/distruzione thread
+            \item \textcolor{red}{$\boldsymbol{-}$} Non scalabile
+        \end{itemize}
+    \end{block}
+    \begin{block}{2. Modello Select/Poll}
+        \begin{itemize}
+            \item \textcolor{green!60!black}{$\boldsymbol{+}$} I/O multiplexing senza thread multipli
+            \item \textcolor{red}{$\boldsymbol{-}$} O(n): scansione lineare dei descriptor
+            \item \textcolor{red}{$\boldsymbol{-}$} Limitazione nel numero di file descriptor
+        \end{itemize}
+    \end{block}
+    \begin{alertblock}{3. Modello Epoll + Thread Pool}
+        \begin{itemize}
+            \item \textcolor{green!60!black}{$\boldsymbol{+}$} O(1): efficiente indipendentemente dal numero di connessioni
+            \item \textcolor{green!60!black}{$\boldsymbol{+}$} Pool fisso: overhead controllato
+            \item \textcolor{green!60!black}{$\boldsymbol{+}$} Separazione dispatcher/worker
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+% ============================================
+\section{Metodologia}
+% ============================================
+
+% === SLIDE 8: Architettura ===
+\begin{frame}
+    \frametitle{Architettura: Dispatcher + Worker}
+    \begin{center}
+    \begin{tikzpicture}[
+        node distance=1.5cm and 2cm,
+        box/.style={rectangle, draw, rounded corners, minimum width=3cm, minimum height=1cm, align=center, thick},
+        arrow/.style={->, very thick, >=Stealth}
+    ]
+        % Main Thread
+        \node[box, fill=blue!20] (dispatcher) {%
+            \textbf{Main Thread}\\
+            \small (Dispatcher)
+        };
+        % Job Queue
+        \node[box, fill=orange!20, below=of dispatcher] (queue) {%
+            \textbf{Job Queue}\\
+            \small Mutex + Cond Var
+        };
+        % Thread Pool
+        \node[box, fill=green!20, below=of queue] (pool) {%
+            \textbf{Thread Pool}\\
+            \small (N Workers)
+        };
+        % Arrows
+        \draw[arrow] (dispatcher) -- node[right] {\small Epoll} (queue);
+        \draw[arrow] (queue) -- node[right] {\small Job} (pool);
+        % Labels
+        \node[left=1.5cm of dispatcher, align=right] {\small Nuove\\connessioni};
+        \draw[arrow] ([xshift=-1cm]dispatcher.west) -- (dispatcher.west);
+        \node[right=1.5cm of pool, align=left] {\small Elaborazione\\richieste};
+        \draw[arrow] (pool.east) -- ([xshift=1cm]pool.east);
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+% === SLIDE 9: I/O Multiplexing ===
+\begin{frame}
+    \frametitle{I/O Multiplexing con Epoll}
+    \begin{block}{Meccanismo Epoll}
+        API del kernel Linux per notifica asincrona di eventi su file descriptor
+    \end{block}
+    \vspace{0.5em}
+    \begin{exampleblock}{Vantaggi Rispetto a Select/Poll}
+        \begin{itemize}
+            \item \textbf{Efficienza O(1)}: tempo di attesa indipendente dal numero di FD monitorati
+            \item \textbf{Edge-triggered mode}: notifica solo su cambiamenti di stato
+            \item \textbf{Scalabilità}: supporto nativo per decine di migliaia di connessioni
+            \item \textbf{Event-driven}: eliminazione del polling attivo
+        \end{itemize}
+    \end{exampleblock}
+    \vspace{0.5em}
+    \centering
+    \small
+    Un singolo thread monitora tutte le connessioni senza overhead
+\end{frame}
+
+% === SLIDE 10: Loop Principale ===
+\begin{frame}[fragile]
+    \frametitle{Loop Principale del Dispatcher}
+\begin{lstlisting}[style=codestyle]
+epoll_fd = epoll_create1()
+epoll_ctl_add(epoll_fd, server_fd, EPOLLIN)
+
+while (true) {
+    num_events = epoll_wait(epoll_fd, events, ...)
+    for (i = 0; i < num_events; i++) {
+        if (events[i].fd == server_fd) {
+            // Nuova connessione
+            client_fd = accept(server_fd)
+            epoll_ctl_add(epoll_fd, client_fd, ...)
+        } else {
+            // Dati pronti -> crea job
+            pool_submit_job(pool, handle_request, ctx)
+        }
+    }
+}
+\end{lstlisting}
+\end{frame}
+
+% === SLIDE 11: Thread Pool ===
+\begin{frame}
+    \frametitle{Thread Pool}
+    \begin{block}{Motivazione}
+        La creazione/distruzione dinamica di thread introduce overhead significativo (context switch, allocazione stack)
+    \end{block}
+    \vspace{1em}
+    \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+            \textbf{Caratteristiche}
+            \begin{itemize}
+                \item Pool di N worker pre-allocati
+                \item Stato dormiente quando idle
+                \item Attivazione on-demand
+            \end{itemize}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \textbf{Benefici}
+            \begin{itemize}
+                \item Overhead ammortizzato
+                \item Utilizzo CPU ottimizzato
+                \item Controllo risorse
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% === SLIDE 12: Worker Thread ===
+\begin{frame}[fragile]
+    \frametitle{Logica Worker Thread}
+\begin{lstlisting}[style=codestyle]
+function worker_loop(pool) {
+    while (true) {
+        lock(pool.mutex)
+        while (queue_empty && !shutdown)
+            wait(pool.cond, pool.mutex)
+        if (shutdown) break
+        job = dequeue_job(pool)
+        unlock(pool.mutex)
+        // Esegue il lavoro FUORI dal lock
+        job.function(job.arg)
+    }
+}
+\end{lstlisting}
+\end{frame}
+
+% === SLIDE 13: Sincronizzazione ===
+\begin{frame}
+    \frametitle{Sincronizzazione: Pattern Produttore-Consumatore}
+    \begin{block}{Problema}
+        Accesso concorrente alla coda condivisa tra dispatcher (produttore) e worker (consumatori)
+    \end{block}
+    \vspace{1em}
+    \begin{exampleblock}{Soluzione: Mutex + Condition Variable}
+        \begin{description}
+            \item[\texttt{pthread\_mutex\_t}] Garantisce mutua esclusione nell'accesso alla coda (enqueue/dequeue atomici)
+            \item[\texttt{pthread\_cond\_t}] Segnalazione efficiente: worker si bloccano su \texttt{wait()} e vengono risvegliati dal dispatcher con \texttt{signal()}
+        \end{description}
+    \end{exampleblock}
+    \vspace{0.8em}
+    \centering
+    \textbf{Elimina sia race condition che busy-waiting}
+\end{frame}
+
+% === SLIDE 14: SQLite ===
+\begin{frame}
+    \frametitle{Backend: SQLite}
+    \begin{block}{Caratteristiche SQLite}
+        \begin{itemize}
+            \item \textbf{Embedded}: libreria C linkata direttamente, non server separato
+            \item \textbf{Zero configurazione}: database self-contained in singolo file
+            \item \textbf{Transazionale}: garanzie ACID complete
+            \item \textbf{Thread-safe}: modalità serialized/multi-thread
+        \end{itemize}
+    \end{block}
+    \vspace{1em}
+    \begin{exampleblock}{Design Modulare}
+        Isolamento completo della logica SQL in \texttt{db\_handler.c}
+        \vspace{0.5em}
+        
+        \texttt{db\_get\_all\_users()}, \texttt{db\_create\_user()}, \texttt{db\_delete\_user()}
+    \end{exampleblock}
+\end{frame}
+
+% === SLIDE 15: Flusso Richiesta ===
+\begin{frame}
+    \frametitle{Flusso di Elaborazione Richiesta}
+    \begin{center}
+    \begin{tikzpicture}[
+        node distance=0.6cm,
+        box/.style={rectangle, draw, rounded corners, minimum width=4.5cm, minimum height=0.6cm, align=center, thick, font=\footnotesize},
+        arrow/.style={->, thick, >=Stealth}
+    ]
+        \node[box, fill=blue!15] (e1) {1. Evento EPOLLIN};
+        \node[box, fill=blue!15, below=of e1] (e2) {2. Allocazione RequestContext};
+        \node[box, fill=orange!15, below=of e2] (e3) {3. Enqueue job};
+        \node[box, fill=green!15, below=of e3] (e4) {4. Worker dequeue};
+        \node[box, fill=purple!15, below=of e4] (e5) {5. Parsing HTTP + DB query};
+        \node[box, fill=red!15, below=of e5] (e6) {6. Send response + cleanup};
+        \draw[arrow] (e1) -- (e2);
+        \draw[arrow] (e2) -- (e3);
+        \draw[arrow] (e3) -- (e4);
+        \draw[arrow] (e4) -- (e5);
+        \draw[arrow] (e5) -- (e6);
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+% ============================================
+\section{Presentazione dei Risultati}
+% ============================================
+
+% === SLIDE 16: Test Funzionali ===
+\begin{frame}[fragile]
+    \frametitle{Test Funzionali con curl}
+    \begin{block}{GET /users}
+\begin{lstlisting}[style=codestyle, basicstyle=\ttfamily\tiny, numbers=none]
+$ curl http://localhost:8080/users
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+[{"id":1,"name":"Mario"},{"id":2,"name":"Luigi"}]
+\end{lstlisting}
+    \end{block}
+    \vspace{0.5em}
+    \begin{block}{POST /users}
+\begin{lstlisting}[style=codestyle, basicstyle=\ttfamily\tiny, numbers=none]
+$ curl -X POST -d "name=Peach" http://localhost:8080/users
+
+HTTP/1.1 201 Created
+{"status":"created","id":3}
+\end{lstlisting}
+    \end{block}
+\end{frame}
+
+% === SLIDE 17: Test Concorrenza ===
+\begin{frame}[fragile]
+    \frametitle{Test di Concorrenza}
+    \begin{block}{Scenario: 50 richieste simultanee}
+\begin{lstlisting}[style=codestyle, language=bash, numbers=none, basicstyle=\ttfamily\small]
+#!/bin/bash
+for i in {1..50}; do
+    curl http://localhost:8080/users &
+done
+wait
+\end{lstlisting}
+    \end{block}
+    \vspace{1em}
+    \begin{exampleblock}{Risultati}
+        \begin{itemize}
+            \item \checkmark\ Tutte le 50 richieste completate con successo
+            \item \checkmark\ Worker diversi processano in parallelo
+            \item \checkmark\ Server rimane reattivo
+        \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+% === SLIDE 18: Vantaggi ===
+\begin{frame}
+    \frametitle{Vantaggi dell'Architettura}
+    \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+            \begin{block}{Performance}
+                \begin{itemize}
+                    \item Basso consumo CPU
+                    \item Overhead minimo
+                    \item Scalabilità O(1)
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \begin{block}{Robustezza}
+                \begin{itemize}
+                    \item Thread-safe
+                    \item Modulare
+                    \item Gestione risorse
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+    \vspace{1.5em}
+    \centering
+    \large
+    \textbf{Architettura production-ready per server ad alte prestazioni}
+\end{frame}
+
+% ============================================
+\section{Conclusione}
+% ============================================
+
+% === SLIDE 19: Limitazioni ===
+\begin{frame}
+    \frametitle{Limitazioni e Sviluppi Futuri}
+    \begin{alertblock}{Limitazioni Implementative}
+        \begin{itemize}
+            \item \textbf{Sicurezza}: Comunicazione in chiaro (HTTP)
+            \item \textbf{Autenticazione}: Assenza di meccanismi di controllo accessi
+            \item \textbf{Parsing HTTP}: Gestione limitata ai casi d'uso principali
+            \item \textbf{Bounded queue}: Coda illimitata espone a rischio OOM
+        \end{itemize}
+    \end{alertblock}
+    \vspace{0.8em}
+    \begin{block}{Roadmap Sviluppi Futuri}
+        \begin{itemize}
+            \item Integrazione \textbf{TLS/SSL} (OpenSSL) per HTTPS
+            \item Sistema di autenticazione basato su \textbf{JWT}
+            \item Parser HTTP robusto (\texttt{http-parser}, \texttt{picohttpparser})
+            \item Integrazione \textbf{Redis} per caching distribuito
+            \item Implementazione \textbf{bounded queue} con backpressure
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+% === SLIDE 20: Competenze ===
+\begin{frame}
+    \frametitle{Competenze Acquisite}
+    \begin{itemize}
+        \item \textbf{Programmazione di Rete}: Socket API, TCP/IP
+        \item \textbf{Programmazione di Sistema}: Epoll, I/O non bloccante
+        \item \textbf{Concorrenza}: Pthreads, Mutex, Condition Variables
+        \item \textbf{Pattern}: Thread Pool, Produttore-Consumatore
+        \item \textbf{Protocolli}: HTTP/1.1, REST
+        \item \textbf{Database}: SQLite, API C
+    \end{itemize}
+    \vspace{2em}
+    \centering
+    \Large
+    \textbf{Grazie per l'attenzione!}
+\end{frame}
+
+\end{document}

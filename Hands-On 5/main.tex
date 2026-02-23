@@ -1,0 +1,452 @@
+\documentclass[a4paper, 12pt]{scrartcl}
+\usepackage[utf8]{inputenc} % supporto caratteri UTF-8
+\usepackage[T1]{fontenc} % migliore gestione dei font
+\usepackage{newtxtext, newtxmath} % Font Times New Roman-like
+\usepackage[main=italian, english]{babel} % imposta l'italiano come lingua principale
+\usepackage{graphicx} % per l'inserimento di immagini
+\usepackage{hyperref} % per link nell'indice
+\usepackage{listings} % per codice sorgente
+\usepackage{xcolor} % per colorare il codice
+\usepackage{amsmath} % per formule matematiche complesse
+\usepackage{tikz} % per i disegni
+\usetikzlibrary{positioning} % per una migliore gestione delle posizioni degli elementi
+\usetikzlibrary{decorations.pathreplacing} % per le graffe
+\usetikzlibrary{shapes.geometric, arrows}
+
+% formattazione codice sorgente
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    captionpos=b
+}
+
+% informazioni sulla relazione
+\title{Hands-On 5}
+\subtitle{RAW SOCKET - ICMP}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Nome e CdL
+\date{\today}
+
+\begin{document}
+
+\maketitle % Genera la copertina con titolo, sottotitolo e autore
+
+\newpage
+\tableofcontents % Inserisce l'indice automatico
+\newpage
+
+\section{Introduzione}
+Il presente documento intende esplorare il funzionamento e l'utilizzo delle \textbf{raw socket} in combinazione con il protocollo \textbf{ICMP} (Internet Control Message Protocol). Lo studio approfondirà le caratteristiche tecniche di ICMP, le modalità di implementazione tramite raw socket in linguaggio C e l'analisi dei risultati ottenuti attraverso diversi grafici. La principale fonte di riferimento per il protocollo ICMP sarà l'\textit{RFC 792}, mentre per le raw socket si farà riferimento alla documentazione di sistema \textit{man}.
+
+
+\subsection{Raw Socket}
+I raw socket consentono di essere implementate ed operare nello user space e ad un livello più basso della pila di rete, permettendo la creazione e la manipolazione diretta dei pacchetti, inclusi gli header di protocollo (IP, TCP, UDP, ICMP, ecc...). \\
+Vengono utilizzati per sviluppare strumenti di rete avanzati come sniffer, scanner, tool di sicurezza oppure protocolli personalizzati e per fare il \textit{Packet Crafting}
+
+\subsubsection{Differenza tra User Space e Kernel Space}
+In un sistema operativo, esistono due spazi di memoria distinti in cui il codice può essere eseguito: lo user space e il kernel space. Questi spazi di memoria sono utilizzati per separare i processi di sistema dalle applicazioni degli utenti, garantendo così maggiore sicurezza e stabilità.
+\begin{itemize}
+    \item \textbf{User Space}: questo è lo spazio di memoria in cui girano le applicazioni degli utenti. Le applicazioni in user space non hanno accesso diretto alle risorse hardware. Quando un'applicazione ha bisogno di accedere a risorse come il disco rigido, la rete o la memoria, deve effettuare una chiamata di sistema (system call) al kernel. Questo meccanismo di separazione garantisce che un'applicazione malfunzionante non possa compromettere la stabilità dell'intero sistema operativo.
+
+    \item \textbf{Kernel Space}: questo è lo spazio di memoria riservato al kernel del sistema operativo, che ha accesso diretto a tutte le risorse hardware del sistema. Il kernel gestisce le risorse del sistema, come il processore, la memoria e i dispositivi di input/output. Le operazioni che richiedono un elevato livello di privilegio, come la gestione della memoria o la manipolazione dei pacchetti di rete a bassissimo livello, vengono eseguite nel kernel space.
+\end{itemize}
+
+\subsection{Protocollo ICMP}
+Il protocollo ICMP è un protocollo di rete utilizzato per inviare messaggi di errore e informazioni operative indicate dalle macchine di rete, come router e host, per segnalare problemi relativi alla consegna dei pacchetti IP. Definito nello standard \textit{RFC 792}, ICMP sfrutta il supporto di base dell'IP come se fosse un protocollo di livello superiore, ma è in realtà una parte integrante di IP e deve essere implementato da ogni modulo IP. \\
+Nella pila ISO/OSI, il protocollo ICMP opera al livello 3 (Livello di Rete). Le raw socket, a loro volta, possono essere utilizzate per manipolare direttamente i pacchetti a questo livello, permettendo l'accesso e la modifica degli header di protocollo.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tikzpicture}
+        % Define the layers with services inside
+        \foreach \layer/\services/\y in { 
+            Applicazione/{HTTP, FTP, SMTP}/5, 
+            Trasporto/{TCP, UDP}/4, 
+            Rete/{IP, ICMP}/3, 
+            Collegamento/{Ethernet, PPP}/2, 
+            Fisico/{Bitstream}/1}
+        {
+            % Draw the main layer box with increased height
+            \node[draw, rectangle, minimum width=8cm, minimum height=1cm, fill=gray!20, align=center] 
+                at (0, \y) {\layer \\ {\scriptsize \services}};
+        }
+
+        % Highlight the Network layer
+        \node[draw, rectangle, minimum width=8cm, minimum height=1cm, fill=yellow, align=center] 
+            at (0, 3) {Rete \\ {\scriptsize IP, ICMP}};
+            
+    \end{tikzpicture}
+    \caption{Pila ISO/OSI e Livello di Operazione delle Raw Socket}
+    \label{fig:osi_model}
+\end{figure}
+
+
+\noindent
+ICMP è utilizzato in diverse situazioni, ad esempio, quando un datagramma non può raggiungere la sua destinazione, quando il gateway non ha la capacità di buffer per inoltrare un datagramma, e quando il gateway può indirizzare l'host a inviare traffico su una rotta più breve. La finalità di questi messaggi di controllo è fornire feedback su problemi nell'ambiente di comunicazione, senza garantire la consegna assoluta dei datagrammi. I messaggi ICMP tipicamente segnalano errori nel processamento dei datagrammi, ma non vengono inviati messaggi ICMP su altri messaggi ICMP per evitare regressi infiniti di messaggi.
+
+\subsection{Formati dei Messaggi ICMP}
+I messaggi ICMP sono inviati utilizzando l'intestazione IP di base. Il primo ottetto della porzione dati del datagramma è un campo di tipo ICMP, il cui valore determina il formato dei dati rimanenti. I campi etichettati come "non utilizzati" sono riservati per estensioni future e devono essere zero quando inviati, ma i ricevitori non dovrebbero utilizzare questi campi eccetto che per includerli nel checksum.
+
+
+\begin{itemize}
+    \item \textbf{Versione:} 4
+    \item \textbf{IHL:} Lunghezza dell'intestazione internet in parole di 32 bit.
+    \item \textbf{Tipo di Servizio:} 0
+    \item \textbf{Lunghezza Totale:} Lunghezza dell'intestazione internet e dei dati in ottetti.
+    \item \textbf{Identificazione, Flags, Offset di Frammento:} Utilizzati nella frammentazione.
+    \item \textbf{Time to Live (TTL):} Tempo di vita in secondi, decrementato ad ogni passaggio attraverso una macchina.
+    \item \textbf{Protocollo:} ICMP = 1
+    \item \textbf{Checksum dell'Intestazione:} Complemento a uno della somma di complemento a uno di tutte le parole di 16 bit nell'intestazione.
+    \item \textbf{Indirizzo Sorgente:} L'indirizzo del gateway o host che compone il messaggio ICMP.
+    \item \textbf{Indirizzo Destinazione:} L'indirizzo del gateway o host a cui il messaggio deve essere inviato.
+\end{itemize}
+
+\begin{figure}[h!]
+    \centering
+    \small
+    \begin{tikzpicture}
+
+        % Frecce con etichette
+        \draw[<->](0, 1.8) -- (14, 1.8) node[midway, above] {32 bit};
+        \draw[<->] (0,1.2) -- (4,1.2) node[midway, above] {8 bit};
+        \draw[<->] (4,1.2) -- (8,1.2) node[midway, above] {8 bit};
+        \draw[<->] (8,1.2) -- (14,1.2) node[midway, above] {16 bit};
+
+        % Linee verticali
+        \draw[densely dashed] (0,1.8) -- (0,1);
+        \draw[densely dashed] (14,1.8) -- (14,1);
+        \draw[densely dotted] (4, 1.2) -- (4,1);
+        \draw[densely dotted] (8,1.2) -- (8,1);
+        
+        % Prima riga
+         \draw (0,0) rectangle (2,1) node[pos=.5] {{Versione}};
+        \draw (2,0) rectangle (4,1) node[pos=.5] {{Codice}};
+        \draw (4,0) rectangle (8,1) node[pos=.5] {{Tipo di Servizio}};
+        \draw (8,0) rectangle (14,1) node[pos=.5] {{Lunghezza totale}};
+
+        % Seconda riga
+        \draw (0,0) rectangle (8,-1) node[pos=.5]{{Identificatore}};
+        \draw (8,0) rectangle (10,-1) node[pos=.5]{{Flags}};
+        \draw (10,0) rectangle (14,-1) node[pos=.5]{{Offset di Frammento}};
+
+        % Terza riga
+        \draw (0,-1) rectangle (4, -2) node[pos=.5]{{Time To Live}};
+        \draw (4,-1) rectangle (8, -2) node[pos=.5]{{Protocollo}};
+        \draw (8,-1) rectangle (14, -2) node[pos=.5]{{Checksum dell'Intestazione}};
+
+        % Quarta riga
+        \draw (0,-2) rectangle (14, -3) node[pos=.5]{{Indirizzo Sorgente}};
+
+        % Quinta riga
+        \draw (0,-3) rectangle (14, -4) node[pos=.5]{{Indirizzo Destinazione}};
+
+        % Sesta riga
+        \draw (0,-4) rectangle (4, -5) node[pos=.5]{{Tipo}};
+        \draw (4,-4) rectangle (8, -5) node[pos=.5]{{Codice}};
+        \draw (8,-4) rectangle (14, -5) node[pos=.5]{{Checksum dell'ICMP}};
+
+        % Settima riga
+        \draw (0,-5) rectangle (14, -6) node[pos=.5]{{Dati (Payload)}};
+
+        % Graffa a destra
+        \draw [decorate,decoration={brace,amplitude=5pt,mirror,raise=4pt}] (14,-6) -- (14,1) node [black,midway,xshift=14pt,rotate=-90] {\footnotesize {Pacchetto IP}};
+
+        % Graffe a sinistra
+        \draw [decorate,decoration={brace,amplitude=5pt,raise=4pt}] (0,-4) -- (0,1) node [black,midway,xshift=-14pt,rotate=90] {\footnotesize Header IP};
+        \draw [decorate,decoration={brace,amplitude=5pt,raise=4pt}] (0,-6) -- (0,-4) node [black,midway,xshift=-14pt, rotate=90] {\footnotesize Header ICMP};
+
+    \end{tikzpicture}
+    \caption{Formato del messaggio ICMP}
+    \label{fig:icmp_format}
+\end{figure}
+
+
+\section{Definizione del problema}
+L'obiettivo di questa relazione è comprendere come le raw socket possono essere utilizzate per inviare e ricevere messaggi ICMP, con particolare attenzione ai messaggi di richiesta ed eco (ping). Questo studio include la configurazione di una raw socket in un ambiente di sviluppo C, l'invio di pacchetti ICMP e l'analisi delle risposte ricevute.
+
+\subsection{Obiettivi Specifici}
+Gli obiettivi specifici di questa relazione includono:
+\begin{itemize}
+    \item Comprendere la struttura dei pacchetti ICMP e il loro utilizzo pratico.
+    \item Configurare e utilizzare raw socket per inviare messaggi ICMP.
+    \item Analizzare le risposte ICMP ricevute e diagnosticare problemi di rete.
+\end{itemize}
+
+\subsection{Riferimenti}
+Le principali fonti di riferimento per questo studio sono:
+\begin{itemize}
+    \item RFC 792 - Internet Control Message Protocol
+    \item Documentazione di sistema (`man`) per le raw socket e il protocollo ICMP
+\end{itemize}
+
+\section{Metodologia}
+Per affrontare il problema di inviare e ricevere messaggi ICMP tramite raw socket, abbiamo seguito un approccio strutturato.
+
+\subsection{Creazione della Raw Socket}
+Per creare una raw socket, utilizziamo la funzione \texttt{socket()} con i parametri \texttt{AF\_INET} (per IPv4), \texttt{SOCK\_RAW} (per raw socket) e \texttt{IPPROTO\_ICMP} (per il protocollo ICMP). Questo ci permette di creare una socket che opera a livello IP e utilizza il protocollo ICMP.
+
+% definizione stili
+\tikzstyle{process} = [rectangle, minimum width=2.5cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+\tikzstyle{protocol} = [thick,<->,>=stealth]
+
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[node distance=1.5cm, auto]
+        % definizione stili
+        \tikzstyle{process} = [rectangle, minimum width=2.5cm, minimum height=1cm, text centered, draw=black, fill=orange!30]
+        \tikzstyle{arrow} = [thick,->,>=stealth]
+        \tikzstyle{protocol} = [thick,<->,>=stealth]
+
+        % Incapsulamento
+        \node (app) [process] {Applicazione};
+        \node (trans) [process, below of=app] {Trasporto};
+        \node (net) [process, below of=trans] {Rete};
+        \node (link) [process, below of=net] {Collegamento};
+        \node (phys) [process, below of=link] {Fisico};
+
+        \draw [arrow] (app) -- node[midway, right] {p} (trans);
+        \draw [arrow] (trans) -- node[midway, right] {p} (net);
+        \draw [arrow] (net) -- node[midway, right] {p} (link);
+        \draw [arrow] (link) -- node[midway, right] {p} (phys);
+
+        % Decapsulamento
+        \node (phys2) [process, right of=phys, xshift=6cm] {Fisico};
+        \node (link2) [process, above of=phys2] {Collegamento};
+        \node (net2) [process, above of=link2] {Rete};
+        \node (trans2) [process, above of=net2] {Trasporto};
+        \node (app2) [process, above of=trans2] {Applicazione};
+
+        \draw [arrow] (phys2) -- node[midway, left] {p} (link2);
+        \draw [arrow] (link2) -- node[midway, left] {p} (net2);
+        \draw [arrow] (net2) -- node[midway, left] {p} (trans2);
+        \draw [arrow] (trans2) -- node[midway, left] {p} (app2);
+
+        % Frecce di incapsulamento e decapsulamento
+        \draw [arrow] (app) -- ++(-1.5,0) -- ++(0,-6) node[midway, left, rotate=90, yshift=10pt] {Incapsulamento} -- (phys.west);
+        \draw [arrow] (phys2.east) -- ++(0.3,0) -- ++(0,6) node[midway, left, rotate=90, yshift=-10pt] {Decapsulamento} -- (app2);
+
+        % Protocolli tra i livelli
+        \draw [protocol] (app) -- node[midway, above] {Protocollo Applicazione} (app2);
+        \draw [protocol] (trans) -- node[midway, above] {Protocollo Trasporto} (trans2);
+        \draw [protocol] (net) -- node[midway, above] {Protocollo Rete} (net2);
+        \draw [protocol] (link) -- node[midway, above] {Protocollo Collegamento} (link2);
+        \draw [protocol] (phys) -- node[midway, above] {Protocollo Fisico} (phys2);
+    \end{tikzpicture}
+    \caption{Schema del processo di incapsulamento e decapsulamento nelle reti}
+    \label{fig:incapsulamento}
+\end{figure}
+
+\subsection{Costruzione del Pacchetto ICMP}
+Il pacchetto ICMP viene costruito manualmente. Questo include la configurazione dell'intestazione ICMP con i campi necessari come il tipo di messaggio, il codice, l'identificatore e il checksum. La funzione \texttt{build\_icmp\_packet()} si occupa di questa operazione.
+
+\subsection{Invio del Pacchetto ICMP}
+Una volta costruito il pacchetto ICMP, utilizziamo la funzione \texttt{sendto()} per inviare il pacchetto all'indirizzo di destinazione specificato. Questa funzione invia i dati della raw socket.
+
+\subsection{Ricezione della Risposta ICMP}
+Dopo aver inviato il pacchetto ICMP, attendiamo una risposta utilizzando la funzione \texttt{recvfrom()}. Questa funzione riceve i dati dalla raw socket e li memorizza in un buffer.
+
+\subsection{Analisi della Risposta ICMP}
+Una volta ricevuta la risposta, analizziamo il pacchetto per verificare che contenga una risposta valida (ICMP Echo Reply) e che l'identificatore corrisponda al PID del processo che ha inviato il ping. Utilizziamo la funzione \texttt{ntohs()} per convertire i valori dal formato di rete al formato host.
+
+\subsection{Calcolo del Checksum}
+Il calcolo del checksum è essenziale per garantire l'integrità dei pacchetti ICMP. Utilizziamo una funzione dedicata \texttt{compute\_checksum()} per calcolare il checksum del pacchetto ICMP prima di inviarlo.
+
+
+\section{Presentazione dei risultati}
+
+\subsection{Inclusione delle Librerie}
+Il primo passo consiste nell'includere le librerie necessarie per la gestione delle socket, del protocollo IP e del protocollo ICMP, nonché le librerie standard di input/output e gestione della memoria.
+
+\begin{lstlisting}[caption=Inclusione delle librerie]
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h> // La usiamo per gestire e utilizzare il protocollo icmp
+#include <arpa/inet.h>
+#include <sys/time.h> // La usiamo per gestire i timer
+\end{lstlisting}
+
+\subsection{Definizione delle Costanti}
+Definiamo alcune costanti che utilizzeremo nel programma, come la dimensione del pacchetto ICMP e il timeout per la risposta.
+
+\begin{lstlisting}[caption=Definizione delle costanti]
+#define PACKET_SIZE 64
+#define TIMEOUT_SEC 2
+\end{lstlisting}
+
+\subsection{Calcolo del Checksum}
+La funzione \texttt{compute\_checksum()} calcola il checksum per il pacchetto ICMP. Ma non l'andremo a studiare ed analizzare.
+
+\subsection{Creazione del Pacchetto ICMP}
+La funzione \texttt{build\_icmp\_packet()} crea un pacchetto ICMP di tipo ECHO REQUEST e lo riempie con i dati necessari, inclusi il tipo di messaggio, il codice, l'identificatore e il checksum.
+
+\begin{lstlisting}[caption=Creazione del pacchetto ICMP]
+void build_icmp_packet(struct icmphdr *icmp, int sequence) {
+    icmp->type = ICMP_ECHO;  // ICMP_ECHO viene utilizzato dal comando ping per verificare se un host e' raggiungibile sulla rete
+    icmp->code = 0;  // Codice impostato a 0 per l'echo reply
+    icmp->un.echo.id = htons(getpid());  // ID univoco basato sull'ID del processo
+    icmp->checksum = 0;
+    
+    // Aggiunge un payload qualunque
+    char *data = (char *)(icmp + 1);  // Puntatore all'area successiva alla struttura ICMP
+    memset(data, 'A', PACKET_SIZE - sizeof(*icmp));  // Riempie il payload con 'A'
+    icmp->checksum = compute_checksum(icmp, PACKET_SIZE);  // Calcola il checksum
+}
+\end{lstlisting}
+
+\begin{figure}[h]
+    \centering
+    \small
+    \begin{tikzpicture}
+
+        % Primo rettangolo (arancione) - il più grande
+        \draw[fill=orange!30] (0,6) rectangle (14,4);
+        \draw (4,6) -- (4,4); 
+        \node at (2,5) {{Header}};
+        \node at (9,5) {{Dati}};
+
+        % Secondo rettangolo (blu) - centrato nella parte destra del primo
+        \draw[fill=blue!30] (5,5.7) rectangle (13,4.3);
+        \draw (7,5.7) -- (7,4.3); 
+        \node at (6,5) {{Header}};
+        \node at (10,5) {{Dati}};
+
+        % Terzo rettangolo (verde) - centrato nella parte destra del secondo
+        \draw[fill=green!30] (7.7,5.5) rectangle (12.3,4.5);
+        \draw (9.3,5.5) -- (9.3,4.5);
+        \node at (8.5,5) {{Header}};
+        \node at (10.7,5) {{Payload}};
+
+    \end{tikzpicture}
+    \caption{Schema di incapsulamento con header e payload}
+    \label{fig:header_payload}
+\end{figure}
+
+
+\subsection{Gestione degli Argomenti}
+Il programma verifica che il numero di argomenti passati sia corretto.
+
+\begin{lstlisting}[caption=Gestione degli argomenti]
+int main(int argc, char *argv[]) {
+    if (argc != 2) {  // Verifica che il numero di argomenti sia corretto
+        printf("Utilizzo: %s <indirizzo IP>\n", argv[0]);
+        exit(1);
+    }
+\end{lstlisting}
+
+\subsection{Creazione della Socket}
+Creiamo una raw socket utilizzando il protocollo ICMP. Se la creazione della socket fallisce, il programma mostra un messaggio di errore e termina.
+
+\begin{lstlisting}[caption=Creazione della socket]
+    int sock;
+    struct sockaddr_in dest;  // Struttura per rappresentare gli indirizzi IPV4
+    char packet[PACKET_SIZE];  // Inizializzazione del packet, specificandone la dimensione (header + payload)
+    
+    struct icmphdr *icmp = (struct icmphdr *)packet;  // Casting del packet alla struttura dell'header ICMP
+
+    if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {  // Creazione della socket
+        perror("socket");
+        exit(1);
+    }
+\end{lstlisting}
+
+\subsection{Gestione del Timeout}
+Configuriamo un timeout per la ricezione della risposta ICMP. Questo è utile per evitare che il programma resti in attesa indefinitamente.
+
+\begin{lstlisting}[caption=Gestione del timeout]
+    struct timeval tv;  // Struttura usata per definire un timeout in secondi e microsecondi
+    tv.tv_sec = TIMEOUT_SEC;  // Imposta il timeout con la define
+    tv.tv_usec = 0;  // Non utilizzo microsecondi
+
+    // Imposta il timeout sulla socket
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+\end{lstlisting}
+
+\subsection{Impostazione della Destinazione}
+Configuriamo l'indirizzo di destinazione (host a cui invieremo il ping) e azzeriamo la struttura dati di destinazione.
+
+\begin{lstlisting}[caption=Impostazione della destinazione]
+    memset(&dest, 0, sizeof(dest));  // Azzera la struttura dati di destinazione
+    dest.sin_family = AF_INET;  // Utilizziamo IPv4
+    dest.sin_addr.s_addr = inet_addr(argv[1]);  // Converte l'indirizzo IP da stringa a binario
+\end{lstlisting}
+
+\subsection{Invio del Pacchetto ICMP}
+Costruiamo il pacchetto ICMP utilizzando la funzione \texttt{build\_icmp\_packet()}.
+
+\begin{lstlisting}[caption=Invio del pacchetto ICMP]
+    build_icmp_packet(icmp, 1);  // Costruisce il pacchetto ICMP
+    printf("Invio ping a %s...\n", argv[1]);
+
+    if (sendto(sock, packet, PACKET_SIZE, 0, (struct sockaddr *)&dest, sizeof(dest)) <= 0) {  // Invio del pacchetto ICMP
+        perror("sendto");
+        close(sock);
+        exit(1); }
+\end{lstlisting}
+
+\subsection{Ricezione della Risposta ICMP}
+Riceviamo la risposta ICMP dalla socket e la memorizziamo in un buffer.
+
+\begin{lstlisting}[caption=Ricezione della risposta ICMP]
+    char recv_buffer[1024];  // Buffer per la risposta del ping
+    struct sockaddr_in src;  // Struttura per rappresentare gli indirizzi IPV4
+    socklen_t src_len = sizeof(src);  // Calcolo della dimensione della struttura
+
+    int bytes = recvfrom(sock, recv_buffer, sizeof(recv_buffer), 0, (struct sockaddr *)&src, &src_len);
+    if (bytes < 0) {  // Nessuna risposta
+        perror("Nessuna risposta");
+        close(sock);
+        exit(1);
+    }
+\end{lstlisting}
+
+\subsection{Analisi della Risposta ICMP}
+Analizziamo il pacchetto ricevuto per verificare che contenga una risposta valida.
+
+\begin{lstlisting}[caption=Analisi della risposta ICMP]
+    struct iphdr *ip_hdr = (struct iphdr *)recv_buffer;  // Cast del buffer ricevuto alla struttura IP header
+    struct icmphdr *icmp_reply = (struct icmphdr *)(recv_buffer + (ip_hdr->ihl * 4));  // Puntatore all'header ICMP
+
+    if (icmp_reply->type == ICMP_ECHOREPLY && ntohs(icmp_reply->un.echo.id) == getpid()) {  // Verifica se il pacchetto e' una risposta valida
+        printf("Ricevuta risposta da %s: seq=%d, TTL=%d\n",
+               inet_ntoa(src.sin_addr),  // Converte l'indirizzo IP del mittente da binario a stringa
+               ntohs(icmp_reply->un.echo.sequence),  // Converte il numero di sequenza nel formato dell'host
+               ip_hdr->ttl);  // Mostra il TTL del pacchetto
+    } else {
+        printf("Risposta non valida\n");
+    }
+
+    close(sock);
+    return 0;}
+\end{lstlisting}
+
+
+\section{Conclusione}
+
+In questa relazione, abbiamo descritto la creazione di una raw socket, la costruzione di un pacchetto ICMP, l'invio e la ricezione di questo pacchetto, e l'analisi della risposta ricevuta.  \\
+Attraverso l'uso di grafici e schemi, abbiamo illustrato il processo di incapsulamento e decapsulamento nei livelli ISO/OSI e la struttura gerarchica dei pacchetti di rete. Questi strumenti visivi hanno aiutato a comprendere meglio il flusso dei dati e l'interazione tra i diversi livelli di protocollo. \\
+I risultati ottenuti dimostrano l'efficacia delle raw socket nel manipolare direttamente i pacchetti di rete, offrendo un controllo granulare che è essenziale per sviluppare strumenti di rete avanzati come sniffer, scanner e tool di sicurezza. Tuttavia, l'uso delle raw socket richiede privilegi elevati e una comprensione approfondita dei protocolli di rete. \\
+In conclusione, l'approccio presentato in questa relazione può essere esteso e adattato per altre applicazioni di rete, offrendo una base solida per ulteriori studi e sviluppi nel campo della gestione e dell'analisi dei pacchetti di rete.
+
+\begin{lstlisting}[caption=Esecuzione del programma di ping]
+sudo ./icmp 8.8.8.8
+Invio ping a 8.8.8.8...
+Ricevuta risposta da 8.8.8.8: seq=0, TTL=112
+\end{lstlisting}
+
+
+
+\end{document}

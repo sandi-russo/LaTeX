@@ -1,0 +1,317 @@
+\documentclass[a4paper, 12pt]{scrartcl} % Classe KOMA-Script
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext, newtxmath} % Font New TX
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Opzioni Hyperref migliorate
+\usepackage{listings} % Per il codice
+\usepackage{xcolor}   % Per i colori
+\usepackage{amsmath}  % Per la matematica (se serve)
+%\usepackage{tikz}    % Includo TikZ anche se non usato direttamente qui
+%\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric, arrows} % Librerie TikZ
+\usepackage{caption}  % Per le didascalie
+\usepackage{subcaption} % Per sotto-figure/tabelle (se servono)
+\usepackage{geometry} % Per i margini
+\geometry{a4paper, margin=2.5cm} % Margini come specificato
+\usepackage{multirow}
+\usepackage{array}
+
+% Definizione colori per listings (come da specifica)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings (come da specifica)
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black}, % Colore cornice
+    % title=\lstname % Rimosso per ora, si può aggiungere per listing specifico
+}
+
+% Stile specifico per C (eredita da lstset e imposta la lingua)
+\lstdefinestyle{cstyle}{
+    language=C,
+    morekeywords={*, extern, static, void, int, return, printf, include, define, ifndef, endif} % Aggiunte keyword C comuni
+}
+
+% Stile specifico per Makefile (eredita da lstset e imposta la lingua)
+\lstdefinestyle{makestyle}{
+    language=make,
+    keywordstyle=\color{red!80!black}\bfseries, % Diverso colore per Makefile
+    morekeywords={*, CC, CFLAGS, TARGET, OBJS, PHONY, all, clean, check, echo, rm} % Keywords Makefile
+}
+
+% ----- INIZIO DOCUMENTO -----
+\begin{document}
+
+% Titolo e autore (modifica con i tuoi dati, usando lo stile richiesto)
+\title{Hands-On 9} % Titolo HO9
+\subtitle{COMPILAZIONE MODULARE, SYMBOL TABLE, MAKE}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Autore come da esempio
+\date{\today} % Usa la data corrente o specifica una data
+\maketitle
+
+\newpage
+\tableofcontents % Indice dei contenuti
+\newpage
+
+% --- SEZIONI RICHIESTE ---
+
+\section{Introduzione}
+ L'obiettivo principale di questo report è familiarizzare con i concetti fondamentali della \textbf{programmazione modulare} in C, analizzare il processo di \textbf{compilazione separata} (senza linking), comprendere la struttura e il significato della \textbf{tabella dei simboli} (\textit{Symbol Table}) nei file oggetto, e utilizzare l'utility \texttt{make} per l'\textbf{automazione della compilazione} di progetti composti da più file sorgente. Le osservazioni raccolte sono presentate come richiesto dalle specifiche dell'esercitazione.
+
+\section{Definizione del Problema}
+Questa esercitazione si articola in due parti principali, ciascuna mirata a esplorare aspetti specifici della compilazione e gestione di codice C:
+
+\begin{enumerate}
+    \item \textbf{Analisi di un Singolo File Sorgente:}
+        \begin{itemize}
+            \item \textbf{Compito:} Compilare un file C fornito (\texttt{main.c}) \textit{senza} eseguire la fase di linking, generando un file oggetto (\texttt{.o}).
+            \item \textbf{Obiettivo:} Osservare e analizzare la tabella dei simboli del file oggetto risultante tramite il comando \texttt{nm}. È richiesta la comprensione e giustificazione di ogni colonna dell'output di \texttt{nm} (indirizzo, tipo del simbolo - b, d, t, u, r, ecc. - e nome del simbolo), facendo riferimento anche alla documentazione (\texttt{man nm}).
+            \item \textbf{Estensione:} Modificare il codice sorgente aggiungendo o eliminando variabili casualmente e utilizzare il comando \texttt{size -\--format=GNU} sul file oggetto per osservare e spiegare la variazione delle dimensioni dei segmenti \texttt{text}, \texttt{data} e \texttt{bss}.
+        \end{itemize}
+    \item \textbf{Analisi di un Programma Modulare con \texttt{make}:}
+        \begin{itemize}
+            \item \textbf{Compito:} Utilizzare l'utility \texttt{make} e un \texttt{Makefile} fornito per compilare un programma C diviso in più moduli (\texttt{header.h}, \texttt{file1.c}, \texttt{file2.c}, \texttt{main.c}).
+            \item \textbf{Obiettivo:} Osservare le tabelle dei simboli dei singoli file oggetto generati (\texttt{file1.o}, \texttt{file2.o}, \texttt{main.o}) tramite il target \texttt{make check} (che invoca \texttt{nm}). Comprendere e giustificare l'output di \texttt{nm} per ciascun file oggetto, con particolare attenzione ai simboli definiti, non definiti (Undefined), locali e globali, e a come la modularità influisce sulla tabella dei simboli prima del linking.
+        \end{itemize}
+\end{enumerate}
+Il report deve documentare i comandi utilizzati, i codici sorgente, l'analisi degli output e le conclusioni tratte.
+
+\section{Metodologia}
+Per affrontare i problemi definiti, sono stati seguiti i seguenti passaggi metodologici:
+
+\subsection{Parte 1: Analisi Singolo File}
+\begin{enumerate}
+    \item \textbf{Codice Sorgente:} È stato utilizzato il codice C fornito nell'esercitazione (Codice \ref{lst:ex1code_met}).
+        \begin{lstlisting}[language=C, style=cstyle, caption={Codice C per l'esercizio 1 (main.c)}, label=lst:ex1code_met]
+        #include <stdio.h>
+
+        int a;
+        static int b = 10;
+
+        void funzione() {
+            static int c = 5;
+            int d = 20;
+            c++;
+            d++;
+        }
+
+        int main() {
+            funzione();
+            return 0;
+        }
+        \end{lstlisting}
+    \item \textbf{Compilazione Separata:} Il codice è stato compilato senza linking usando GCC con i flag \texttt{-e -s -c}.
+        \begin{verbatim}
+        gcc -e -s -c main.c
+        \end{verbatim}
+
+        \begin{itemize}
+            \item \textbf{-e: preprocessor}: questo parametro fa in modo che il compilatore si fermi dopo la fase di elaborazione
+
+            \item \textbf{-s: compiler}: questo parametro fa sì che si deneri un file \textit{assembly} (\textbf{.s}) invece del codice oggetto. \\
+            Il file contiene le istruzioni assembly corrispondenti al codice C
+
+            \item \textbf{-c: compilazione (senza linking)}: traduce il codice sorgente \textit{main.c} in codice oggetto \textit{main.o}. \\
+            Il file contiene il codice oggetto, prondo ad essere linkato con altre unità di compilazione.
+            
+        \end{itemize}
+
+        
+    \item \textbf{Analisi Tabella dei Simboli:} La tabella dei simboli del file \texttt{main.o} è stata ispezionata con \texttt{nm}.
+    
+        \begin{verbatim}
+        nm main.o
+        \end{verbatim}
+
+
+\begin{table}[ht]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+         \multicolumn{3}{|c|}{Tabella dei Simboli} \\
+         \hline
+        Indirizzo & Tipo & Nome \\
+        \hline
+        0000000000000004 & C & a \\
+        0000000000000000 & d & b \\
+        0000000000000004 & d & c.2317 \\
+        0000000000000000 & T & funzione \\
+        0000000000000025 & T & main \\
+        \hline
+    \end{tabular}
+    \caption{Tabella dei Simboli del codice \ref{lst:ex1code_met}}
+    \label{tab:table_symbol}
+\end{table}
+
+
+\begin{enumerate}
+    \item \textbf{indirizzo} (esadecimale): locazione di memoria \textit{relativa} all'interno del segmento corrispondente nel file \textit{.o}. La differenza di indirizzi tra simboli consecutivi dello stesso tipo dipende dalla dimensione del simbolo precedente.
+    
+    \item \textbf{tipo} (simbolo): \\
+    \begin{minipage}{\textwidth}
+        \centering
+        \begin{tabular}{|c|m{12cm}|}
+            \hline
+            \textbf{Simbolo} & \textbf{Descrizione} \\
+            \hline
+            T & Simbolo nel segmento \textit{Text} (codice), solitamente una funzione definita nel file, come il \textit{main}. \\
+            t & Simbolo \textit{locale} nel segmento \textit{Text} (funzione statica). \\
+            D & Simbolo nel segmento \textit{Data} (\textit{static int b = 10}), lavoriamo su un dato inizializzato. \\
+            d & Simbolo \textit{locale} nel segmento \textit{Data} (\textit{static int c = 5}), inizializzata e all'interno della funzione. \\
+            B & Simbolo nel segmento \textit{BSS} (\textbf{Block Started by Symbol}) (dati non inizializzati), es: \textit{int a}, variabile di tipo globale. \\
+            b & Simbolo \textit{locale} nel segmento \textit{BSS}, \textit{static int d}, all'interno di una funzione. \\
+            U & Simbolo undefined (non definito in questo file, richiesto dal linker), come il \textit{printf}, se la libreria è su un altro file. \\
+            C & Simbolo \textit{Common}, simile a \textit{BSS}, per variabili globali non inizializzate. \\
+            \hline
+        \end{tabular}
+    \end{minipage}
+\end{enumerate}
+        
+    \item \textbf{Analisi Segmenti:} Le dimensioni dei segmenti sono state analizzate con \texttt{size}.
+        \begin{verbatim}
+        size --format=GNU main.o
+        \end{verbatim}
+    \item \textbf{Modifiche e Osservazioni:} Sono state introdotte modifiche (aggiunta/rimozione di variabili globali/statiche, inizializzate/non) nel codice, ripetendo i passi 2 e 4 per osservare l'impatto sui segmenti \texttt{text}, \texttt{data}, \texttt{bss}.
+\end{enumerate}
+
+\subsection{Parte 2: Analisi Programma Modulare}
+\begin{enumerate}
+    \item \textbf{Codici Sorgente:} Sono stati utilizzati i file \texttt{header.h}, \texttt{file1.c}, \texttt{file2.c}, \texttt{main.c} e \texttt{Makefile} forniti (riportati nella sezione Risultati).
+    \item \textbf{Compilazione con \texttt{make}:} L'intero progetto è stato compilato e linkato usando il comando \texttt{make} nella directory contenente i file.
+        \begin{verbatim}
+        make
+        \end{verbatim}
+        Questo comando legge il \texttt{Makefile} e genera i file oggetto (\texttt{.o}) necessari e l'eseguibile finale (\texttt{programma}).
+    \item \textbf{Analisi Simboli Moduli:} Le tabelle dei simboli dei singoli file oggetto sono state ispezionate usando il target \texttt{check} definito nel \texttt{Makefile}.
+        \begin{verbatim}
+        make check
+        \end{verbatim}
+        Questo comando esegue \texttt{nm} su \texttt{file1.o}, \texttt{file2.o}, e \texttt{main.o}.
+    \item \textbf{Pulizia:} I file generati (\texttt{.o} e l'eseguibile) sono stati rimossi usando il target \texttt{clean}.
+        \begin{verbatim}
+        make clean
+        \end{verbatim}
+    \item \textbf{Analisi Makefile:} Il contenuto e la logica del \texttt{Makefile} sono stati analizzati per comprenderne il funzionamento (variabili, regole, dipendenze, comandi).
+\end{enumerate}
+
+\section{Presentazione dei Risultati}
+Questa sezione presenta i codici sorgente completi (dove non già mostrati), il Makefile commentato e l'analisi dettagliata degli output ottenuti.
+
+\subsection{Risultati Parte 1: Singolo File}
+
+\subsubsection{Analisi Output \texttt{nm main.o}}
+L'analisi dell'output di \texttt{nm main.o} (basata sulla metodologia descritta) rivela quanto segue per i simboli principali del codice \texttt{main.c}:
+\begin{itemize}
+    \item \texttt{a}: Essendo globale non inizializzata, appare come simbolo \texttt{C} (Common) o \texttt{B} (BSS), indicando che richiederà spazio nel segmento BSS dell'eseguibile finale. L'indirizzo nel file \texttt{.o} è tipicamente zero.
+    \item \texttt{b}: Globale statica inizializzata. Il tipo è \texttt{d} (Data locale), poiché \texttt{static} ne limita la visibilità al file. Occupa spazio nel segmento Data del file \texttt{.o} con un indirizzo relativo.
+    \item \texttt{funzione}: Funzione globale. Il tipo è \texttt{T} (Text globale), rappresenta codice eseguibile e ha un indirizzo nel segmento Text.
+    \item \texttt{c}: Locale statica inizializzata. Il tipo è \texttt{d} (Data locale), occupa spazio nel segmento Data e il suo nome potrebbe avere un suffisso (es. \texttt{c.1234}) per l'univocità interna.
+    \item \texttt{d}: \textbf{Non presente} nella tabella dei simboli. Essendo una variabile automatica, viene allocata sullo stack a runtime e non fa parte dei segmenti statici del file oggetto.
+    \item \texttt{main}: Funzione globale. Il tipo è \texttt{T} (Text globale), con un indirizzo nel segmento Text.
+\end{itemize}
+L'analisi degli indirizzi conferma che sono offset relativi all'interno dei rispettivi segmenti nel file oggetto.
+
+\subsubsection{Analisi Output \texttt{size main.o}}
+L'output di \texttt{size --format=GNU main.o} mostra le dimensioni dei segmenti:
+\begin{itemize}
+    \item \texttt{text}: Dimensione del codice compilato per \texttt{funzione} e \texttt{main}.
+    \item \texttt{data}: Dimensione totale delle variabili statiche/globali inizializzate (\texttt{b} e \texttt{c}).
+    \item \texttt{bss}: Dimensione dello spazio richiesto per le variabili statiche/globali non inizializzate (\texttt{a}).
+\end{itemize}
+L'esperimento di aggiunta/rimozione variabili ha confermato che: variabili inizializzate incidono su \texttt{data}, quelle non inizializzate su \texttt{bss}, e le funzioni su \texttt{text}, come atteso.
+
+\subsection{Risultati Parte 2: Programma Modulare}
+
+\subsubsection{Codici Sorgente Moduli}
+I codici \texttt{header.h}, \texttt{file1.c}, \texttt{file2.c}, \texttt{main.c} sono quelli presentati nella sezione Metodologia o nelle specifiche dell'Hands-On.
+
+\subsubsection{Makefile Commentato}
+Il \texttt{Makefile} utilizzato è cruciale per la gestione del progetto modulare.
+
+\begin{lstlisting}[language=make, style=makestyle, caption={Makefile commentato (HO9)}, label=lst:makefile_res]
+# Variabili
+CC = gcc                # Compilatore
+CFLAGS = -g -Wall       # Flag: debug info, tutti i warning
+TARGET = programma      # Nome eseguibile finale
+OBJS = main.o file1.o file2.o # File oggetto necessari
+
+# Regola Default: 'all' dipende dall'eseguibile finale
+all: $(TARGET)
+
+# Regola di Linking: Crea l'eseguibile ($(TARGET)) dagli oggetti ($(OBJS))
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^  # Linka oggetti ($^) per creare target ($@)
+
+# Regola Pattern: Crea un file '.o' da un file '.c'
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@ # Compila sorgente ($<) per creare oggetto ($@)
+
+# Regola 'check': Mostra simboli dei file oggetto
+check: $(OBJS) # Assicuriamoci che gli oggetti esistano prima di check
+	@echo "\n=== Simboli file1.o ==="
+	nm file1.o
+	@echo "\n=== Simboli file2.o ==="
+	nm file2.o
+	@echo "\n=== Simboli main.o ==="
+	nm main.o
+
+# Regola 'clean': Rimuove i file generati
+clean:
+	rm -f $(OBJS) $(TARGET) # Forza rimozione oggetti ed eseguibile
+
+
+# Target Fittizi: 'all', 'clean', 'check' sono azioni, non file
+.PHONY: all clean check
+\end{lstlisting}
+\textbf{Funzionamento:}
+\begin{itemize}
+    \item \texttt{make} invoca `all`, che dipende da `programma`.
+    \item Per creare `programma`, `make` vede che dipende da `main.o`, `file1.o`, `file2.o`.
+    \item Se un `.o` manca o il `.c` corrispondente è più recente, usa la regola pattern `%.o: %.c` per compilarlo (es. `gcc -g -Wall -c main.c -o main.o`).
+    \item Una volta creati tutti gli `.o`, usa la regola `$(TARGET): $(OBJS)` per linkarli (`gcc -g -Wall -o programma main.o file1.o file2.o`).
+    \item \texttt{make check} esegue `nm` sugli oggetti.
+    \item \texttt{make clean} rimuove i file generati.
+\end{itemize}
+
+\subsubsection{Analisi Output \texttt{make check}}
+L'output di `make check` mostra le tabelle dei simboli individuali:
+\begin{itemize}
+    \item \textbf{\texttt{nm file1.o}:} Mostra \texttt{var\_extern} come definita (\texttt{D}), \texttt{var\_static} come locale (\texttt{d}), \texttt{modifica\_var\_extern} come codice (\texttt{T}), e \texttt{printf} come indefinita (\texttt{U}).
+    \item \textbf{\texttt{nm file2.o}:} Mostra \texttt{stampa\_var\_extern} come codice (\texttt{T}), ma \texttt{var\_extern} come indefinita (\texttt{U}) perché definita altrove, e \texttt{printf} come indefinita (\texttt{U}).
+    \item \textbf{\texttt{nm main.o}:} Mostra \texttt{main} come codice (\texttt{T}), ma sia \texttt{modifica\_var\_extern} che \texttt{stampa\_var\_extern} come indefinite (\texttt{U}) perché definite in altri moduli.
+\end{itemize}
+Questa analisi evidenzia come ogni modulo conosca solo i propri simboli definiti e richieda al linker di risolvere i riferimenti esterni (\texttt{U}) trovando le definizioni negli altri moduli o librerie.
+
+\section{Conclusione}
+Quest'esrcitazione ha permesso di consolidare la comprensione di aspetti chiave del processo di compilazione e linking in C, specialmente in contesti modulari.
+\begin{itemize}
+    \item L'uso del flag \texttt{gcc -c} è fondamentale per la \textbf{compilazione separata}, che genera file oggetto contenenti codice rilocabile e metadati come la tabella dei simboli.
+    \item L'utility \texttt{nm} è uno strumento prezioso per ispezionare i file oggetto, rivelando quali simboli sono definiti, quali sono referenziati ma non definiti (\texttt{U}), e la loro classificazione (Text, Data, BSS) e visibilità (locale/globale).
+    \item L'utility \texttt{size} permette di quantificare l'impatto di diverse scelte di programmazione (variabili inizializzate/non, funzioni) sulla dimensione dei segmenti di memoria \texttt{text}, \texttt{data}, e \texttt{bss}.
+    \item La distinzione tra variabili \textbf{automatiche} (stack, non in \texttt{nm}), \textbf{statiche locali/globali} (visibilità limitata, segmenti Data/BSS), e \textbf{globali} (visibilità estesa, segmenti Data/BSS/Text per funzioni) è cruciale.
+    \item L'utility \texttt{make} e la scrittura di \texttt{Makefile} sono essenziali per \textbf{automatizzare la compilazione} di progetti non banali, gestendo le dipendenze tra file e riducendo la possibilità di errori umani nel processo di build.
+\end{itemize}
+Queste competenze sono propedeutiche allo sviluppo di progetti software più complessi e strutturati.
+
+% ----- FINE DOCUMENTO -----
+\end{document}

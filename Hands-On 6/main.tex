@@ -1,0 +1,264 @@
+\documentclass[a4paper, 12pt]{scrartcl}
+\usepackage[utf8]{inputenc} % supporto caratteri UTF-8
+\usepackage[T1]{fontenc} % migliore gestione dei font
+\usepackage{newtxtext, newtxmath} % Font Times New Roman-like
+\usepackage[main=italian, english]{babel} % imposta l'italiano come lingua principale
+\usepackage{graphicx} % per l'inserimento di immagini
+\usepackage{hyperref} % per link nell'indice
+\usepackage{listings} % per codice sorgente
+\usepackage{xcolor} % per colorare il codice
+\usepackage{amsmath} % per formule matematiche complesse
+\usepackage{tikz} % per i disegni
+\usetikzlibrary{positioning} % per una migliore gestione delle posizioni degli elementi
+\usetikzlibrary{decorations.pathreplacing} % per le graffe
+\usetikzlibrary{shapes.geometric, arrows}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% formattazione codice sorgente
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    captionpos=b
+}
+
+% informazioni sulla relazione
+\title{Hands-On 6}
+\subtitle{SOCKET MULTICAST}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Nome e CdL
+\date{\today}
+
+\begin{document}
+
+\maketitle % Genera la copertina con titolo, sottotitolo e autore
+
+\newpage
+\tableofcontents % Inserisce l'indice automatico
+\newpage
+
+\section{Introduzione}
+In questo documento andremo ad analizzare il funzionamento e l'implementazione delle socket multicast. \\
+Con il termine \textbf{multicast}, nelle reti di calcolatori, si indica la distribuzione \textit{simultanea} di informazioni verso un gruppo di destinazione. Il termine viene utilizzato anche per indicare un pacchetto inviato con tale modalità; un indirizzo che si riferisce a un gruppo di destinazione, è detto a sua volta indirizzo multicast. \\
+Il modello di servizio multicast prevede che un calcolatore invii i pacchetti ad un indirizzo \textit{registrato} al gruppo multicast; il calcolatore sorgente invia una sola copia dell'informazione (indipendentemente dal numero dei destinatari), saranno poi gli MRouter (Multicast Router) che moltiplicheranno l'informazione, se necessario.
+
+\section{Definizione del Problema}
+
+\begin{figure}[h]
+    \centering
+    \caption{Differenze tra la comunicazione Multicast e Broadcast}
+    \label{fig:multicast_broadcast}
+
+    % MULTICAST
+    \begin{subfigure}[h]{0.45\textwidth}
+        \centering
+        \begin{tikzpicture}[node distance=1.5cm, every node/.style={draw, circle, minimum size=1cm, font=\small}]
+
+
+    % Nodo di invio
+    \node[fill=blue!30] (sender) at (0,0) {Sender};
+
+    % Ricevitori
+    \node[fill=green!30] (b1) [right=1cm, yshift=2cm] {Node 1};
+    \node[fill=green!30] (b2) [right=2cm] {Node 2};
+    \node[fill=green!30] (b3) [right=1cm, yshift=-2cm] {Node 3};
+
+    % Frecce
+    \draw[->, thick] (sender) -- (b1);
+    \draw[->, thick] (sender) -- (b2);
+    \draw[->, thick] (sender) -- (b3);
+
+    % nodi che non ricevono
+    \node[fill=red!30] (m1) [right=2cm of sender, yshift=2cm] {Node A};
+    \node[fill=red!30] (m2) [right=2cm of sender, yshift=-2cm] {Node B};
+
+    % frecce nodi che non ricevono
+    \draw[->, thick, dashed] (sender) -- (m1);
+    \draw[->, thick, dashed] (sender) -- (m2);
+        \end{tikzpicture}
+        \caption{Comunicazione Multicast}
+        \label{fig:multicast}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[h]{0.5\textwidth}
+                \begin{tikzpicture}[node distance=1.5cm, every node/.style={draw, circle, minimum size=1cm, font=\small}]
+
+    % Nodo di invio
+    \node[fill=blue!30] (sender) at (0,0) {Sender};
+
+    % Ricevitori
+    \node[fill=green!30] (b1) [right=1cm, yshift=2cm] {Node 1};
+    \node[fill=green!30] (b2) [right=2cm] {Node 2};
+    \node[fill=green!30] (b3) [right=1cm, yshift=-2cm] {Node 3};
+
+    % Frecce
+    \draw[->, thick] (sender) -- (b1);
+    \draw[->, thick] (sender) -- (b2);
+    \draw[->, thick] (sender) -- (b3);
+
+    % nodi che non ricevono
+    \node[fill=green!30] (m1) [right=2cm of sender, yshift=2cm] {Node4};
+    \node[fill=green!30] (m2) [right=2cm of sender, yshift=-2cm] {Node 5};
+
+    % frecce nodi che non ricevono
+    \draw[->, thick] (sender) -- (m1);
+    \draw[->, thick] (sender) -- (m2);
+\end{tikzpicture}
+        \caption{Comunicazione Broadcast}
+        \label{fig:broadcast}
+    \end{subfigure}
+
+\end{figure}
+
+\subsection{Comunicazione Multicast}
+Nel modello \textbf{Multicast}, i dati vengono inviati a un insieme selezionato di destinatari all'interno della rete. Ciò consente di ottimizzare l'uso delle risorse di rete, evitando l'invio di pacchetti a nodi non interessati. \\
+Come mostrato nella Figura~\ref{fig:multicast}, il \textit{Sender} trasmette il messaggio solo ai nodi \textbf{Node 1}, \textbf{Node 2} e \textbf{Node 3} (colorati in verde), mentre i nodi \textbf{Node A} e \textbf{Node B} (colorati in rosso) non ricevono il messaggio. Questa modalità di trasmissione è comunemente utilizzata in applicazioni come lo streaming video (Live Youtube, Diretta Rai Play, IPTV...), le videoconferenze e la distribuzione di aggiornamenti software a gruppi specifici di utenti.
+
+\subsection{Comunicazione Broadcast}
+Nel modello \textbf{Broadcast}, invece, il messaggio viene trasmesso a \textbf{tutti i nodi} all'interno della rete, indipendentemente dal fatto che siano interessati o meno. \\
+Come evidenziato nella Figura~\ref{fig:broadcast}, il \textit{Sender} invia il messaggio a tutti i nodi disponibili, compresi \textbf{Node 1}, \textbf{Node 2}, \textbf{Node 3}, \textbf{Node 4} e \textbf{Node 5} (tutti colorati in verde). Questo metodo è utile per la diffusione di informazioni di emergenza o per la trasmissione di pacchetti di routing nelle reti locali, ma può comportare un consumo eccessivo di banda, oppure la congestione di essa, e un aumento del traffico di rete.
+
+\subsection{Confronto tra Multicast e Broadcast}
+La principale differenza tra multicast e broadcast è legata all'efficienza della comunicazione:
+\begin{itemize}
+    \item \textbf{Multicast} ottimizza le risorse di rete inviando i dati solo ai destinatari richiesti.
+    \item \textbf{Broadcast} garantisce che tutti i nodi ricevano il messaggio, ma può causare congestione nella rete.
+\end{itemize}
+
+La scelta tra multicast e broadcast dipende dall'applicazione e dalle esigenze della rete. Mentre il multicast è più efficiente in termini di utilizzo della larghezza di banda, il broadcast è utile quando è necessario raggiungere ogni dispositivo senza eccezioni.
+
+\section{Metodologia}
+In questa sezione, descriviamo la metodologia utilizzata per implementare e testare il codice di una socket multicast in C. Il codice è stato sviluppato per ricevere messaggi multicast su una rete locale.
+
+\subsection{Descrizione del Codice}
+Il codice è suddiviso in diverse parti principali:
+\begin{enumerate}
+    \item \textbf{Creazione del Socket}: Viene creato un socket UDP utilizzando la funzione \texttt{socket()}.
+    \item \textbf{Configurazione delle Opzioni del Socket}: Viene impostata l'opzione \texttt{SO\_REUSEADDR} per riutilizzare l'indirizzo e la porta.
+    \item \textbf{Unione al Gruppo Multicast}: Viene configurato l'indirizzo multicast e l'interfaccia di rete utilizzando la struttura \texttt{ip\_mreq} e la funzione \texttt{setsockopt()}.
+    \item \textbf{Binding del Socket}: Il socket viene associato all'indirizzo e alla porta specificati utilizzando la funzione \texttt{bind()}.
+    \item \textbf{Ricezione dei Messaggi}: Il socket è pronto per ricevere messaggi multicast utilizzando la funzione \texttt{recvfrom()}.
+    \item \textbf{Uscita dal Gruppo Multicast}: Alla fine, il socket viene rimosso dal gruppo multicast utilizzando l'opzione \texttt{IP\_DROP\_MEMBERSHIP}.
+\end{enumerate}
+
+\subsection{Test}
+Per verificare il corretto funzionamento del programma, è stato utilizzato un generatore di pacchetti multicast che invia messaggi al gruppo multicast specificato. Il ricevitore multicast è stato eseguito in parallelo per assicurarsi che i messaggi vengano ricevuti correttamente.
+
+\section{Presentazione dei Risultati}
+I risultati ottenuti dai test del codice di ricezione multicast sono stati soddisfacenti. Di seguito sono riportati alcuni esempi di messaggi ricevuti:
+
+\begin{verbatim}
+Received message: Test message 1
+Received message: Test message 2
+Received message: Test message 3
+\end{verbatim}
+
+Il programma ha dimostrato di essere in grado di ricevere correttamente i messaggi multicast inviati al gruppo specificato. Inoltre, il consumo di risorse di rete è stato ottimizzato grazie all'uso del multicast, evitando di inviare pacchetti a nodi non interessati.
+
+\subsection{Descrizione Dettagliata del Codice}
+Qui descriviamo il funzionamento del codice passo dopo passo, utilizzando il pacchetto \texttt{listings} per includere i frammenti di codice.
+
+\begin{lstlisting}[caption={Inclusione delle librerie necessarie}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+\end{lstlisting}
+Le librerie incluse forniscono le funzioni necessarie per la gestione delle socket, la manipolazione delle stringhe e altre funzionalità di sistema.
+
+\begin{lstlisting}[caption={Definizione di costanti per il gruppo multicast e la porta}]
+#define MULTICAST_GROUP "239.0.0.1"
+#define PORT 12345
+\end{lstlisting}
+
+\newpage
+\noindent
+Definiamo l'indirizzo del gruppo multicast e il numero di porta su cui il programma ascolterà i messaggi.
+
+\begin{lstlisting}[caption={Creazione del socket UDP}]
+if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    perror("socket");
+    exit(EXIT_FAILURE);
+}
+\end{lstlisting}
+Qui creiamo un socket UDP utilizzando la funzione \texttt{socket()}. Se la creazione del socket fallisce, viene stampato un messaggio di errore e il programma termina.
+
+\begin{lstlisting}[caption={Impostazione dell'opzione SO\_REUSEADDR}]
+int reuse = 1;
+if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+    perror("setsockopt SO_REUSEADDR failed");
+    exit(EXIT_FAILURE);
+}
+\end{lstlisting}
+Impostiamo l'opzione \texttt{SO\_REUSEADDR} per permettere il riutilizzo dell'indirizzo e della porta, in modo da evitare errori in caso di riavvio rapido del programma.
+
+\begin{lstlisting}[caption={Configurazione dell'indirizzo multicast e dell'interfaccia di rete}]
+mreq.imr_multiaddr.s_addr = inet_addr(MULTICAST_GROUP);
+mreq.imr_interface.s_addr = INADDR_ANY;
+\end{lstlisting}
+Configuriamo l'indirizzo multicast e l'interfaccia di rete utilizzando la struttura \texttt{ip\_mreq}.
+
+\begin{lstlisting}[caption={Binding del socket all'indirizzo e alla porta}]
+server_addr.sin_family = AF_INET;
+server_addr.sin_addr.s_addr = INADDR_ANY;
+server_addr.sin_port = htons(PORT);
+
+if (bind(sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    perror("bind");
+    exit(EXIT_FAILURE);
+}
+\end{lstlisting}
+Associare il socket all'indirizzo e alla porta specificati utilizzando la funzione \texttt{bind()}. Se il binding fallisce, viene stampato un messaggio di errore e il programma termina.
+
+\begin{lstlisting}[caption={Unione al gruppo multicast}]
+if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+    perror("setsockopt IP_ADD_MEMBERSHIP failed");
+    exit(EXIT_FAILURE);
+}
+\end{lstlisting}
+Unire il socket al gruppo multicast utilizzando l'opzione \texttt{IP\_ADD\_MEMBERSHIP}. Se l'operazione fallisce, viene stampato un messaggio di errore e il programma termina.
+
+\begin{lstlisting}[caption={Ricezione dei messaggi multicast}]
+char buffer[1024];
+struct sockaddr_in senderAddr;
+socklen_t senderAddrLen = sizeof(senderAddr);
+
+while (1) {
+    int nBytes = recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr *)&senderAddr, &senderAddrLen);
+    if (nBytes < 0) {
+        perror("recvfrom");
+        exit(EXIT_FAILURE);
+    }
+    buffer[nBytes] = '\0';
+    printf("Received message: %s\n", buffer);
+}
+\end{lstlisting}
+Ciclo infinito per la ricezione dei messaggi multicast. Utilizziamo la funzione \texttt{recvfrom()} per ricevere i dati e stampiamo il messaggio ricevuto.
+
+\begin{lstlisting}[caption={Uscita dal gruppo multicast}]
+if (setsockopt(sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+    perror("setsockopt IP_DROP_MEMBERSHIP failed");
+    exit(EXIT_FAILURE);
+}
+\end{lstlisting}
+Alla fine, usciamo dal gruppo multicast utilizzando l'opzione \texttt{IP\_DROP\_MEMBERSHIP}. Se l'operazione fallisce, viene stampato un messaggio di errore e il programma termina.
+
+\begin{lstlisting}[caption={Chiusura del socket e termine del programma}]
+close(sock);
+return 0;
+\end{lstlisting}
+Chiudiamo il socket e terminiamo il programma.
+
+\section{Conclusione}
+In questa relazione abbiamo descritto l'implementazione di un programma in C per la ricezione di messaggi multicast. Abbiamo illustrato le differenze tra comunicazione multicast e broadcast, evidenziando i vantaggi dell'uso del multicast in termini di efficienza delle risorse di rete. La metodologia adottata per lo sviluppo e il test del codice ha garantito il corretto funzionamento del programma, che è risultato in grado di ricevere messaggi multicast in modo affidabile. Infine, i risultati dei test hanno confermato l'efficacia del programma nel contesto delle reti locali.
+\end{document}

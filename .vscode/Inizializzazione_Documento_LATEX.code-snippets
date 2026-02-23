@@ -1,0 +1,26 @@
+{
+  "Inizializzazione Documento": {
+    "prefix": "!tex",
+    "body": [
+      "\\documentclass{article}",
+      "\\usepackage{graphicx} % Required for inserting images",
+      "\\usepackage[utf8]{inputenc}",
+      "\\usepackage[T1]{fontenc}",
+      "\\usepackage[italian]{babel}",
+      "",
+      "\\title{${1}}",
+      "\\author{${2:Sandi Russo}}",
+      "\\date{\\today}",
+      "",
+      "\\begin{document}",
+      "",
+      "\\maketitle",
+      "",
+      "\\section{Introduction}",
+      "$0",
+      "",
+      "\\end{document}"
+    ],
+    "description": "Inizializza un documento LaTeX con titolo vuoto e data odierna"
+  }
+}

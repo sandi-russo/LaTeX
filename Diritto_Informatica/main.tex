@@ -1,0 +1,870 @@
+\documentclass[a4paper,11pt]{article}
+
+% Pacchetti fondamentali per la lingua e la codifica
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+
+% Pacchetti per la formattazione della pagina e del testo
+\usepackage{geometry}
+\geometry{a4paper, margin=2cm} % Margini standard leggibili
+\usepackage{parskip} % Aggiunge spazio tra i paragrafi invece del rientro
+\usepackage{hyperref} % Per i link e i riferimenti
+\usepackage{booktabs} % Per tabelle più eleganti
+\usepackage{longtable} % Per tabelle che possono andare su più pagine
+\usepackage{array} % Per gestire meglio le colonne delle tabelle
+
+\begin{document}
+
+\section{INTRODUZIONE AL DIRITTO (18/09)}
+
+\textbf{Riferimenti manuale}: pp. 11-36, 79-94, 105-137, 151-163, 179-193, 211-216, 225-229, 233-235, 259-268, 271-299, 317-345, 405-413, 429-443.
+
+\subsection{La distinzione tra Diritto Pubblico e Privato}
+Il sistema giuridico si divide tradizionalmente in due grandi macro-aree, distinte in base alla natura degli interessi tutelati e al tipo di rapporto che si instaura tra i soggetti.
+
+Il \textbf{Diritto Pubblico} è l'insieme delle norme che regolano l'organizzazione e il funzionamento dello Stato, nonché i rapporti tra lo Stato (o gli enti pubblici) e i cittadini. In questo ambito, l'ente pubblico agisce in una posizione di supremazia o autorità rispetto al privato, poiché l'obiettivo primario è il perseguimento dell'interesse generale e la tutela dell'ordine pubblico. Rientrano in questa categoria il diritto costituzionale, il diritto amministrativo, il diritto penale e il diritto tributario.
+
+Il \textbf{Diritto Privato}, al contrario, disciplina i rapporti tra singoli cittadini o tra enti privati (e talvolta anche enti pubblici quando agiscono come privati). La caratteristica fondamentale di questa branca è che i soggetti si trovano su un piano di \textbf{parità giuridica}. L'obiettivo delle norme è la tutela degli interessi individuali e la regolamentazione dei rapporti personali, familiari ed economici. Le materie principali sono il diritto civile e il diritto commerciale.
+
+\hrulefill
+\section{INTRODUZIONE E CONCETTI FONDAMENTALI (22/09)}
+
+\subsection{Distinzione tra Informatica Giuridica e Diritto dell'Informatica}
+
+\begin{enumerate}
+    \item \textbf{Informatica Giuridica}: è l'informatica al servizio del diritto. Studia come le tecnologie possono essere utilizzate per migliorare e automatizzare l'attività legale. Si occupa, ad esempio, della creazione di banche dati giurisprudenziali, di software per la gestione degli studi legali e, più recentemente, dell'applicazione dell'Intelligenza Artificiale per l'analisi predittiva delle sentenze (Giustizia Predittiva). Non tratteremo questa materia nel corso.
+    \item \textbf{Diritto dell'Informatica}: è il diritto applicato all'informatica. È la branca giuridica che studia le regole da applicare alle nuove tecnologie. Si occupa di normare fenomeni come la protezione dei dati personali (GDPR), la validità della firma digitale, la sicurezza informatica (cybersecurity), i reati informatici e il commercio elettronico.
+\end{enumerate}
+
+
+\hrulefill
+\section{LE FONTI DEL DIRITTO DELL'INFORMATICA (25/09)}
+
+\subsection{Il sistema delle Fonti}
+Per "Fonti del Diritto" si intendono tutti quegli atti o fatti abilitati dall'ordinamento a produrre norme giuridiche. Nel contesto tecnologico, le fonti presentano due caratteristiche peculiari:
+\begin{itemize}
+    \item Devono essere dinamiche per rincorrere la velocità dell'innovazione tecnologica (che è sempre più rapida della legge).
+    \item Sono eterogenee: comprendono leggi tradizionali, giurisprudenza e la cosiddetta \textbf{Soft Law} (linee guida, raccomandazioni, codici di condotta che, pur non essendo vincolanti come una legge, orientano fortemente i comportamenti degli operatori).
+\end{itemize}
+\newpage\noindent
+Le fonti sono organizzate secondo un principio gerarchico preciso:
+
+\begin{enumerate}
+    \item \textbf{Fonti Sovranazionali e Internazionali}:
+    \begin{itemize}
+        \item \textbf{Diritto dell'Unione Europea}: Gioca un ruolo primario nel digitale. Si distingue in:
+        \begin{itemize}
+            \item \textit{Regolamenti UE}: Atti aventi portata generale, obbligatori in tutti i loro elementi e \textbf{direttamente applicabili} in ciascuno degli Stati membri (es. il GDPR). Prevalgono sulle leggi nazionali.
+            \item \textit{Direttive UE}: Vincolano gli Stati membri solo riguardo al \textbf{risultato da raggiungere}, lasciando alla discrezionalità nazionale la scelta della forma e dei mezzi (necessitano di una legge interna di recepimento).
+            \item \textit{Decisioni UE}: Obbligatorie solo per i destinatari specifici (es. uno Stato o un'impresa come Microsoft o Google).
+        \end{itemize}
+        \item \textbf{Trattati Internazionali}: Accordi tra Stati che diventano vincolanti internamente solo dopo la ratifica con legge ordinaria.
+    \end{itemize}
+    \item \textbf{Fonti Costituzionali}: Al vertice del sistema interno troviamo la Costituzione Italiana e le leggi costituzionali. Qualsiasi norma informatica deve rispettare i principi fondamentali (es. segretezza della corrispondenza, libertà di manifestazione del pensiero).
+    \item \textbf{Fonti Primarie}: Comprendono le Leggi ordinarie del Parlamento, i Decreti Legislativi (D.Lgs) e i Decreti Legge (D.L.) emanati dal Governo, oltre alle Leggi Regionali (per le materie di loro competenza).
+    \item \textbf{Fonti Secondarie}: Sono i regolamenti emanati dal Governo, dai Ministeri o dagli enti locali. Servono a specificare i dettagli tecnici delle leggi primarie.
+\end{enumerate}
+
+\subsection{Storia ed Evoluzione del Diritto dell'Informatica: le quattro fasi}
+
+\subsubsection*{1. Fase Pionieristica (Anni '70 - '80)}
+Questa fase coincide con l'avvento dei primi grandi calcolatori (mainframe). È interessante notare come le prime norme italiane che citano "procedure meccanizzate" non nascano per tutelare la privacy, ma per esigenze \textbf{tributarie e contabili}.
+\begin{itemize}
+    \item \textbf{Art. 14 d.P.R. 600/1973}: Introduce le norme per l'accertamento delle imposte sui redditi in presenza di contabilità automatizzata.
+    \item \textbf{Art. 39 d.P.R. 633/1972 (Legge IVA)}: Permette di sostituire i vecchi registri cartacei con i tabulati elettronici.
+\end{itemize}
+
+\textit{Problematiche emerse}: In questo periodo il vuoto normativo era enorme. Mancavano tutele per la persona (privacy inesistente), tutele per il software e mancava la definizione di "reato informatico".
+
+\subsubsection*{2. Fase di Consolidamento (Anni '90)}
+La diffusione dei Personal Computer e la nascita della \textbf{Telematica} (l'integrazione tra informatica e telecomunicazioni) impongono un intervento legislativo massiccio. Il legislatore prende atto che il digitale non è più un'eccezione ma la norma. Vengono emanate le leggi fondamentali:
+\begin{itemize}
+    \item \textbf{Legge 547/1993}: Introduce i crimini informatici nel codice penale (es. accesso abusivo a sistema informatico).
+    \item \textbf{Direttiva 95/46/CE}: La madre della normativa sulla privacy (poi sostituita dal GDPR).
+    \item \textbf{Legge Bassanini (1997) e d.P.R. 513/1997}: Riconoscono per la prima volta valore legale al documento elettronico e alla firma digitale (equiparando il bit alla carta).
+    \item Tutele specifiche per il software (Direttiva 91/250/CEE) e per le banche dati.
+\end{itemize}
+
+
+\subsubsection*{3. Fase di Internet e dell'E-commerce (Anni 2000)}
+Con l'esplosione del Web, P2P e social network, il diritto affronta la dematerializzazione totale (niente supporto fisico). Nascono e-commerce e streaming. Le sfide giuridiche riguardano responsabilità dei provider, pirateria e gestione dei contenuti. Si applicano le norme precedenti adattate alla responsabilità civile (contrattuale ed extracontrattuale) per gli illeciti in rete, cercando di colmare i vuoti normativi attraverso l'interpretazione estensiva delle leggi tradizionali,\textbf{spesso faticando a gestire fenomeni transnazionali che superano i confini fisici degli Stati}.
+
+\subsubsection*{4. Fase della Società Digitale e dell'Intelligenza Artificiale (Oggi)}
+Viviamo nell'iper-connessione (IoT) e nell'era degli algoritmi. La norma cardine è l'\textbf{AI ACT (Reg. UE 2024/1689)}, basato sull'approccio "Risk-Based": maggiori sono i rischi dell'AI per i diritti umani, più severe sono le regole da rispettare, \textbf{al fine di creare un ecosistema di fiducia e sicurezza per i cittadini europei}.
+
+\subsection*{Il CAD (Codice dell'Amministrazione Digitale)}
+Il \textbf{CAD} (D.Lgs 82/2005) è il testo unico sull'informatizzazione della PA. Sancisce l'obbligo per la PA di agire in digitale e garantisce a cittadini e imprese il \textbf{diritto all'uso delle tecnologie} (PEC, SPID, documenti informatici) nei rapporti con le istituzioni.
+
+\hrulefill
+
+\section{DIRITTI DELLA PERSONALITÀ (29/09)}
+
+\subsection{I Diritti della Personalità: Evoluzione e Fondamento Costituzionale}
+La discussione giuridica sui diritti della personalità in Italia ha subito una svolta fondamentale nel 1985 con il \textbf{Caso Veronesi} (Sentenza Cassazione n. 3769/1985). Questa sentenza è storica perché ha riconosciuto per la prima volta formalmente il \textbf{Diritto all'Identità Personale} come diritto autonomo, distinto dalla semplice reputazione o riservatezza. La vicenda, come noto, riguardava l'uso distorto di un'intervista dell'oncologo in una pubblicità di sigarette. La Suprema Corte stabilì che ogni individuo ha diritto a una fedele rappresentazione della propria personalità e immagine sociale, proteggendo il soggetto non solo dall'indiscrezione (privacy), ma anche dalla falsa rappresentazione delle proprie idee.
+
+Questa evoluzione trova il suo fondamento nell'\textbf{Art. 2 della Costituzione Italiana}, il quale recita: "\textit{La Repubblica riconosce e garantisce i diritti inviolabili dell'uomo, sia come singolo sia nelle formazioni sociali}".
+L'uso del verbo \textbf{riconosce} non è casuale ma riflette una precisa scelta di filosofia del diritto (giusnaturalismo): indica che i diritti della persona sono innati e originari. Essi preesistono allo Stato, il quale non li "crea" o "concede", ma si limita a prenderne atto e a garantirli.
+Questa tutela è duplice: protegge il cittadino dagli abusi dei pubblici poteri (es. libertà personale) e garantisce il rispetto dei diritti anche nei rapporti orizzontali tra privati (es. inviolabilità del domicilio o reputazione).
+
+\subsection{Caratteri e Tipologie dei Diritti della Personalità}
+I diritti della personalità sono una categoria "aperta" e storicamente condizionata, con caratteri indefettibili:
+\begin{itemize}
+    \item \textbf{Necessarietà}: competono a tutte le persone fisiche dalla nascita alla morte.
+    \item \textbf{Imprescrittibilità}: il diritto non si estingue anche se non esercitato.
+    \item \textbf{Assolutezza}: diritti validi \textit{erga omnes} (verso chiunque).
+    \item \textbf{Non patrimonialità}: tutelano valori non commerciabili privi di prezzo di mercato.
+    \item \textbf{Indisponibilità}: irrinunciabili, sebbene sia sempre più ammessa la cessione dell'uso a terzi (es. fini pubblicitari) senza cedere la titolarità del diritto.
+\end{itemize}
+
+Oltre alla Costituzione, questi diritti trovano protezione in norme sovranazionali come la Dichiarazione Universale dei Diritti dell'Uomo (1948), la CEDU (1950) e la Carta di Nizza (2000).
+
+Tra i diritti specifici più rilevanti nel contesto digitale troviamo:
+\begin{enumerate}
+    \item \textbf{Diritto al Nome}: garantisce l'identificazione della persona e permette di agire contro chi ne abusa o lo usurpa.
+    \item \textbf{Diritto all'Immagine}: tutela la persona contro l'esposizione non autorizzata del proprio ritratto. Questo diritto incontra dei limiti solo in presenza di esigenze superiori come il diritto di cronaca, finalità scientifiche o artistiche, purché non venga mai lesa la dignità del soggetto.
+    \item \textbf{Diritto alla Riservatezza (Privacy)}: è il diritto a escludere gli altri dalla propria sfera privata.
+    \item \textbf{Diritto all'Integrità Morale}: protegge la persona da giudizi di disvalore e attribuzioni di fatti che ne ledano l'onore o il decoro.
+\end{enumerate}
+
+\subsection{L'Identità Digitale e lo SPID}
+Nel contesto odierno, l'identità personale si evolve in \textbf{Identità Digitale}. Essa è costituita dalla stratificazione di dati che l'utente cede per accedere ai servizi o che immette volontariamente in rete, definendo la sua proiezione pubblica.
+Questo passaggio comporta nuovi rischi:
+\begin{itemize}
+    \item Il rischio di disallineamento tra identità reale e identità digitale (dati errati, non aggiornati o profili falsi).
+    \item Il rischio che l'analisi massiva di questi dati (Big Data) faciliti pratiche discriminatorie o lesive della dignità.
+\end{itemize}
+
+Per regolamentare l'identificazione certa online, il legislatore ha introdotto lo \textbf{SPID} (Sistema Pubblico di Identità Digitale) attraverso il \textbf{CAD}. Lo SPID rappresenta un meccanismo unitario che permette a cittadini e imprese di accedere con un'unica credenziale ai servizi della Pubblica Amministrazione, garantendo certezza nell'identificazione.
+
+La giurisprudenza ha continuato a raffinare la tutela dell'identità. La \textbf{Sentenza di Cassazione n. 5525/2012} (successiva a quella dell'85) ha ribadito e chiarito definitivamente la differenza tra reputazione e identità personale: mentre la reputazione è lesa da offese, l'identità personale è lesa da \textbf{falsità}, anche se queste falsità sono positive o neutre, poiché alterano la verità storica della persona.
+
+\hrulefill
+
+\section{LA PROFILAZIONE E I PROCESSI DECISIONALI AUTOMATIZZATI (06/10)}
+
+\subsection{Dai Casi di Cronaca alla Normativa}
+I casi \textit{Cambridge Analytica} e \textit{Veronesi} dimostrano gli effetti devastanti della manipolazione dei dati sulla democrazia (influenzando occultamente le scelte elettorali tramite micro-targeting) e sulla dignità, alterando la percezione sociale della persona con informazioni distorte \textbf{o decontestualizzate che ne oscurano la vera identità}. In questo scenario, il dato cessa di essere neutro e diviene uno strumento di potere asimmetrico, capace di ledere l'autodeterminazione del singolo \textbf{se lasciato in balia delle sole logiche di mercato}.
+
+Se l'Art. 2 della Costituzione offre il fondamento generale come "clausola aperta" per i nuovi diritti tecnologici, lo strumento operativo è il \textbf{GDPR} (Reg. UE 2016/679). Esso trasforma i principi astratti in obblighi concreti, sancendo che la tecnologia deve essere al servizio dell'uomo \textbf{e non strumento di discriminazione}, e distingue nettamente tra profilazione e processi decisionali automatizzati.
+
+\subsection{Distinzione tra Profilazione e Processo Decisionale}
+Il GDPR scompone il fenomeno in tre livelli di intensità crescente:
+
+\textbf{1. La Profilazione (Art. 4 GDPR)}\\
+È qualsiasi trattamento automatizzato volto a valutare aspetti personali quali rendimento professionale, situazione economica, salute, preferenze, interessi, affidabilità o spostamenti.
+\textit{Concetto chiave}: La profilazione è un'attività di "analisi" o "classificazione" che crea un quadro conoscitivo (il profilo) senza, di per sé, prendere decisioni. Esempi: Spotify che analizza i gusti musicali o l'e-commerce che classifica l'utente come "alto spendente".
+
+\textbf{2. Processo decisionale basato sulla profilazione}\\
+Si ha quando il profilo viene utilizzato per prendere decisioni concrete (dall'uomo o dalla macchina). Esempio: un impiegato di banca decide se concedere un mutuo guardando il "punteggio di rischio" calcolato dal software.
+
+\textbf{3. Processo decisionale basato UNICAMENTE sul trattamento automatizzato (Art. 22 GDPR)}\\
+Fattispecie critica e severamente disciplinata. Si verifica quando la decisione è presa da un algoritmo senza intervento umano significativo e produce \textbf{effetti giuridici} (es. diniego cittadinanza) o \textbf{incide significativamente} sulla vita della persona (es. rifiuto automatico prestito, e-recruitment).
+In questi casi vige un \textbf{divieto generale}, salvo eccezioni (consenso, contratto, legge). Anche nelle eccezioni, l'utente conserva il diritto all'intervento umano e a contestare la decisione.
+
+\subsection{Vantaggi e Rischi}
+La profilazione porta efficienza economica e personalizzazione, ma comporta rischi elevati: mancanza di trasparenza ("black box"), discriminazione sociale (segregazione per censo/etnia) ed errori tecnici difficili da correggere senza supervisione umana.
+
+\subsection{Cookies e Strumenti di Tracciamento}
+Tecnicamente, gran parte della profilazione online avviene tramite i \textbf{Cookies}, classificati in quattro categorie in base alla funzione e al rischio privacy:
+
+\begin{enumerate}
+    \item \textbf{Cookies Tecnici/Necessari}: Indispensabili (es. login, carrello). \textit{Rischio: Basso} (solo informativa).
+    \item \textbf{Cookies Funzionali}: Memorizzano preferenze (lingua, layout). \textit{Rischio: Medio-Basso}.
+    \item \textbf{Cookies Statistici (Analytics)}: Dati d'uso. \textit{Rischio: Medio} (se anonimizzati, altrimenti serve consenso).
+    \item \textbf{Cookies di Profilazione/Marketing}: Creano profili per pubblicità mirata. \textit{Rischio: Alto}. Richiedono obbligatoriamente il \textbf{consenso preventivo, esplicito e libero} (opt-in).
+\end{enumerate}
+
+A tal proposito, il consenso (Art. 122 GDPR) non può essere tacito. Sono vietati i "Cookie Wall" e il consenso tramite scrolling. L'utente deve compiere un'azione positiva inequivocabile.
+
+
+\subsection{I Diritti dell'Interessato (Art. 16-18 GDPR)}
+A chiusura del sistema di tutela, il GDPR garantisce diritti specifici per permettere all'utente di mantenere il controllo sulla propria identità digitale:
+\begin{itemize}
+    \item \textbf{Diritto di rettifica (Art. 16)}: Correzione di dati inesatti (fondamentale per evitare decisioni basate su profili errati).
+    \item \textbf{Diritto alla cancellazione / Oblio (Art. 17)}: Rimozione dei dati quando non più necessari o in caso di revoca del consenso.
+    \item \textbf{Diritto di limitazione (Art. 18)}: "Congelamento" dei dati in attesa di verifiche.
+\end{itemize}
+
+\section{DIRITTO ALL'OBLIO (09/10)}
+
+\subsection{Terminologia e Concetti Preliminari}
+Prima di addentrarci nella disciplina del diritto all'oblio, è fondamentale chiarire alcuni concetti giuridici di base emersi durante la lezione, necessari per comprendere il funzionamento delle norme e delle garanzie.
+
+\begin{itemize}
+    \item \textbf{Struttura della norma}: In un testo di legge, la \textbf{Rubrica} è il titolo dell'articolo (ci dice di cosa parla), mentre il \textbf{Dispositivo} è il testo vero e proprio che contiene la prescrizione normativa.
+    \item \textbf{Differenza tra Regolamenti e Direttive UE}: I \textit{Regolamenti} sono atti specifici, vincolanti e immediatamente applicabili in tutti gli Stati membri (es. GDPR). Le \textit{Direttive}, invece, fissano un obiettivo vincolante ma lasciano ai singoli Stati la libertà di scegliere i mezzi e la forma per raggiungerlo (necessitano di recepimento).
+    \item \textbf{La Prescrizione}: È un istituto giuridico fondamentale collegato alla certezza del diritto. Se lo Stato non persegue un reato (o non richiede un pagamento) entro un determinato periodo di tempo, quel reato si estingue. La \textit{ratio} è che non si può tenere un cittadino sotto la "spada di Damocle" di una punizione per un tempo indefinito (es. un furto di 20 anni fa). Tuttavia, i reati gravissimi (come l'omicidio) non si prescrivono mai.
+    \item \textbf{Il Casellario Giudiziario}: È l'archivio (la "fedina penale") che riporta le condanne definitive di un soggetto. Anche qui vige un principio di oblio: dopo un certo periodo, le condanne minori possono essere "cancellate" dalla visibilità per permettere il reinserimento sociale.
+    \item \textbf{Corte di Giustizia dell'Unione Europea (CGUE)}: È l'organo giudiziario supremo dell'UE. Il cittadino vi si può rivolgere solitamente solo dopo aver esaurito i gradi di giudizio interni e le tutele nazionali (Garante Privacy, Cassazione), salvo i casi di rinvio pregiudiziale.
+    \item \textbf{Mutuo e Ipoteca} (Definizioni civilistiche): Il \textit{mutuo} è il contratto di prestito (solitamente per l'acquisto di casa) dove la somma va restituita con gli interessi. A garanzia di ciò, la banca iscrive \textit{ipoteca} sull'immobile: è una garanzia reale che permette alla banca, in caso di mancato pagamento, di vendere la casa all'asta e soddisfarsi sul ricavato.
+\end{itemize}
+
+\subsection{Il Diritto all'Oblio: Definizione e Normativa}
+Il \textbf{diritto all'oblio} è il diritto dell'individuo a non vedere riproposte eccessivamente nel tempo informazioni che lo riguardano, soprattutto quando queste sono relative a fatti passati ormai privi di attualità o interesse pubblico.
+Storicamente, questo concetto nasceva legato al diritto penale (oblio giudiziario): la necessità che chi ha scontato una pena possa riabilitarsi senza essere eternamente marchiato come "criminale".
+Tuttavia, nell'era digitale, il problema si è amplificato. Internet possiede una "memoria infinita": le notizie non scompaiono mai e sono sempre accessibili. Questo ha costretto legislatori e giudici a ripensare il bilanciamento tra la \textbf{libertà di informazione} (diritto della collettività a sapere) e la \textbf{privacy/dignità} del singolo.
+
+Il riferimento normativo principale è l'\textbf{Articolo 17 del GDPR (Regolamento UE 679/2016)}, rubricato "Diritto alla cancellazione".
+Questo articolo prevede che l'interessato abbia il diritto di ottenere la cancellazione dei propri dati personali (e il titolare ha l'obbligo di cancellarli) quando:
+\begin{enumerate}
+    \item I dati non sono più necessari rispetto alle finalità per cui erano stati raccolti.
+    \item L'interessato revoca il consenso su cui si basava il trattamento.
+    \item L'interessato si oppone al trattamento (Art. 21 GDPR) e non c'è un motivo legittimo prevalente per proseguire.
+    \item I dati sono stati trattati illecitamente.
+\end{enumerate}
+
+\subsection{Deindicizzazione vs Cancellazione: Il Caso Google Spain}
+Un punto di svolta fondamentale è rappresentato dalla sentenza \textbf{Google Spain (Corte di Giustizia UE, 2014)}. La Corte ha stabilito un principio rivoluzionario: i motori di ricerca (come Google) sono "titolari del trattamento" dei dati che indicizzano. Pertanto, un cittadino può chiedere la \textbf{deindicizzazione}.
+È fondamentale distinguere i due concetti:
+\begin{itemize}
+    \item \textbf{Cancellazione}: Eliminazione della notizia dalla fonte originale (sito del giornale). È molto difficile da ottenere perché spesso lede il diritto di cronaca e l'archivio storico.
+    \item \textbf{Deindicizzazione}: Rimozione del link dai risultati del motore di ricerca associati al \textit{nome} della persona. La notizia rimane online nell'archivio del giornale, ma non appare più se cerco "Nome Cognome" su Google.
+\end{itemize}
+
+Il diritto all'oblio non è automatico, ma richiede un \textbf{bilanciamento} caso per caso. Il giudice o il motore di ricerca devono valutare:
+\begin{itemize}
+    \item La pertinenza e l'attualità dell'informazione.
+    \item L'interesse pubblico attuale (se la persona è un politico o se il fatto è recente, prevale il diritto di cronaca).
+    \item La gravità del pregiudizio alla vita privata.
+\end{itemize}
+
+\subsection{Le Sfumature del Diritto all'Oblio}
+Possiamo classificare l'oblio in diverse tipologie:
+\begin{enumerate}
+    \item \textbf{Oblio Giudiziario}: Riguarda vicende penali chiuse. Serve a evitare l'ergastolo mediatico.
+    \item \textbf{Oblio Informatico/Digitale}: La possibilità tecnica di deindicizzare link lesivi.
+    \item \textbf{Oblio Giornalistico}: Riguarda gli archivi online dei quotidiani. Si discute se l'articolo debba essere aggiornato (oblio dinamico) o reso irreperibile.
+    \item \textbf{Oblio Sanitario}: Gode della massima protezione trattandosi di dati sensibili.
+    \item \textbf{Oblio Selettivo vs Totale}: La differenza tra deindicizzare solo per il nome (selettivo) o rimuovere completamente il dato.
+    \item \textbf{Oblio Europeo vs Extra-UE}: Un tema caldo (Sentenza Google/CNIL 2019) è l'ambito territoriale. La Corte UE ha chiarito che l'obbligo di deindicizzazione vale per le versioni europee dei motori di ricerca, ma non è obbligatorio estenderlo a livello globale (anche se devono essere adottate misure efficaci per scoraggiare l'accesso da UE).
+\end{enumerate}
+
+\subsection{Giurisprudenza Recente}
+\begin{itemize}
+    \item \textbf{Caso C-460/20 (2022)}: La deindicizzazione è possibile anche senza un provvedimento giudiziario preventivo se l'informazione è \textit{manifestamente inesatta}.
+    \item \textbf{Cassazione, ord. n. 14488/2025}: Ha ribadito che il rifiuto di deindicizzare deve essere motivato e sindacabile.
+\end{itemize}
+
+In conclusione, il diritto all'oblio non deve diventare una forma di censura o di riscrittura della storia. Le notizie di interesse pubblico devono rimanere, ma non è detto che debbano essere per sempre il primo risultato associato al nome di una persona.
+
+\newpage
+\section{LIBERTÀ DI ESPRESSIONE IN RETE (13/10)}
+
+\subsection{Il Concetto di Libertà di Espressione}
+La lezione prende spunto da un caso di cronaca: un video in cui Vittorio Feltri afferma "i meridionali sono esseri inferiori". Questo episodio ci permette di analizzare il confine tra la libertà di parola e l'incitamento all'odio (\textit{Hate Speech}).
+
+La \textbf{libertà di espressione} è la pietra angolare di ogni sistema democratico. Senza un libero flusso di idee, anche critiche o impopolari, non esiste democrazia. Essa include:
+\begin{enumerate}
+    \item Il diritto di esprimersi liberamente con qualsiasi mezzo.
+    \item Il diritto al silenzio (non essere costretti a esprimersi).
+    \item \textbf{Il Diritto all'Informazione}, che ha una doppia valenza:
+    \begin{itemize}
+        \item \textit{Lato Attivo}: Diritto di informare e diffondere notizie.
+        \item \textit{Lato Passivo}: Diritto della collettività a \textit{ricevere} informazioni plurali e corrette.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Le Fonti Normative (Sovranazionali e Nazionali)}
+A livello europeo, la tutela della libertà di espressione si è evoluta significativamente. Inizialmente non prevista nei trattati economici (CE), è stata pienamente integrata con il Trattato di Lisbona (2007) e la Carta di Nizza.
+\begin{itemize}
+    \item \textbf{Art. 11 Carta di Nizza}: Sancisce la libertà di opinione e la libertà di ricevere o comunicare informazioni senza ingerenze pubbliche.
+    \item \textbf{Art. 10 CEDU (Convenzione Europea dei Diritti dell'Uomo)}: È la norma cardine. Stabilisce la libertà ma prevede anche che essa comporti "doveri e responsabilità".
+\end{itemize}
+
+\textbf{Il Test in Tre Fasi della CEDU}\\
+La Corte Europea ha elaborato un test per stabilire se una limitazione alla libertà di espressione da parte dello Stato sia legittima. L'interferenza è accettabile solo se supera tutte e tre le fasi:
+\begin{enumerate}
+    \item \textbf{Legalità}: La limitazione deve essere prevista dalla legge.
+    \item \textbf{Legittimità}: Deve perseguire uno scopo legittimo (es. sicurezza nazionale, protezione della reputazione altrui, ordine pubblico).
+    \item \textbf{Necessità e Proporzionalità}: La misura deve essere "necessaria in una società democratica". Deve essere proporzionata allo scopo (non devono esistere mezzi meno invasivi per ottenere lo stesso risultato).
+\end{enumerate}
+
+Se la libertà di espressione entra in conflitto con altri diritti (es. privacy o diritto al lavoro), si procede al \textbf{Bilanciamento}: nessun diritto è tiranno, ovvero non esiste un diritto che prevale a priori sugli altri (come visto nel caso ILVA tra diritto alla salute e diritto al lavoro).
+
+\textbf{In Italia: L'Art. 21 della Costituzione}\\
+Tutti hanno il diritto di manifestare liberamente il proprio pensiero. I principi chiave sono:
+\begin{itemize}
+    \item Divieto di autorizzazioni preventive o censura.
+    \item Il \textbf{Sequestro} della stampa è ammesso solo \textit{dopo} la pubblicazione, per atto motivato dell'autorità giudiziaria e solo nei casi previsti dalla legge (riserva di legge e di giurisdizione). In casi di assoluta urgenza, la polizia giudiziaria può intervenire ma deve denunciare l'accaduto al giudice entro 24 ore, il quale deve convalidare entro le successive 24 ore, altrimenti il sequestro decade.
+\end{itemize}
+Questi principi nati per la carta stampata si applicano oggi anche a Internet.
+
+\subsection{I Limiti: Diffamazione, Ingiuria e Hate Speech}
+La libertà di parola non copre le offese. Bisogna distinguere due fattispecie che spesso vengono confuse:
+
+\begin{enumerate}
+    \item \textbf{Ingiuria (Art. 594 c.p. - Depenalizzato)}: Offendere l'onore o il decoro di una persona \textbf{presente}.
+    \begin{itemize}
+        \item Oggi non è più reato penale, ma un illecito civile (si paga un risarcimento danni e una sanzione pecuniaria, ma non si sporca la fedina penale).
+    \end{itemize}
+    \item \textbf{Diffamazione (Art. 595 c.p. - Reato)}: Offendere l'altrui reputazione comunicando con più persone, quando l'offeso \textbf{NON è presente}.
+    \begin{itemize}
+        \item La \textit{reputazione} è la stima sociale di cui un individuo gode. Essendo un reato, comporta conseguenze penali.
+    \end{itemize}
+\end{enumerate}
+
+\textbf{L'aggravante dei Social Network}\\
+La diffamazione prevede un'aggravante se commessa "col mezzo della stampa o altro mezzo di pubblicità". I social network rientrano in questa categoria perché il messaggio raggiunge un numero indeterminato di persone (potenzialità diffusiva) e rimane nel tempo.
+
+\textbf{Caso WhatsApp e la "Contestualità"}\\
+Come distinguere ingiuria e diffamazione in una chat (es. gruppo WhatsApp)? La Cassazione (Sentenza 27540) ha chiarito che il criterio è la percezione immediata:
+\begin{itemize}
+    \item Se l'offeso è online e percepisce l'offesa immediatamente (botta e risposta in tempo reale) $\rightarrow$ \textbf{Ingiuria} (illecito civile).
+    \item Se manca l'immediatezza (es. messaggio inviato quando l'offeso non è connesso, che lo legge dopo) $\rightarrow$ \textbf{Diffamazione} (reato penale).
+\end{itemize}
+
+\subsection{Hate Speech e Responsabilità delle Piattaforme}
+L'\textbf{Hate Speech} (incitamento all'odio) riguarda espressioni che diffondono, incitano o giustificano l'odio razziale, la xenofobia o altre forme di intolleranza.
+Il caso Feltri citato a lezione mostra come tali affermazioni possano catalizzare sentimenti negativi e discriminatori, rendendole pericolose socialmente.
+
+\textbf{La Responsabilità degli Host Provider (Piattaforme)}\\
+Secondo la normativa europea (Direttiva E-commerce e successivi), piattaforme come Facebook o YouTube (Hosting Provider) \textbf{non hanno un obbligo generale di sorveglianza} preventiva su tutto ciò che viene caricato. Non devono fare i "poliziotti" attivi della rete. Tuttavia, hanno l'obbligo di intervenire prontamente (rimuovere il contenuto) una volta che ricevono una segnalazione qualificata di contenuto illecito.
+
+\textbf{Digital Services Act (DSA) e Code of Conduct+}\\
+Il quadro normativo si è recentemente rafforzato con il \textbf{DSA} (Regolamento sui Servizi Digitali) e l'aggiornamento del \textbf{Code of Conduct+}.
+\begin{itemize}
+    \item Le grandi piattaforme (Meta, TikTok, X) hanno sottoscritto un Codice di Condotta per contrastare l'odio online, impegnandosi a esaminare le segnalazioni entro 24 ore.
+    \item \textit{Domanda}: Ci possiamo fidare perché seguono queste norme? Il "Code of Conduct" rende le piattaforme più responsabili e trasparenti (devono pubblicare report su quanti contenuti rimuovono). Il DSA trasforma questi impegni volontari in obblighi legali veri e propri per le piattaforme molto grandi, introducendo sanzioni pesanti se non moderano adeguatamente i contenuti illegali.
+\end{itemize}
+
+\newpage
+
+
+\section{TUTELA DEI DATI PERSONALI (20/10)}
+\subsection{Evoluzione del Concetto: Dalla Privacy alla Data Protection}
+Per comprendere la normativa odierna, bisogna analizzare l'evoluzione storica. Il concetto nasce negli USA nel 1890 (Warren e Brandeis) come \textbf{"Right to be alone"} (diritto a essere lasciati soli), legato all'idea del domicilio come fortezza.
+In Italia, il riconoscimento giurisprudenziale arriva con la celebre \textbf{Sentenza di Cassazione n. 2129 del 1974} (caso \textit{Soraya}), che definì la riservatezza come diritto a proteggere vicende strettamente personali e familiari prive di un interesse socialmente apprezzabile per i terzi.
+
+Con l'informatica di massa, però, questo concetto difensivo non bastava più. La capacità di incrociare e vendere dati ha imposto il passaggio alla \textbf{Protezione dei Dati Personali}.
+Mentre la \textit{Privacy} è il diritto a non subire interferenze, la \textit{Data Protection} è il diritto a controllare la circolazione delle proprie informazioni (autodeterminazione informativa).
+
+\textit{Esempio chiarificatore}:
+\begin{itemize}
+    \item \textbf{Privacy}: Se giro per casa vestito da carnevale, è un fatto intimo. Nessuno ha diritto di saperlo o fotografarmi.
+    \item \textbf{Protezione Dati}: Se acquisto un biglietto del treno, sono in pubblico, ma c'è un trattamento dati. Ho diritto che Trenitalia usi quei dati \textit{solo} per il viaggio e non li ceda a terzi senza consenso.
+\end{itemize}
+
+\subsection{Il Quadro Costituzionale Italiano}
+Nella Costituzione non esiste la parola "privacy", ma la tutela deriva da una lettura combinata di:
+
+\begin{enumerate}
+    \item \textbf{Art. 2 Cost.} (\textit{"La Repubblica riconosce e garantisce i diritti inviolabili..."}): Clausola "aperta" che permette di dare rango costituzionale ai nuovi interessi emersi con l'evoluzione sociale, inclusa la data protection.
+    \item \textbf{Art. 3 Cost.} (Principio di Uguaglianza):
+    \begin{itemize}
+        \item \textbf{Uguaglianza Formale} (comma 1): "Tutti i cittadini sono eguali davanti alla legge". Lo Stato deve essere cieco rispetto alle differenze (sesso, razza, religione).
+        \item \textbf{Uguaglianza Sostanziale} (comma 2): "È compito della Repubblica rimuovere gli ostacoli...". Qui lo Stato deve "vedere" le differenze per aiutare i svantaggiati.
+        \item \textit{Esempio}: Tasse universitarie graduate per reddito (uguaglianza sostanziale) per garantire il diritto allo studio. Nel digitale, la protezione dati evita discriminazioni basate sulla profilazione.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Cenni sulle Fonti Normative (Digressione)}
+Per capire la genesi delle norme (es. Codice Privacy), ricordiamo la distinzione tra atti aventi forza di legge:
+\begin{itemize}
+    \item \textbf{Decreto Legge (D.L.)}: Emanato dal Governo in casi di necessità e urgenza. Entra subito in vigore ma decade \textit{ex tunc} (come mai esistito) se non convertito in legge dal Parlamento entro 60 giorni.
+    \item \textbf{Decreto Legislativo (D.Lgs.)}: Usato per materie complesse (come i Codici). Il Parlamento emana una "Legge Delega" fissando i principi; il Governo scrive il testo normativo. Il Codice Privacy (D.Lgs 196/2003) nasce così.
+\end{itemize}
+
+\newpage
+\subsection{Il Contesto Europeo}
+La normativa privacy è di derivazione prettamente europea, volta a creare un mercato unico digitale.
+\begin{itemize}
+    \item \textbf{CEDU} (Convenzione Europea dei Diritti dell'Uomo): Trattato internazionale degli anni '50. La Corte Europea dei Diritti dell'Uomo (Strasburgo) vigila sulla sua applicazione.
+    \item \textbf{Carta di Nizza} (Carta dei diritti fondamentali dell'UE): Distingue nettamente i due diritti:
+    \begin{itemize}
+        \item \textbf{Art. 7}: Rispetto della vita privata e familiare (Privacy classica).
+        \item \textbf{Art. 8}: Protezione dei dati personali (Diritto di controllo, accesso, rettifica e vigilanza di un'autorità indipendente).
+    \end{itemize}
+    \item \textbf{TFUE (Art. 16)}: Sancisce che ogni persona ha diritto alla protezione dei dati di carattere personale che la riguardano.
+\end{itemize}
+
+\subsection{L'Evoluzione Normativa: Dalla Direttiva al GDPR}
+\begin{enumerate}
+    \item \textbf{Direttiva 95/46/CE}: Fu il primo tentativo di armonizzazione. Essendo una direttiva, richiedeva leggi nazionali di recepimento (In Italia portò alla Legge 675/96 e poi al Codice Privacy 2003). Tuttavia, questo creò frammentazione: ogni stato recepiva la direttiva in modo leggermente diverso, ostacolando il mercato unico.
+    \item \textbf{Regolamento UE 679/2016 (GDPR)}: L'UE è intervenuta con un Regolamento (immediatamente applicabile) per uniformare totalmente la materia. Le ragioni sono:
+    \begin{itemize}
+        \item Fallimento dell'armonizzazione precedente.
+        \item Mutato scenario tecnologico (Social Media, Big Data, Cloud).
+        \item Necessità di regole uguali per tutti gli operatori economici.
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Ambiti di applicazione del GDPR:}
+\begin{itemize}
+    \item \textbf{Materiale}: Trattamento interamente o parzialmente automatizzato, o non automatizzato se contenuto in archivi (es. schedari cartacei ordinati).
+    \item \textbf{Territoriale}: Principio di \textit{extraterritorialità}. Il GDPR si applica se il titolare è nell'UE, MA ANCHE se il titolare è fuori dall'UE (es. USA) ma offre beni/servizi a persone nell'UE o ne monitora il comportamento.
+\end{itemize}
+
+\subsection{Definizioni Chiave (Art. 4 GDPR)}
+\begin{itemize}
+    \item \textbf{Dato Personale}: Qualsiasi informazione riguardante una persona fisica identificata o identificabile (direttamente o indirettamente). Include: nome, codici fiscali, dati di localizzazione (GPS), indirizzi IP, ma anche elementi dell'identità fisica, fisiologica, economica, culturale.
+    \item \textbf{Trattamento}: Qualsiasi operazione sui dati: raccolta, registrazione, conservazione, modifica, estrazione, consultazione, uso, comunicazione, cancellazione. Anche la semplice "visione" o "distruzione" è un trattamento.
+    \item \textbf{Profilazione}: Trattamento automatizzato volto a valutare aspetti personali (rendimento lavorativo, salute, preferenze, spostamenti) per analizzare o prevedere comportamenti.
+    \item \textbf{Titolare del Trattamento (Controller)}: Chi decide il "perché" e il "come" (finalità e mezzi). È il soggetto che ha il potere decisionale e la responsabilità giuridica (es. l'Ateneo, l'Azienda).
+    \item \textbf{Responsabile del Trattamento (Processor)}: Chi tratta i dati \textit{per conto} del titolare seguendo le sue istruzioni (es. la società che gestisce le paghe per conto dell'azienda).
+\end{itemize}
+
+
+\subsection{I Principi del Trattamento (Art. 5)}
+I dati devono essere:
+\begin{enumerate}
+    \item \textbf{Leciti, corretti e trasparenti}: Nessun trattamento "oscuro".
+    \item \textbf{Limitazione della finalità}: Raccolti per scopi determinati e non usati per altro (es. vietato usare dati di assunzione per marketing).
+    \item \textbf{Minimizzazione}: Solo i dati indispensabili, non di più.
+    \item \textbf{Esattezza}: I dati devono essere precisi e aggiornati.
+    \item \textbf{Limitazione della conservazione}: Conservati solo per il tempo necessario.
+    \item \textbf{Integrità e Riservatezza}: Sicurezza tecnica (cybersecurity).
+\end{enumerate}
+
+\subsection{Il Garante per la Protezione dei Dati Personali}
+È l'autorità di controllo indipendente (Art. 51 GDPR e Art. 2-bis Codice Privacy).
+\begin{itemize}
+    \item \textbf{Composizione}: Organo collegiale di 4 membri (2 eletti dalla Camera, 2 dal Senato) in carica 7 anni (non rinnovabili). Eleggono Presidente e Vicepresidente.
+    \item \textbf{Funzioni}:
+    \begin{itemize}
+        \item Poteri \textbf{Investigativi}: Ispezioni, accesso alle banche dati.
+        \item Poteri \textbf{Correttivi}: sanzioni, ordine di rettifica/cancellazione, blocco del trattamento.
+        \item Poteri \textbf{Sanzionatori}: Multe amministrative (fino a 20 milioni di euro o 4\% del fatturato).
+        \item Poteri \textbf{Consultivi}: Pareri al Parlamento su nuove leggi.
+        \item Partecipa all'\textbf{EDPB} (Comitato Europeo) per garantire l'applicazione uniforme del GDPR.
+    \end{itemize}
+\end{itemize}
+
+\hrulefill
+
+\section{GDPR E ADEMPIMENTI (23/10)}
+
+\subsection{L'Approccio Basato sul Rischio (Risk Based Approach)}
+Il GDPR cambia paradigma: non fornisce una check-list statica, ma impone al Titolare di valutare i rischi specifici. Più un'attività è pericolosa per i diritti (es. dati sanitari), più alte devono essere le misure di sicurezza (come guidare un tir richiede cautele diverse rispetto a una bicicletta).
+
+\subsection{Il Consenso (Art. 6 e 7)}
+Il consenso è la base giuridica che esprime l'\textbf{autodeterminazione informativa} dell'individuo.
+\textbf{Definizione (Art. 4 n.11)}: \textit{"Qualsiasi manifestazione di volontà libera, specifica, informata e inequivocabile dell'interessato"}.
+
+I 4 Requisiti del Consenso valido:
+\begin{enumerate}
+    \item \textbf{Libero}: Non deve esserci coercizione o squilibrio di potere (es. se il dipendente teme di dire no al datore di lavoro). Se il rifiuto comporta un danno, il consenso non è libero.
+    \item \textbf{Informato}: L'utente deve sapere \textit{prima} a cosa serve quel trattamento (tramite l'Informativa).
+    \item \textbf{Specifico}: Non basta un "sì" generico a tutto. Serve un consenso distinto per ogni finalità (es. servizio, marketing, cessione a terzi).
+    \item \textbf{Inequivocabile}: Deve esserci un'azione positiva (opt-in). Le caselle pre-spuntate o il silenzio-assenso \textbf{non} sono validi.
+\end{enumerate}
+
+
+
+\textbf{Consenso Accessorio vs Necessario} (Risposta al dubbio):
+Non si può inserire il consenso come condizione obbligatoria per l'esecuzione di un contratto se i dati non sono necessari per quel contratto.
+\begin{itemize}
+    \item \textit{Esempio}: Se compro un paio di scarpe online, devo dare i dati di spedizione (necessari $\rightarrow$ base giuridica: Contratto, non serve consenso). Il venditore non può dirmi "ti vendo le scarpe solo se mi dai il consenso anche per la newsletter". Quel consenso è \textbf{accessorio} e deve essere facoltativo.
+\end{itemize}
+
+\textbf{Revoca}: Il consenso è revocabile in qualsiasi momento con la stessa facilità con cui è stato dato. La revoca vale per il futuro (ex nunc), non rende illeciti i trattamenti fatti prima.
+
+\subsection{Minori e Consenso Digitale (Art. 8)}
+Il GDPR fissa l'età del consenso digitale (iscrizione a social, app, servizi online) a \textbf{16 anni}.
+Tuttavia, lascia agli Stati la possibilità di abbassarla fino a 13 anni.
+\textbf{In Italia}: Il D.Lgs 101/2018 ha fissato la soglia a \textbf{14 anni}, sotto i quali, il trattamento è lecito solo se il consenso è prestato o autorizzato dal titolare della responsabilità genitoriale.
+
+\subsection{Categorie Particolari di Dati (Art. 9 - Ex Dati Sensibili)}
+Esiste un divieto generale di trattare dati che rivelino: origine razziale/etnica, opinioni politiche, religiose, appartenenza sindacale, dati genetici, dati sulla salute o sull'orientamento sessuale.
+Questi dati si possono trattare \textbf{solo se} ricorre un'eccezione, tra cui:
+\begin{itemize}
+    \item Consenso esplicito dell'interessato.
+    \item Necessità di assolvere obblighi in materia di diritto del lavoro.
+    \item Tutela di un interesse vitale (es. soccorso medico d'urgenza se l'interessato è incosciente).
+    \item Accertamento, esercizio o difesa di un diritto in sede giudiziaria.
+\end{itemize}
+
+\subsection{Le Basi Giuridiche (Art. 6)}
+Il consenso \textbf{non} è l'unica base legale. Un trattamento è lecito anche se basato su:
+\begin{enumerate}
+    \item \textbf{Esecuzione di un contratto} (es. dati per spedire un pacco o pagare lo stipendio).
+    \item \textbf{Obbligo Legale} (es. dati comunicati all'Agenzia delle Entrate).
+    \item \textbf{Interessi Vitali} (salvare la vita di una persona).
+    \item \textbf{Interesse Pubblico} (es. sanità pubblica).
+    \item \textbf{Legittimo Interesse} (del titolare o di terzi, previo bilanciamento con i diritti dell'interessato).
+\end{enumerate}
+
+\subsection{Il Principio di Accountability (Responsabilizzazione)}
+È il cuore del GDPR (Art. 5.2). Non basta rispettare le regole, bisogna \textbf{dimostrare} di averlo fatto. L'onere della prova è ribaltato sull'azienda (inversione dell'onere della prova).
+Strumenti pratici per l'Accountability:
+\begin{itemize}
+    \item \textbf{Registro delle attività di trattamento}: Mappa di tutti i dati trattati (chi, cosa, perché, per quanto tempo).
+    \item \textbf{DPIA (Data Protection Impact Assessment)}: Valutazione d'impatto obbligatoria per trattamenti ad alto rischio.
+    \item \textbf{Data Breach}: Obbligo di notificare le violazioni di sicurezza al Garante entro \textbf{72 ore} e, se grave, anche agli utenti.
+    \item \textbf{DPO (Data Protection Officer)}: Responsabile della protezione dati, figura ibrida di consulenza e vigilanza interna.
+\end{itemize}
+
+\subsection{Privacy by Design e Privacy by Default (Art. 25)}
+\begin{enumerate}
+    \item \textbf{Privacy by Design (Fin dalla progettazione)}:
+    La privacy non è un'aggiunta finale, ma deve essere integrata nell'architettura del software/servizio fin dall'inizio.
+    \begin{itemize}
+        \item \textit{Determinazione dei mezzi}: Nella fase di ideazione, quando decido \textit{come} fare una cosa (es. che database usare, che crittografia), devo già includere le tutele.
+        \item \textit{Atto del trattamento}: Le tutele devono essere attive durante l'uso effettivo.
+    \end{itemize}
+    \item \textbf{Privacy by Default (Per impostazione predefinita)}:
+    A sistema appena installato o avviato, l'impostazione deve essere quella più protettiva per l'utente (massima privacy). L'utente non deve agire per proteggersi, ma deve agire se vuole "aprirsi" (es. il profilo social deve nascere privato, non pubblico). Si devono trattare solo i dati strettamente necessari (\textit{Minimizzazione}).
+\end{enumerate}
+
+\subsection{I Diritti dell'Interessato (Art. 12-22)}
+Il Titolare deve facilitare l'esercizio di questi diritti e rispondere (solitamente entro 1 mese e gratuitamente).
+\begin{enumerate}
+    \item \textbf{Informativa e Trasparenza}: Diritto a sapere chi tratta i dati, perché, a chi li dà e per quanto tempo.
+    \item \textbf{Accesso}: Diritto a chiedere "state trattando dati su di me? Se sì, quali?".
+    \item \textbf{Rettifica}: Correzione immediata di dati errati.
+    \item \textbf{Cancellazione (Oblio)}: Quando i dati non servono più o revoco il consenso.
+    \item \textbf{Limitazione}: "Congelare" i dati (li conservi ma non li usi) mentre si verifica una contestazione.
+    \item \textbf{Portabilità}: Ricevere i propri dati in un formato strutturato (es. XML, CSV) per passarli a un altro fornitore (es. cambio operatore telefonico).
+    \item \textbf{Opposizione}: Diritto a dire "no" a trattamenti basati sul legittimo interesse o per marketing diretto.
+\end{enumerate}
+
+\textit{Nota sulla "volontà che vale fino a un certo punto"}: I diritti non sono assoluti. Se chiedo alla banca di cancellare i dati del mio mutuo (diritto all'oblio), la banca rifiuterà legittimamente perché ha un \textbf{Obbligo Legale} e un \textbf{Contratto} che prevalgono sul mio consenso o sulla mia volontà di cancellazione.
+
+\subsection{Processi Decisionali Automatizzati (Art. 22)}
+L'interessato ha il diritto di \textbf{non} essere sottoposto a una decisione basata unicamente sul trattamento automatizzato (compresa la profilazione) che produca effetti giuridici o incida molto sulla sua persona.
+\begin{itemize}
+    \item \textit{Esempio}: Un algoritmo che rifiuta automaticamente un'assunzione o un prestito.
+    \item \textit{Eccezioni}: Ammesso se necessario per un contratto, autorizzato dalla legge o basato su consenso esplicito.
+    \item \textit{Garanzia}: Anche nelle eccezioni, l'utente ha diritto all'\textbf{intervento umano}, a esprimere la propria opinione e a contestare la decisione.
+\end{itemize}
+
+\subsection{Tutela e Rimedi}
+Se i diritti vengono violati, l'interessato ha due strade alternative (non cumulabili per lo stesso oggetto):
+\begin{enumerate}
+    \item \textbf{Reclamo al Garante}: Procedura amministrativa, più rapida ed economica. Il Garante può sanzionare l'azienda.
+    \item \textbf{Ricorso all'Autorità Giudiziaria}: Procedura civile ordinaria per ottenere il risarcimento del danno (anche morale).
+\end{enumerate}
+
+
+
+\section{SUCCESSIONE DEI DATI PERSONALI ED EREDITÀ DIGITALE (27/10)}
+
+\subsection{Introduzione al Diritto Successorio}
+Per comprendere il problema della trasmissione dei dati personali post-mortem, è necessario prima delineare i contorni del diritto successorio tradizionale.
+Il \textbf{Diritto delle Successioni} è quella branca del diritto privato che regola la destinazione del patrimonio di una persona fisica a seguito della sua morte. È una materia antica, radicata nella tradizione, che oggi fatica ad adattarsi alle nuove forme di ricchezza (digitali) e ai nuovi modelli familiari (famiglie allargate, convivenze di fatto) che il codice civile del 1942 non prevedeva.
+
+Alla morte del soggetto (\textit{de cuius}), si apre la successione. In base al \textbf{principio di autodeterminazione}, ogni individuo ha la libertà di decidere la sorte dei propri beni tramite il \textbf{testamento}.
+\begin{itemize}
+    \item \textbf{Successione Testamentaria}: Se c'è un testamento, si seguono le volontà del defunto (nel rispetto delle quote di legittima).
+    \item \textbf{Successione Legittima}: Se non c'è testamento, la legge individua gli eredi tra i parenti fino al sesto grado. In mancanza di parenti entro il sesto grado, l'eredità si devolve allo Stato.
+\end{itemize}
+
+\textbf{La natura dell'eredità}\\
+L'eredità non comprende solo i beni (attività), ma anche i \textbf{debiti} (passività). L'erede subentra nella totalità dei rapporti giuridici patrimoniali del defunto.
+Di fronte all'eredità, il chiamato può:
+\begin{enumerate}
+    \item \textbf{Accettare puramente e semplicemente}: Il patrimonio del defunto si fonde con quello dell'erede (confusione dei patrimoni). Se i debiti del defunto superano i beni, l'erede risponde coi propri soldi.
+    \item \textbf{Accettare con Beneficio di Inventario}: I patrimoni restano distinti. L'erede risponde dei debiti del defunto solo entro il valore dei beni ereditati (es. se eredito 10 e i debiti sono 15, pago solo 10 e il mio patrimonio personale non viene intaccato).
+    \item \textbf{Rinunciare all'eredità}: La rinuncia deve essere totale; non è ammessa una rinuncia parziale (non posso prendere la casa e rifiutare il mutuo).
+\end{enumerate}
+
+\textit{Nota sulla trasmissibilità}: Si trasmettono agli eredi solo i rapporti di natura \textbf{patrimoniale}. I rapporti personali (es. l'obbligo di pagare gli alimenti o la responsabilità penale) si estinguono con la morte. Se sono imputato in un processo penale e muoio, il reato si estingue (\textit{mors omnia solvit}). Se invece c'è una causa civile per risarcimento danni (es. incidente stradale), il debito risarcitorio passa agli eredi.
+
+\subsection{Il Problema dell'Eredità Digitale}
+La questione moderna riguarda i beni digitali e i dati personali. Si trasmettono agli eredi?
+Il problema nasce dalla natura ibrida del dato personale:
+\begin{itemize}
+    \item Ha una componente \textbf{morale/personale} (diritto della personalità), che tradizionalmente si estingue con la morte.
+    \item Ha una componente \textbf{patrimoniale} (valore economico), poiché i dati sono "merce" di scambio per servizi gratuiti (Facebook, Google) o generano profitto (es. un account Instagram monetizzato, un manoscritto digitale, un wallet di criptovalute).
+\end{itemize}
+
+Spesso, i contratti con i Service Provider (Terms of Service - ToS) prevedono clausole di \textbf{intrasmissibilità}: alla morte dell'utente, l'account dovrebbe essere chiuso e i contenuti eliminati. Le piattaforme, solitamente, vengono a conoscenza del decesso tramite segnalazione di terzi o inattività prolungata.
+
+\subsection{La Soluzione Normativa: Art. 2-terdecies Codice Privacy}
+Il legislatore italiano ha introdotto una norma specifica per risolvere il conflitto tra la policy delle piattaforme (che tendono a chiudere tutto) e i diritti degli eredi. Si tratta dell'\textbf{Art. 2-terdecies del D.Lgs 196/2003} (introdotto dal D.Lgs 101/2018).
+
+La norma stabilisce che i diritti (accesso, rettifica, cancellazione, ecc.) riferiti ai dati personali di persone decedute possono essere esercitati da chi ha un interesse proprio, o agisce a tutela dell'interessato, in qualità di suo mandatario, o per ragioni familiari meritevoli di protezione.
+
+Analizziamo i requisiti per l'accesso ai dati del defunto:
+\begin{enumerate}
+    \item \textbf{Interesse proprio}: L'erede ha bisogno di quei dati per una questione patrimoniale (es. accedere alle fatture online per pagare le tasse o sbloccare un conto).
+    \item \textbf{Ragioni familiari meritevoli di protezione}: Interesse affettivo o morale (es. recuperare le foto di famiglia dal cloud, come nel caso citato a lezione).
+    \item \textbf{Mandatario}: Qualcuno delegato in vita dal defunto.
+\end{enumerate}
+
+\textbf{Il Divieto del Defunto}\\
+La legge garantisce l'autodeterminazione anche post-mortem. L'interessato può, mentre è in vita, vietare espressamente l'esercizio di questi diritti agli eredi.
+\begin{itemize}
+    \item Il divieto deve essere espresso in modo non equivoco (es. nel testamento o tramite strumenti offerti dalla piattaforma).
+    \item \textbf{Eccezione fondamentale al divieto}: Il divieto \textbf{NON produce effetti} se l'esercizio dei diritti serve agli eredi per tutelare i propri interessi \textbf{patrimoniali} o per difendere un diritto in sede giudiziaria.
+    \begin{itemize}
+        \item \textit{Esempio}: Se uno Chef muore e lascia un libro di ricette inedito su iCloud (opera dell'ingegno con valore economico), anche se aveva vietato l'accesso, gli eredi possono accedervi perché è un bene patrimoniale che spetta loro per legge.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Il Caso Giurisprudenziale ("Caso dello Chef" / Caso Apple)}
+La questione riguardava il recupero di dati (es. ricette o contenuti digitali) custoditi su un dispositivo o cloud di un defunto. Apple negava l'accesso citando le proprie clausole contrattuali (tutela della privacy del defunto).
+Il Giudice ha applicato l'art. 2-terdecies, ordinando ad Apple di fornire i dati agli eredi.
+Questo avviene spesso tramite un \textbf{Ricorso d'Urgenza (ex art. 700 c.p.c.)}, che attiva un \textbf{Processo Cautelare}. È una procedura veloce che serve a "congelare" la situazione o ottenere subito un ordine del giudice prima che il danno diventi irreparabile (es. prima che la piattaforma cancelli definitivamente i dati per inattività).
+
+\subsection{Strumenti Operativi delle Piattaforme}
+Le grandi piattaforme si stanno adeguando, offrendo strumenti di "Legacy Contact" (Contatto Erede):
+\begin{itemize}
+    \item \textbf{Facebook/Meta}: Permette di nominare un contatto erede che potrà gestire l'account in modalità "commemorativa" (es. fissare un post, cambiare foto profilo, scaricare un archivio di foto), ma solitamente \textbf{non} dà accesso alle chat private (tutela della segretezza della corrispondenza).
+    \item \textbf{Google}: "Gestione account inattivo" permette di decidere se cancellare tutto o inviare i dati a contatti fidati dopo un periodo di inattività.
+\end{itemize}
+
+In conclusione, sebbene i dati personali abbiano natura ibrida, la tendenza del legislatore italiano è quella di favorire la successione dei dati ("eredità digitale") quando vi sono interessi patrimoniali o affettivi rilevanti, rendendo nulle le clausole contrattuali delle piattaforme americane che negano tale accesso, salvo volontà contraria ed esplicita del defunto (che comunque non può ledere i diritti patrimoniali degli eredi).
+
+\section{IL CONTRATTO TELEMATICO E IL COMMERCIO ELETTRONICO (30/10)}
+
+\subsection{Nozione Generale di Contratto}
+Per comprendere la disciplina digitale, dobbiamo partire dalla definizione codicistica generale. L'\textbf{art. 1321 del Codice Civile} definisce il contratto come \textit{"l'accordo di due o più parti per costituire, regolare o estinguere tra loro un rapporto giuridico patrimoniale"}.
+L'elemento essenziale è la \textbf{patrimonialità}: il rapporto deve essere suscettibile di valutazione economica.
+Esempi classici includono:
+\begin{itemize}
+    \item \textbf{Compravendita}: scambio di un bene verso il corrispettivo di un prezzo.
+    \item \textbf{Permuta}: scambio di cosa contro cosa (baratto evoluto).
+    \item \textbf{Prestazione d'opera}: es. l'avvocato che difende un cliente o un freelance che realizza un sito web.
+    \item \textbf{Fornitura di servizi digitali}: iscrizione a una piattaforma social (dove il corrispettivo è spesso rappresentato dai dati personali ceduti, monetizzati tramite profilazione) o abbonamenti a servizi di streaming.
+\end{itemize}
+
+Il nostro ordinamento sancisce il principio di \textbf{autonomia contrattuale}: le parti possono stipulare anche contratti non previsti espressamente dalla legge (contratti atipici), purché perseguano interessi meritevoli di tutela secondo l'ordinamento giuridico.
+
+\subsection{Il Contratto Telematico}
+Il contratto telematico non è un "nuovo" tipo di contratto, ma un contratto stipulato con una modalità specifica: l'uso di strumenti informatici. Si definisce come l'accordo tra soggetti che, pur non essendo presenti fisicamente nel medesimo luogo, utilizzano strumenti informatici interconnessi come interfaccia diretta della loro volontà.
+
+Per regolare questa materia, il legislatore ha affiancato al Codice Civile una serie di normative speciali:
+\begin{enumerate}
+    \item \textbf{D.Lgs. 70/2003}: attuazione della Direttiva 2000/31/CE sul commercio elettronico.
+    \item \textbf{D.Lgs. 82/2005 (CAD)}: Codice dell'Amministrazione Digitale (fondamentale per le firme e i documenti informatici).
+    \item \textbf{D.Lgs. 206/2005 (Codice del Consumo)}: fondamentale per la tutela della parte debole.
+\end{enumerate}
+
+\textbf{Gli Elementi Essenziali (Art. 1325 c.c.)}\\
+Affinché un contratto telematico sia valido, deve possedere i quattro requisiti fondamentali:
+\begin{enumerate}
+    \item \textbf{Accordo delle parti}: l'incontro delle volontà (proposta e accettazione).
+    \item \textbf{Causa}: la funzione economico-sociale del contratto (il "perché" giuridico dello scambio).
+    \item \textbf{Oggetto}: deve essere possibile, lecito, determinato o determinabile (il bene fisico, il servizio digitale, etc.).
+    \item \textbf{Forma}: nel digitale vige la libertà di forma, salvo quando la legge richiede espressamente la forma scritta a pena di nullità (es. compravendita immobiliare), che nel digitale si soddisfa con specifiche firme elettroniche.
+\end{enumerate}
+
+\subsection{Le Parti del Contratto e l'Asimmetria Informativa}
+Originariamente, il diritto privato vedeva i contraenti come soggetti paritari. Tuttavia, nel mercato moderno esiste spesso uno squilibrio di potere (asimmetria), specialmente tra chi offre il servizio (azienda) e chi lo acquista (utente).
+\newpage
+In base ai soggetti coinvolti, distinguiamo:
+\begin{itemize}
+    \item \textbf{B2B (Business to Business)}: contratti tra imprese. Qui la tutela è minore perché si presume che le parti abbiano pari forza contrattuale.
+    \item \textbf{B2C (Business to Consumer)}: contratti tra impresa e consumatore finale. Qui la tutela è massima.
+    \item \textbf{C2C (Consumer to Consumer)}: contratti tra privati (es. vendita su Vinted o eBay tra privati). Le tutele del Codice del Consumo non si applicano.
+\end{itemize}
+
+\textbf{Definizioni del Codice del Consumo (D.Lgs. 206/2005):}
+\begin{itemize}
+    \item \textbf{Consumatore}: persona fisica che agisce per scopi \textit{estranei} all'attività imprenditoriale o professionale eventualmente svolta.
+    \item \textbf{Professionista}: persona fisica o giuridica che agisce nell'\textit{esercizio} della propria attività imprenditoriale o professionale.
+\end{itemize}
+\textit{Esempio}: Se compro un PC per giocare a casa sono un consumatore. Se compro lo stesso PC e chiedo fattura per lo studio legale, sono un professionista e perdo le tutele del consumatore (es. il recesso o la garanzia di 2 anni).
+
+\subsection{I Contratti a Distanza e il Diritto di Recesso}
+Il contratto telematico nel B2C è una tipica ipotesi di \textbf{contratto a distanza}: concluso senza la presenza fisica simultanea delle parti, mediante l'uso esclusivo di mezzi di comunicazione a distanza.
+Poiché il consumatore non può "vedere e toccare" la merce prima dell'acquisto, la legge gli riconosce il \textbf{Diritto di Recesso} (o diritto di ripensamento).
+È il diritto potestativo di sciogliere unilateralmente il vincolo contrattuale senza dover fornire alcuna motivazione e senza penalità.
+
+\textbf{Termini per il Recesso:}
+\begin{itemize}
+    \item \textbf{14 giorni}: decorrono dal ricevimento della merce (o dalla conclusione del contratto per i servizi).
+    \item \textbf{12 mesi + 14 giorni}: se il professionista \textit{non} ha informato il consumatore sul diritto di recesso, il termine si estende di un anno. Se fornisce le info in ritardo, il termine torna a essere di 14 giorni da quel momento.
+\end{itemize}
+
+\textbf{Modalità di esercizio:}\\
+Il consumatore deve inviare una comunicazione esplicita (raccomandata, PEC o modulo web dedicato) prima della scadenza.
+Una volta esercitato il recesso:
+\begin{enumerate}
+    \item Il consumatore deve restituire i beni entro 14 giorni
+    \item Il venditore deve rimborsare tutti i pagamenti ricevuti.
+\end{enumerate}
+
+\subsection{La Conclusione del Contratto (Quando e Dove)}
+La regola generale è data dall'\textbf{Art. 1326 c.c.}: \textit{"Il contratto è concluso nel momento in cui chi ha fatto la proposta ha conoscenza dell'accettazione dell'altra parte"}.
+
+Nel digitale si applica la \textbf{Presunzione di Conoscenza (Art. 1335 c.c.)}: "L'accettazione si reputa conosciuta nel momento in cui giunge all'indirizzo del destinatario, a meno che questi non provi di essere stato, senza sua colpa, nell'impossibilità di averne notizia".
+
+\textbf{Il caso della Posta Elettronica}\\
+Tecnicamente, una email non arriva direttamente al PC del destinatario, ma si ferma sul server del provider.
+Il documento informatico si intende consegnato \textbf{quando è reso disponibile all'indirizzo elettronico dichiarato}.
+Quindi: il contratto si conclude quando l'email di accettazione arriva sul server del proponente, non quando lui la scarica o la legge. Il rischio del mancato controllo della casella ricade sul destinatario.
+
+\subsection{E-Commerce: Offerta al Pubblico vs Invito ad Offrire}
+Nei siti di e-commerce (come Amazon o un catalogo online), dobbiamo distinguere due situazioni giuridiche in base alla completezza delle informazioni:
+
+\begin{enumerate}
+    \item \textbf{Offerta al Pubblico (Art. 1336 c.c.)}: Si ha quando il sito contiene \textit{tutti} gli elementi essenziali del contratto (prezzo, descrizione precisa, condizioni). In questo caso, il sito sta facendo una proposta; l'utente, cliccando "acquista", compie l'accettazione e il contratto è concluso immediatamente.
+    \item \textbf{Invito ad Offrire}: Se mancano elementi essenziali (es. prezzo non indicato o "trattativa riservata"), il sito non sta facendo una proposta ma invita l'utente a farla. Qui l'utente propone di comprare e il venditore dovrà poi accettare.
+\end{enumerate}
+
+\textbf{Obblighi Informativi nell'E-Commerce (Art. 12 D.Lgs. 70/2003)}\\
+Per garantire trasparenza, il venditore deve fornire specifiche informazioni \textit{prima} dell'inoltro dell'ordine: le fasi tecniche per concludere il contratto, come il contratto sarà archiviato e come accedervi, i mezzi tecnici per correggere errori di inserimento dati prima dell'invio, lngue a disposizione e strumenti di risoluzione controversie.
+
+Inoltre, ai sensi dell'art. 13 D.Lgs. 70/2003, dopo l'ordine il venditore deve inviare immediatamente una \textbf{ricevuta dell'ordine} riepilogativa. Nella prassi automatizzata, il contratto si perfeziona con l'invio dell'ordine (se offerta al pubblico) e la ricevuta serve a conferma.
+Il \textbf{Foro Competente} nelle controversie con i consumatori è inderogabile: è sempre il luogo di residenza del consumatore (es. Tribunale di Messina se l'utente vive lì), per evitare di costringere l'utente a cause costose all'estero.
+
+\hrulefill
+
+\section{LE TRATTATIVE E LA FIRMA ELETTRONICA (06/11)}
+
+\subsection{La Responsabilità Precontrattuale}
+Anche nel mondo digitale, prima della conclusione del contratto esiste una fase di "trattativa" (scambio di email, configurazione di preventivi, chat di assistenza). In questa fase le parti non sono ancora vincolate al contratto, ma sono vincolate a un preciso dovere giuridico.
+\textbf{Art. 1337 c.c.}: \textit{"Le parti, nello svolgimento delle trattative... devono comportarsi secondo \textbf{buona fede}"}.
+
+La violazione della buona fede (es. recesso ingiustificato dalle trattative quando l'accordo era quasi fatto) porta alla \textbf{Responsabilità Precontrattuale} (\textit{Culpa in contrahendo}). Il risarcimento in questo caso copre il cosiddetto \textbf{Interesse Negativo}:
+\begin{itemize}
+    \item Spese inutilmente sostenute (es. viaggi, consulenze).
+    \item Perdita di altre occasioni (perdita di chance).
+\end{itemize}
+Non copre invece il mancato guadagno che sarebbe derivato dal contratto (quello spetta solo se il contratto fosse stato concluso).
+
+\textbf{Il contesto Internazionale}\\
+Mentre in Italia e nei paesi di \textit{Civil Law} la buona fede è un obbligo, nei paesi di \textit{Common Law} (anglosassoni) vige una maggiore libertà: ci si può ritirare dalle trattative quasi sempre senza conseguenze.
+Per evitare incertezze nei contratti internazionali telematici, si usano documenti precontrattuali come:
+\begin{itemize}
+    \item \textbf{LOI (Letter of Intent)}: fissa i punti già raggiunti.
+    \item \textbf{NDA (Non Disclosure Agreement)}: accordo di riservatezza per proteggere i dati scambiati durante la trattativa.
+\end{itemize}
+
+\subsection{Gli Obblighi di Trasparenza nel D.Lgs 70/2003}
+Oltre alla buona fede generale, chi fa e-commerce ha obblighi specifici di trasparenza (Art. 7, 8, 9 D.Lgs. 70/2003). Il sito web deve rendere sempre accessibili: nome, ragione sociale, sede legale, contatti rapidi (email), numero di iscrizione REA o Registro Imprese, partita IVA.
+
+Le \textbf{Comunicazioni Commerciali} (pubblicità via mail, banner) devono essere chiaramente identificabili come tali. È vietato mascherare pubblicità da contenuto informativo. Se non sollecitate (spam), devono indicare chiaramente come opporsi a riceverne altre (opt-out).
+
+
+\subsection{Le Firme Elettroniche}
+Per stipulare contratti telematici validi e opponibili a terzi, è fondamentale il tema della \textbf{sottoscrizione}. La firma serve a garantire la provenienza del documento e l'accettazione del contenuto.
+Il Regolamento europeo eIDAS e il CAD (Codice Amministrazione Digitale) distinguono quattro livelli di firma con forza probatoria crescente:
+
+\subsubsection*{1. Firma Elettronica ``Semplice''}
+Rappresenta il livello base ed è costituita da dati elettronici semplici, come la \textbf{firma in calce a una mail ordinaria} o il click su ``Accetto''. Essendo il sistema più debole, non offre garanzie assolute: in giudizio spetterà al giudice valutarne liberamente l'idoneità caso per caso.
+
+\subsubsection*{2. Firma Elettronica Avanzata (FEA)}
+Richiede standard di sicurezza superiori: connessione univoca al firmatario, controllo esclusivo e rilevamento delle modifiche successive. Un caso tipico è la \textbf{firma grafometrica su tablet} in banca o alle poste. Giuridicamente soddisfa il requisito della forma scritta (Art. 2702 c.c.), ma in caso di disconoscimento l'onere della prova è ripartito.
+
+\subsubsection*{3. Firma Elettronica Qualificata (FEQ) e Firma Digitale}
+Rappresentano il vertice della sicurezza. La FEQ utilizza dispositivi sicuri (token) e certificati qualificati; la Firma Digitale (specificità normativa italiana) aggiunge l'uso di \textbf{chiavi crittografiche asimmetriche} (es. chiavette USB di certificatori come Aruba o InfoCert). Entrambe hanno \textbf{massima efficacia probatoria}, equiparata alla firma autografa: fanno piena prova fino a querela di falso.
+
+\subsection{Efficacia Probatoria e Disconoscimento}
+La differenza sostanziale tra queste firme risiede nell'\textbf{Onere della Prova} in caso di contenzioso:
+
+\begin{itemize}
+    \item \textbf{Con Firma Semplice}: Se l'utente dice "non sono stato io", tocca a chi vuole far valere il contratto dimostrare che la firma è autentica.
+    \item \textbf{Con Firma Digitale/Qualificata}: Si applica l'\textbf{inversione dell'onere della prova}. La firma si \textit{presume} riconducibile al titolare. Se l'utente dice "non ho firmato io", \textbf{deve essere lui a dimostrare} che la firma gli è stata sottratta o usata abusivamente (es. furto del token + PIN).
+\end{itemize}
+
+Inoltre, per contestare un documento firmato con firma digitale, non basta una semplice dichiarazione: è necessario instaurare un procedimento complesso chiamato \textbf{Querela di Falso}, poiché la firma digitale fa "piena prova" fino a querela di falso della provenienza delle dichiarazioni.
+
+\textbf{Limiti e Nullità}\\
+Il CAD specifica che per certi atti molto importanti (quelli elencati nell'art. 1350 c.c. nn. 1-12, come la compravendita di immobili), la \textbf{Firma Digitale o Qualificata} è obbligatoria a pena di nullità. Per altri atti meno solenni (contratti bancari, assicurativi), può bastare la Firma Avanzata.
+
+
+\section{L'INTELLIGENZA ARTIFICIALE E L'AI ACT (17/11)}
+
+\subsection{Il Contesto e la Necessità di Regolamentazione}
+L'IA permea ormai ogni settore strategico (sanità, sicurezza, economia). Per non lasciare lo sviluppo alla sola autoregolamentazione, l'UE ha approvato il \textbf{Regolamento 2024/1689 (AI Act)}, primo quadro normativo globale in materia.
+L'obiettivo è bilanciare innovazione e tutela dei diritti fondamentali attraverso un approccio \textbf{antropocentrico}: la tecnologia deve servire l'uomo, evitando discriminazioni o danni.
+
+\subsection{L'Approccio Basato sul Rischio (Risk-Based Approach)}
+L'AI Act classifica le tecnologie in una piramide di \textbf{quattro livelli di rischio}, a cui corrispondono obblighi crescenti, partendo dal presupposto che non tutte le IA hanno la stessa pericolosità.
+
+\subsubsection*{1. Rischio Inaccettabile (Divieto Assoluto)}
+Sistemi incompatibili con i valori UE e pertanto \textbf{vietati}:
+\begin{itemize}
+    \item \textbf{Social Scoring}: Classificazione dei cittadini per comportamento sociale o caratteristiche personali (tipico di regimi autoritari).
+    \item \textbf{Tecniche Manipolative}: Sistemi che sfruttano vulnerabilità (es. minori) o usano tecniche subliminali per alterare il comportamento.
+    \item \textbf{Sorveglianza Biometrica real-time}: Riconoscimento facciale in spazi pubblici da parte delle forze dell'ordine (vietato salvo gravi eccezioni come terrorismo o ricerca dispersi, previa autorizzazione).
+\end{itemize}
+
+\subsubsection*{2. Rischio Alto (Regolamentazione Severa)}
+Sistemi permessi ma con impatto critico su diritti o sicurezza (es. \textit{selezione personale, credit scoring, diagnosi mediche, giustizia, infrastrutture critiche}). L'accesso al mercato richiede rigorosi requisiti \textit{ex-ante}:
+\begin{itemize}
+    \item \textbf{Governance dei Dati}: Dataset di alta qualità e privi di \textit{bias} discriminatori (es. per evitare scarti automatici di minoranze).
+    \item \textbf{Trasparenza e Supervisione}: Obbligo di documentazione tecnica e controllo umano costante (\textit{Human in the loop}) per poter intervenire o spegnere il sistema.
+    \item \textbf{Sicurezza e Registrazione}: Robustezza contro attacchi cyber e iscrizione nel database pubblico UE.
+\end{itemize}
+
+\subsubsection*{3. Rischio Limitato (Obblighi di Trasparenza)}
+Riguarda sistemi che interagiscono con le persone o generano contenuti, come i \textbf{Chatbot} o i sistemi di \textit{Deepfake}.
+Qui il rischio principale è l'inganno. Pertanto, l'obbligo fondamentale è la \textbf{Trasparenza}: l'utente deve essere informato che sta interagendo con una macchina (nel caso del chatbot) o che il contenuto (audio/video) è stato generato o manipolato artificialmente (nel caso dei deepfake). Ciò serve a garantire una decisione consapevole e a evitare la disinformazione.
+
+\subsubsection*{4. Rischio Minimo}
+Comprende la stragrande maggioranza delle applicazioni attuali: filtri antispam, videogiochi, sistemi di raccomandazione di film o prodotti. Per questi sistemi l'AI Act non prevede obblighi specifici, lasciando libere le imprese di svilupparli (codici di condotta volontari sono comunque incoraggiati).
+
+\subsection{I Modelli di IA General-Purpose (GPAI)}
+L'avvento di tecnologie come ChatGPT ha introdotto norme specifiche per i \textbf{GPAI} (Foundation Models), modelli potenti e versatili integrabili in altre applicazioni. Si distinguono in:
+\begin{enumerate}
+    \item \textbf{GPAI Standard}: Soggetti a obblighi di trasparenza tecnica e rispetto del copyright (diritto d'autore) nell'addestramento.
+    \item \textbf{GPAI con Rischio Sistemico}: Modelli ad altissima potenza di calcolo (FLOPs) capaci di causare incidenti su larga scala o creare minacce bio/informatiche. Richiedono regole extra: valutazioni d'impatto, test avversari (\textit{red-teaming}) e reportistica sugli incidenti gravi.
+\end{enumerate}
+
+\subsection{La Governance Europea e Nazionale}
+L'applicazione delle norme è garantita da una nuova architettura di sorveglianza:
+\begin{itemize}
+    \item \textbf{AI Office}: Organo centrale della Commissione UE; vigila sui GPAI e coordina la politica europea.
+    \item \textbf{Comitato Scientifico}: Panel di esperti indipendenti a supporto dell'AI Office.
+    \item \textbf{AI Board}: Composto dai rappresentanti degli Stati membri per garantire l'applicazione uniforme delle norme.
+    \item \textbf{Autorità Nazionali}: Ogni Stato designa le proprie autorità (in Italia es. AgID o Garante) per vigilare sui sistemi ad alto rischio locali, ispezionare e sanzionare.
+\end{itemize}
+
+\subsection{Il Regime Sanzionatorio}
+L'AI Act prevede sanzioni amministrative dissuasive in base alla gravità della violazione:
+\begin{itemize}
+    \item \textbf{35 mln € o 7\% del fatturato}: Uso di pratiche vietate (Rischio Inaccettabile).
+    \item \textbf{15 mln € o 3\%}: Violazioni degli obblighi sui sistemi ad Alto Rischio.
+    \item \textbf{7,5 mln € o 1,5\%}: Fornitura di informazioni inesatte alle autorità.
+\end{itemize}
+
+
+\hrulefill
+
+\section{IL CLOUD COMPUTING}
+
+\subsection*{1. Definizione e Modelli}
+Il Cloud trasforma le risorse informatiche da prodotti a servizi on-demand. Si classifica in tre modelli con diverse implicazioni di responsabilità:
+\begin{itemize}
+    \item \textbf{SaaS (Software as a Service):} Uso software via web (es. Gmail). Minimo controllo dell'utente.
+    \item \textbf{IaaS (Infrastructure as a Service):} Affitto di potenza/storage. Sicurezza condivisa.
+    \item \textbf{PaaS (Platform as a Service):} Piattaforme per sviluppatori.
+\end{itemize}
+
+\subsection*{2. La Qualificazione Giuridica (Contratto Atipico)}
+In assenza di una disciplina specifica nel Codice Civile, la dottrina tenta di adattare figure esistenti:
+\begin{itemize}
+    \item \textbf{Appalto:} Gestione per conto del cliente. \textit{Critica:} Manca la "personalizzazione" tipica dell'appalto, essendo il Cloud standardizzato.
+    \item \textbf{Locazione:} Affitto di "spazio" digitale. \textit{Critica:} Funziona per lo IaaS, non per il SaaS.
+    \item \textbf{Somministrazione:} Fornitura continuativa (spiega bene il pagamento a consumo).
+    \item \textbf{Conclusione:} Prevale la tesi del \textbf{Contratto Atipico o Misto}, regolato prevalentemente dai \textbf{SLA} (Service Level Agreements) sulle prestazioni tecniche.
+\end{itemize}
+
+\subsection*{3. Privacy e Trasferimento Dati (Il Caso Schrems)}
+La criticità maggiore riguarda i server extra-UE. La CGUE (Sentenze **Schrems I e II**) ha stabilito che i dati dei cittadini europei non sono sicuri negli USA, poiché le leggi americane (FISA) consentono la sorveglianza massiva (NSA).
+\textit{Conseguenza:} Invalidati "Safe Harbour" e "Privacy Shield"; oggi il trasferimento richiede garanzie rafforzate.
+
+\subsection*{4. Legge Applicabile e Tutela del Consumatore}
+In caso di controversie con Big Tech estere:
+\begin{itemize}
+    \item \textbf{Legge Applicabile (Roma I):} Se l'utente è consumatore, vale la legge del suo paese di residenza, non quella della sede del provider.
+    \item \textbf{Foro Competente:} Il consumatore agisce nel proprio tribunale; clausole su fori esteri sono nulle.
+\end{itemize}
+
+\hrulefill
+
+\section{GIOCHI ONLINE}
+
+\subsection*{1. Evoluzione e Contratto di Gioco}
+Mentre il Codice Civile (art. 1933) considerava il gioco un'obbligazione naturale (senza diritto di agire per la vincita), il \textbf{Gioco Online Autorizzato} (ADM) crea un rapporto giuridico vincolante.
+Strumento cardine è il \textbf{Contratto di Conto di Gioco}, che richiede registrazione e identificazione univoca, garantendo al giocatore piena tutela legale e diritto alla riscossione.
+
+\subsection*{2. Tutela della Salute e ``Decreto Dignità''}
+Per contrastare la ludopatia, lo Stato impone vincoli rigidi:
+\begin{itemize}
+    \item \textbf{Divieto ai Minori:} Accesso consentito solo previa verifica documento d'identità.
+    \item \textbf{Divieto di Pubblicità:} Il D.L. 87/2018 (\textit{Decreto Dignità}) ha vietato ogni forma di promozione, anche indiretta, per de-normalizzare l'azzardo.
+    \item \textbf{Autoesclusione (RUA):} Iscrizione al Registro Unico per bloccarsi l'accesso a \textit{tutte} le piattaforme legali (temporaneamente o a tempo indeterminato).
+\end{itemize}
+
+\subsection*{3. Nuove Tipologie e Mercato Transfrontaliero}
+Oltre alle scommesse classiche, esistono il \textbf{Betting Exchange} (scambio scommesse tra utenti, la piattaforma è solo intermediario) e gli \textbf{Skill Games} (dove prevale l'abilità, es. Poker torneo).
+
+\subsubsection*{Il nodo del Mercato Unico:}
+Mancando una legge UE armonizzata, coesistono operatori legali (concessione ADM) e operatori del \textbf{Mercato Grigio} (licenze estere, es. Malta). La Corte di Giustizia UE ha stabilito che l'Italia può oscurare i siti esteri solo per tutelare \textbf{ordine pubblico e salute}, non per mero protezionismo economico delle entrate erariali.
+
+\end{document}

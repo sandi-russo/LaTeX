@@ -1,0 +1,149 @@
+\chapter{Buffer Overflow}
+
+\section{Principi del Buffer Overflow}
+
+Un buffer overflow, noto anche come buffer overrun o buffer overwrite, è una condizione che si verifica quando un'area di memoria viene riempita con più dati di quelli che può contenere, sovrascrivendo così altre informazioni in memoria.
+
+Questo fenomeno può essere sfruttato da attaccanti per mandare in crash un sistema o inserire codice malevolo, ottenendo così il controllo del sistema.
+
+\subsection{Cause e Conseguenze}
+
+Il buffer overflow è spesso il risultato di errori di programmazione, quando un processo tenta di memorizzare dati oltre i limiti di un buffer di dimensioni fisse. Questo può sovrascrivere celle di memoria adiacenti contenenti variabili del programma, parametri o dati di controllo del flusso, come indirizzi di ritorno e puntatori a stack frame precedenti. Il buffer può trovarsi in diverse aree di memoria, come lo stack, l'heap o la sezione dati del processo.
+
+Le principali conseguenze di un buffer overflow includono:
+
+\begin{description}
+    \item[Corruzione dei dati] I dati utilizzati dal programma possono essere modificati involontariamente.
+    
+    \item[Alterazione del flusso di esecuzione] L'overflow può deviare il flusso di controllo verso aree non previste.
+    
+    \item[Violazioni di accesso alla memoria] L'accesso a celle di memoria non autorizzate può interrompere il programma.
+    
+    \item[Esecuzione di codice arbitrario] In caso di attacco, l'overflow permette di eseguire codice scelto dall'attaccante con i privilegi del processo compromesso.
+\end{description}
+
+\subsection{Requisiti per Sfruttare un Buffer Overflow}
+
+Per sfruttare un buffer overflow, un attaccante deve:
+
+\begin{enumerate}
+    \item \textbf{Identificare una vulnerabilità:} il programma deve presentare una vulnerabilità di buffer overflow che può essere sfruttata attraverso dati esterni sotto il controllo dell'attaccante.
+    
+    \item \textbf{Comprendere la struttura della memoria:} è essenziale capire come il buffer è memorizzato nella memoria del processo, consentendo all'attaccante di sovrascrivere le celle di memoria adiacenti e potenzialmente alterare il flusso del programma.
+\end{enumerate}
+
+\subsubsection{Identificazione delle Vulnerabilità}
+
+La ricerca di programmi vulnerabili può essere effettuata tramite l'analisi del codice sorgente, il monitoraggio dell'esecuzione del programma con input sovradimensionati o strumenti come il fuzzing. Quest'ultimo è un metodo per testare la sicurezza di un programma inviandogli grandi quantità di input casuali per individuare potenziali falle di sicurezza.
+
+\section{Shellcode}
+
+In molti attacchi di buffer overflow, il controllo del programma viene trasferito a codice appositamente fornito dall'attaccante, noto come shellcode, che ha come obiettivo l'esecuzione di una shell a riga di comando. Su sistemi UNIX, questo avviene attraverso una chiamata alla funzione di sistema \texttt{execve("/bin/sh")}, mentre su Windows si utilizza generalmente \texttt{system("command.exe")} o \texttt{cmd.exe}.
+
+\subsection{Caratteristiche dello Shellcode}
+
+Lo shellcode è costituito da codice macchina, ossia istruzioni binarie specifiche per l'architettura del processore e per il sistema operativo attaccato. Questa dipendenza dal sistema target rende gli attacchi di buffer overflow tipicamente mirati a un componente software specifico su una piattaforma definita. La scrittura di shellcode richiede conoscenza del linguaggio assembly e del funzionamento interno del sistema attaccato, anche se strumenti come il Metasploit Project hanno semplificato la generazione di shellcode e lo sviluppo di exploit, rendendolo accessibile a un numero più ampio di utenti.
+
+\subsection{Sviluppo dello Shellcode}
+
+Per comprendere la struttura base di uno shellcode, consideriamo un esempio classico su un sistema Linux Intel, in cui l'obiettivo è eseguire la shell. Lo shellcode deve configurare gli argomenti per la chiamata \texttt{execve}, specificando i parametri necessari e invocando la funzione. Poiché \texttt{execve} è una funzione di libreria, lo shellcode inserisce esplicitamente le istruzioni per configurare i registri e invocare l'interrupt software necessario per la chiamata al kernel.
+
+\subsection{Restrizioni}
+
+Nello sviluppo di shellcode, esistono alcune restrizioni tecniche:
+
+\begin{description}
+    \item[Indipendenza dalla posizione] Lo shellcode non deve contenere riferimenti a indirizzi assoluti, poiché l'attaccante non può prevedere l'esatta posizione del buffer nello stack del programma attaccato.
+    
+    \item[Assenza di valori NULL] Il codice non può contenere valori NULL all'interno, eccetto alla fine, a causa delle routine di gestione delle stringhe in C che terminano le stringhe con un carattere NULL. Includere valori NULL interromperebbe la copia dello shellcode nel buffer.
+\end{description}
+
+\section{Difese Contro i Buffer Overflow}
+
+Le difese contro i buffer overflow possono essere implementate sia a tempo di compilazione sia a livello di runtime.
+
+\subsection{Difese a Tempo di Compilazione}
+
+Le difese a tempo di compilazione mirano a rendere i programmi più robusti contro i buffer overflow direttamente durante il processo di compilazione.
+
+\subsubsection{Scelta del Linguaggio di Programmazione}
+
+Usare linguaggi di alto livello con controllo automatico sui limiti dei buffer riduce la vulnerabilità ai buffer overflow. Tuttavia, la sicurezza di questi linguaggi ha un costo in termini di prestazioni. Nonostante i vantaggi, l'accesso diretto a istruzioni e risorse hardware è limitato, per cui linguaggi come il C continuano a essere utilizzati, specialmente per codice che richiede controllo a basso livello.
+
+\subsubsection{Tecniche Sicure di Scrittura del Codice}
+
+Nei linguaggi non sicuri come il C, i programmatori devono seguire pratiche di programmazione sicura, come il controllo dello spazio disponibile prima di scrivere su un buffer. È essenziale una scrittura robusta del codice che prevenga il buffer overflow controllando sempre le dimensioni dei dati e dei buffer.
+
+\subsubsection{Estensioni del Linguaggio e Librerie Sicure}
+
+Per il C sono stati sviluppati compilatori che inseriscono automaticamente controlli sui limiti dei buffer. Le librerie sicure, come Libsafe, proteggono lo stack evitando che le operazioni di copia superino lo spazio disponibile, prevenendo così le modifiche agli indirizzi di ritorno e impedendo alcune forme di attacco.
+
+\subsubsection{Meccanismi di Protezione dello Stack}
+
+Questi metodi aggiungono controlli sullo stack per rilevare eventuali tentativi di sovrascrittura.
+
+\paragraph{Stackguard}
+
+Un'estensione del compilatore GCC, Stackguard inserisce un valore sentinella sotto l'indirizzo di ritorno nello stack. Se questo valore viene modificato, si interrompe il programma, evitando che l'attaccante possa alterare il flusso di esecuzione. Il canarino è generato in modo casuale, rendendo più difficile per l'attaccante prevederne il valore.
+
+\paragraph{Stackshield e RAD (Return Address Defender)}
+
+Questi strumenti, anch'essi estensioni di GCC, copiano l'indirizzo di ritorno in una regione sicura della memoria all'ingresso della funzione e lo confrontano con il valore nello stack all'uscita della funzione. Se l'indirizzo di ritorno è stato alterato, il programma viene interrotto. Questa tecnica non modifica la struttura dello stack frame e quindi è compatibile con i debugger tradizionali.
+
+\subsection{Difese a Tempo di Esecuzione}
+
+Le difese a tempo di esecuzione proteggono i sistemi contro i buffer overflow senza necessità di ricompilare i programmi esistenti, rendendole particolarmente utili per sistemi operativi aggiornati o per mitigare vulnerabilità già presenti nei programmi.
+
+\subsubsection{Protezione dello Spazio degli Indirizzi Eseguibili}
+
+Una difesa efficace consiste nel rendere non eseguibili lo stack, supportando questa protezione tramite l'unità di gestione della memoria del processore (MMU), che etichetta le pagine come non eseguibili. Questa tecnica è inclusa nei sistemi operativi moderni e previene l'esecuzione di codice sullo stack, anche se alcuni programmi (ad esempio i compilatori just-in-time) possono richiedere eccezioni per funzionare correttamente.
+
+\subsubsection{Randomizzazione dello Spazio degli Indirizzi}
+
+Modificando in modo casuale l'indirizzo dello stack per ogni esecuzione del processo, si riduce la probabilità di successo di un attacco di stack overflow, poiché l'attaccante non può prevedere esattamente l'indirizzo di destinazione.
+
+La randomizzazione può essere estesa anche al caricamento delle librerie standard, modificando casualmente l'ordine e gli indirizzi di memoria delle funzioni di libreria, rendendo impraticabili attacchi basati sul riutilizzo di codice di libreria.
+
+\subsubsection{Pagine di Guardia}
+
+Un'ulteriore protezione consiste nell'inserimento di pagine di guardia (pagine vuote e non accessibili) tra le aree di memoria critiche, come gli stack frame o le allocazioni sull'heap. Queste pagine, segnalate come illegali dalla MMU, interrompono il processo se si tenta di accedervi, bloccando potenziali attacchi che cercano di sovrascrivere regioni di memoria adiacenti. Sebbene queste pagine migliorino la sicurezza, introducono un sovraccarico in termini di tempo di esecuzione a causa delle mappature aggiuntive richieste.
+
+\section{Altre Forme di Attacchi Overflow}
+
+Gli attacchi di buffer overflow non si limitano allo stack, ma includono varianti come il return-to-system-call, gli overflow di heap e quelli nell'area dati globale. Questi attacchi sfruttano vulnerabilità specifiche di diverse aree di memoria e richiedono difese mirate.
+
+\subsection{Sostituzione dello Stack Frame}
+
+In un classico stack buffer overflow, l'attaccante sovrascrive l'area delle variabili locali dello stack, puntatore al frame e indirizzo di ritorno. Una variante di questo attacco modifica solo il puntatore al frame, indirizzandolo a uno stack frame fittizio all'interno del buffer sovrascritto, il quale include un indirizzo di ritorno che punta allo shellcode. Questo attacco è utile in caso di overflow parziale, ma richiede precisione nell'individuare l'indirizzo esatto del buffer.
+
+\subsubsection{Difese}
+
+Le difese includono protezioni dello stack (come Stackguard), stack non eseguibili e randomizzazione dello stack in memoria, che riducono la probabilità di individuare indirizzi esatti.
+
+\subsection{Ritorno alla Chiamata di Sistema}
+
+Con la diffusione degli stack non eseguibili, gli attaccanti hanno iniziato a modificare l'indirizzo di ritorno per trasferire il controllo a codice già presente nel sistema, tipicamente funzioni di libreria come \texttt{system()}. L'attaccante sovrascrive il buffer, sostituisce l'indirizzo di ritorno con una funzione di sistema e inserisce i parametri necessari allo stack, sfruttando il codice della libreria per eseguire i propri comandi.
+
+Una variante prevede di concatenare chiamate a due funzioni di libreria: ad esempio, \texttt{strcpy()} per copiare lo shellcode in una parte eseguibile della memoria e poi un'altra funzione per eseguirlo, aggirando le protezioni dello stack.
+
+\subsubsection{Difese}
+
+Le difese includono meccanismi di protezione dello stack, randomizzazione dello stack e delle librerie di sistema.
+
+\subsection{Heap Overflow}
+
+Gli attaccanti possono sfruttare gli overflow nei buffer situati nell'heap, l'area di memoria allocata dinamicamente per strutture dati come liste e record. Sebbene l'heap non contenga indirizzi di ritorno, un attaccante può sovrascrivere un puntatore a funzione e farlo puntare al proprio shellcode.
+
+Un esempio comune prevede la sovrascrittura di un puntatore a funzione in una struttura dati vulnerabile per indirizzarlo al codice malevolo nell'heap.
+
+\subsubsection{Difese}
+
+Per difendersi dagli heap overflow, si possono rendere non eseguibili le pagine dell'heap, randomizzare l'allocazione della memoria e aggiungere controlli di integrità nei gestori di allocazione della memoria.
+
+\subsection{Overflow nell'Area Dati Globale}
+
+Anche i buffer nell'area dati globale possono essere vulnerabili a overflow, consentendo di modificare puntatori a funzione o strutture dati adiacenti. Questo tipo di attacco sfrutta la natura statica delle variabili globali, che hanno indirizzi fissi all'interno del codice.
+
+\subsubsection{Difese}
+
+Proteggere l'area dei dati globali rendendola non eseguibile, posizionare i puntatori a funzione sotto altri dati per ridurre il rischio di sovrascrittura, e utilizzare pagine di guardia per prevenire accessi non autorizzati.

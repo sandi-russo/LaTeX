@@ -1,0 +1,277 @@
+\chapter{Firewall}
+
+\section{Introduzione}
+
+I firewall si basano sulla semplice idea che il traffico di rete proveniente da ambienti meno sicuri debba essere autenticato e ispezionato prima di passare a un ambiente più sicuro. Ciò impedisce a utenti, dispositivi e applicazioni non autorizzati di entrare in un ambiente o segmento di rete protetto. Senza firewall, computer e dispositivi nella rete sono soggetti ad attacchi e rendono l'utente vulnerabile.
+
+\section{Requisiti Minimi}
+
+Un firewall deve:
+
+\begin{enumerate}
+    \item Garantire che tutto il traffico (sia in entrata che in uscita) passi attraverso esso, che agisce come unico punto di accesso alla rete locale. Questo obiettivo è raggiunto bloccando fisicamente ogni altro accesso alla rete.
+    
+    \item Permettere solo il traffico autorizzato, conforme alle policy di sicurezza definite dall'organizzazione.
+    
+    \item Essere immune a tentativi di penetrazione.
+\end{enumerate}
+
+\section{Politiche d'Accesso}
+
+Le politiche d'accesso sono basate su una serie di caratteristiche di filtraggio, come l'accesso in base a indirizzi IP, valori di protocollo, direzione del traffico (in entrata o uscita), o altre proprietà a livello di rete e trasporto. Un'altra modalità di filtraggio è basata sulle attività di rete, come limitare le richieste a specifiche ore o identificare tentativi di scansione.
+
+\section{Caratteristiche di un Firewall}
+
+I firewall possono monitorare il traffico di rete a diversi livelli, dai pacchetti di rete a basso livello fino ai dettagli dei protocolli applicativi. Il livello di monitoraggio dipende dalla policy di accesso implementata.
+
+\section{Filtri del Firewall}
+
+Un firewall può agire come filtro positivo, consentendo solo i pacchetti che rispettano determinati criteri, o come filtro negativo, bloccando quelli che li soddisfano. Le policy di accesso si basano sulle informazioni contenute nei pacchetti, come gli header di protocollo o i modelli generati da una sequenza di pacchetti.
+
+\subsection{Firewall a Filtraggio di Pacchetto}
+
+Il firewall a filtraggio di pacchetto applica una serie di regole a ciascun pacchetto IP in entrata e in uscita e decide se inoltrarlo o scartarlo. Le regole di filtraggio si basano su diverse informazioni contenute nel pacchetto, come l'indirizzo IP di origine, l'indirizzo IP di destinazione, i numeri di porta di livello trasporto (come TCP o UDP), il campo di protocollo IP e l'interfaccia di rete attraverso la quale il pacchetto è passato.
+
+Esistono due politiche predefinite:
+
+\begin{description}
+    \item[Default discard] Più conservativa e generalmente preferita da aziende, in cui tutto ciò che non è espressamente permesso è bloccato.
+    
+    \item[Default forward] Più aperta ma meno sicura, in cui tutto ciò che non è espressamente proibito è permesso.
+\end{description}
+
+\subsection{Tipi di Attacchi al Firewall a Filtraggio di Pacchetto}
+
+I packet filtering firewall possono essere soggetti a diversi tipi di attacchi, ognuno dei quali richiede contromisure specifiche per essere prevenuto o mitigato.
+
+\subsubsection{IP Spoofing}
+
+Un tipo di attacco è l'IP spoofing, in cui l'attaccante invia pacchetti dall'esterno utilizzando un indirizzo IP spoofato, fingendo che il pacchetto provenga da un host interno fidato. La contromisura principale è scartare qualsiasi pacchetto con un indirizzo di origine interno se questo arriva su un'interfaccia esterna.
+
+\subsubsection{Source Routing}
+
+Un altro attacco è quello del source routing, in cui l'attaccante specifica il percorso che un pacchetto deve seguire attraverso la rete, sperando di aggirare i controlli di sicurezza che non analizzano le informazioni di routing. La contromisura più efficace è scartare tutti i pacchetti che utilizzano l'opzione di source routing.
+
+\subsubsection{Tiny Fragment Attack}
+
+L'attacco a piccoli frammenti (tiny fragment attack) separa le informazioni dell'header TCP in frammenti diversi. L'attacco mira a bypassare le regole di filtraggio che dipendono dalle informazioni dell'header TCP, poiché molti filtri analizzano solo il primo frammento di un pacchetto. Per contrastare questo attacco, il firewall dovrebbe imporre una regola secondo cui il primo frammento deve contenere una quantità minima di informazioni dell'header di trasporto. Inoltre, se il primo frammento viene scartato, il firewall deve ricordare il pacchetto e scartare tutti i frammenti successivi.
+
+\subsection{Firewall a Filtraggio di Pacchetto con Stato}
+
+Il firewall a filtraggio di pacchetto con stato offre un livello di sicurezza superiore, poiché tengono conto del contesto delle connessioni e non si limitano a esaminare i pacchetti in modo isolato.
+
+Le applicazioni basate su TCP, come SMTP, seguono il modello client/server. Per stabilire la comunicazione, si crea una connessione TCP tra il client e il server. Il server SMTP utilizza una porta TCP ben definita (porta 25), mentre il client SMTP utilizza una porta temporanea, solitamente compresa tra 1024 e 65535.
+
+Il problema con un firewall a filtraggio di pacchetto è che, per consentire il traffico TCP in entrata, deve permettere il traffico su tutte queste porte ad alto numero (oltre 1024). Questo succede perché un firewall tradizionale non è in grado di distinguere quali connessioni siano legittime e quali siano tentativi di attacco.
+
+Il firewall a filtraggio di pacchetto con stato gestisce questa vulnerabilità mantenendo un registro delle connessioni TCP in uscita. Questo registro contiene informazioni su tutte le connessioni attive, incluse le porte utilizzate dal client e dal server. Il firewall consente il traffico in entrata su porte ad alto numero solo se il pacchetto in arrivo corrisponde a una connessione già esistente nel registro.
+
+\section{Tipi di Firewall}
+
+\subsection{Gateway a Livello Applicativo}
+
+Un gateway a livello applicativo (o proxy applicativo) funge da intermediario per il traffico di rete a livello applicativo. In pratica, un utente si connette al gateway utilizzando un'applicazione TCP/IP come Telnet o FTP, e il gateway chiede all'utente di specificare l'host remoto che desidera contattare. Una volta forniti un nome utente valido e le informazioni di autenticazione, il gateway contatta l'applicazione sull'host remoto e si occupa di inoltrare i segmenti TCP contenenti i dati dell'applicazione tra l'utente e l'host remoto.
+
+I gateway a livello applicativo sono generalmente più sicuri rispetto ai filtri di pacchetti, poiché operano a un livello più alto e si concentrano solo su un numero limitato di applicazioni consentite, evitando di dover gestire tutte le possibili combinazioni di traffico TCP e IP. Un ulteriore vantaggio è la possibilità di registrare e controllare facilmente tutto il traffico in entrata a livello applicativo, migliorando la capacità di auditing e monitoraggio.
+
+Tuttavia, uno svantaggio significativo di questo tipo di gateway è l'overhead di elaborazione aggiuntivo su ogni connessione. Poiché il gateway agisce come punto di ``giunzione'' tra due connessioni distinte (una verso l'utente e l'altra verso l'host remoto), deve esaminare e inoltrare tutto il traffico in entrambe le direzioni, aumentando il carico computazionale.
+
+\subsection{Proxy a Livello di Circuito}
+
+Un proxy a livello di circuito (o circuit-level gateway) è un tipo di firewall che gestisce le connessioni TCP tra due host senza permettere una connessione TCP diretta end-to-end. Simile a un gateway a livello applicativo, il circuit-level gateway crea due connessioni TCP separate: una con l'host interno e una con l'host esterno. Una volta stabilite queste due connessioni, il gateway funge da intermediario, inoltrando i segmenti TCP tra le due connessioni senza esaminare il contenuto dei pacchetti.
+
+La principale funzione di sicurezza di un circuit-level gateway è determinare quali connessioni saranno consentite, invece di analizzare ogni singolo pacchetto. Questo tipo di gateway è particolarmente utile in ambienti in cui l'amministratore di sistema si fida degli utenti interni. Questa configurazione permette di ottenere un bilanciamento tra sicurezza e prestazioni, poiché limita l'analisi approfondita ai dati in entrata, dove il rischio è maggiore, e ottimizza le connessioni in uscita, riducendo il carico computazionale.
+
+\section{Classificazione per Locazione}
+
+Una ulteriore classificazione può essere operata sulla base della locazione del firewall, quindi si individuano:
+
+\begin{description}
+    \item[Bastion host] Un sistema estremamente protetto, che gestisce il minor numero di servizi possibili (tipicamente, solo i firewall).
+    
+    \item[Host-based firewall] Firewall installati direttamente su un host al fine di evitare attacchi diretti, sono configurati con regole progettate appositamente per l'host considerato.
+    
+    \item[Personal firewall] In questo caso ci si riferisce a software installati su PC o workstation, ideati tipicamente per soluzioni non professionali.
+\end{description}
+
+\subsection{Bastion Host}
+
+Un bastion host effettua la funzione di interfaccia tra la rete interna e quella esterna e per questo è spesso soggetto di attacchi dall'esterno ma del resto la sua più classica configurazione d'uso è quella di primo ed unico punto di contatto tra privato e pubblico dominio.
+
+I progettisti di reti posizionano il bastion host nella prima linea di difesa. Costituisce un punto nevralgico per tutte le comunicazioni fra la rete e Internet: nessun computer della rete può accedere a Internet senza passare attraverso il bastion host e viceversa. Se si concentra ogni accesso alla rete in un unico computer, può essere molto facile gestire la sicurezza della rete.
+
+Un bastion (computer bastione) è un computer specializzato nell'isolare una rete locale da una connessione pubblica, creando uno scudo che permette di proteggere la rete locale.
+
+Il posizionamento del bastion host (con finalità firewall) può prevedere diverse configurazioni, tra cui:
+
+\begin{itemize}
+    \item Un singolo firewall tra la rete interna e quella esterna
+    \item Creazione di una DMZ
+\end{itemize}
+
+\subsubsection{pfSense come Bastion Host}
+
+Un esempio di bastion host e pfSense, sistema operativo basato su FreeBSD, spesso utilizzato come firewall e router. Può essere configurato come bastion host grazie alla sua robustezza e capacità di gestire vari servizi di rete, come VPN, proxy e filtraggio del traffico.
+
+\subsection{Host-Based Firewall}
+
+Esempi di host-based firewall:
+
+\begin{description}
+    \item[iptables (Linux)] È il firewall integrato nel kernel Linux, che consente di configurare regole specifiche per filtrare pacchetti in entrata e in uscita su singoli host. È utilizzato comunemente nei server per gestire la sicurezza a livello di host.
+    
+    \item[Windows Defender Firewall] Integrato nei sistemi operativi Windows, consente di impostare regole per filtrare il traffico di rete su un singolo computer, permettendo di configurare restrizioni per applicazioni e servizi.
+    
+    \item[pf (OpenBSD, FreeBSD, macOS)] Un firewall host-based su Unix-like OS, che consente di configurare policy specifiche per il filtraggio del traffico a livello di singolo sistema.
+\end{description}
+
+\subsection{Personal Firewall}
+
+Esempi di personal firewall:
+
+\begin{description}
+    \item[Norton Personal Firewall] Parte della suite di sicurezza Norton, questo firewall personale protegge i computer domestici bloccando le connessioni non autorizzate e monitorando le attività sospette.
+    
+    \item[Little Snitch (macOS)] Un firewall personale per macOS che avvisa l'utente ogni volta che un'applicazione tenta di connettersi a Internet, permettendo un controllo dettagliato sulle connessioni in uscita.
+\end{description}
+
+\section{Architetture di Sicurezza di Rete}
+
+Un amministratore di sicurezza deve decidere la posizione e il numero di firewall necessari.
+
+\subsection{La Rete DMZ}
+
+Un'implementazione comune è quella di reti DMZ (Demilitarized Zone), dove una configurazione tipica prevede un firewall esterno collocato al margine di una rete locale o aziendale, appena all'interno del router di frontiera che collega la rete a Internet.
+
+Un secondo firewall interno protegge la maggior parte della rete aziendale. Tra questi due firewall si trova una zona DMZ, un segmento di rete dedicato a dispositivi accessibili dall'esterno che richiedono protezione, come un sito web aziendale, un server di posta elettronica o un server DNS.
+
+\subsubsection{Il Ruolo dei Firewall}
+
+\paragraph{Il Firewall Esterno}
+
+Il firewall esterno controlla e limita l'accesso ai sistemi nella DMZ, garantendo al contempo un primo livello di protezione per il resto della rete aziendale.
+
+\paragraph{Il Firewall Interno}
+
+I firewall interni svolgono tre funzioni principali:
+
+\begin{enumerate}
+    \item Offrono un filtraggio più rigoroso rispetto al firewall esterno, proteggendo server e workstation aziendali da attacchi esterni.
+    
+    \item Forniscono protezione bidirezionale riguardo alla DMZ:
+    \begin{itemize}
+        \item Proteggono la rete interna da attacchi provenienti dai sistemi DMZ compromessi (a causa di worm, rootkit, bot o altro malware).
+        \item Difendono i sistemi DMZ da attacchi provenienti dalla rete interna.
+    \end{itemize}
+    
+    \item È possibile utilizzare più firewall interni per proteggere diverse parti della rete interna l'una dall'altra, separando server interni dalle workstation o suddividendo diverse aree operative della rete per aumentare la sicurezza.
+\end{enumerate}
+
+Questa configurazione garantisce una protezione stratificata, con il firewall esterno che gestisce il traffico proveniente dall'esterno e il firewall interno che offre una protezione più specifica e approfondita.
+
+\subsection{La Rete VPN}
+
+Una VPN (Virtual Private Network) consiste in un gruppo di computer collegati tramite una rete non sicura, che utilizzano protocolli speciali e crittografia per garantire la sicurezza. In ogni sito aziendale, server e database sono collegati tramite una o più LAN. Per interconnettere questi siti, si può utilizzare Internet o un'altra rete pubblica. Il problema principale che il gestore deve affrontare è la sicurezza.
+
+L'uso di una rete pubblica espone il traffico a rischi di intercettazione e può offrire un punto di accesso per utenti non autorizzati.
+
+\subsubsection{Garantire la Sicurezza}
+
+La VPN, per risolvere questo problema, utilizza la crittografia e l'autenticazione negli strati inferiori del protocollo per garantire una connessione sicura. La crittografia può essere eseguita tramite software di firewall o, in alcuni casi, dai router stessi. Il protocollo più comune per questo scopo è a livello IP, ed è conosciuto come IPSec.
+
+\subsubsection{Implementazione di una VPN}
+
+Un metodo logico per implementare IPSec è all'interno di un firewall. Tuttavia, se IPSec viene implementato in un dispositivo separato, posto dietro il firewall, tutto il traffico VPN che attraversa il firewall in entrambe le direzioni sarà criptato. In questo scenario, il firewall non può eseguire le sue funzioni di filtraggio o altre funzioni di sicurezza.
+
+\subsection{Firewall Distribuiti}
+
+Una configurazione di firewall distribuiti coinvolge dispositivi firewall autonomi e firewall host-based che lavorano insieme sotto un controllo amministrativo centrale.
+
+I firewall autonomi forniscono una protezione globale, inclusi firewall interni ed esterni. In un sistema di firewall distribuiti, potrebbe essere utile stabilire sia una DMZ interna che una esterna. I server web che richiedono meno protezione, poiché contengono informazioni meno sensibili, possono essere collocati in una DMZ esterna, fuori dal firewall esterno. La protezione necessaria per questi server è garantita dai firewall basati su host.
+
+Un aspetto fondamentale è il monitoraggio della sicurezza, che include l'aggregazione e l'analisi dei log, statistiche del firewall e il monitoraggio remoto dettagliato dei singoli host, se necessario.
+
+\subsection{Topologia delle Reti con Firewall}
+
+\begin{description}
+    \item[Firewall residente su host] Include software firewall personali e firewall su server. Possono essere utilizzati da soli o come parte di una strategia di sicurezza approfondita.
+    
+    \item[Router di screening] Un router singolo tra la rete interna ed esterna con filtraggio di pacchetti stateless o completo. Questo è tipico per piccole imprese o reti domestiche (SOHO).
+    
+    \item[Bastion singolo in-line] Un dispositivo firewall tra un router interno ed esterno. Può implementare filtri stateful o proxy applicativi.
+    
+    \item[Bastion singolo a T] Simile al bastion host in linea, ma con una terza interfaccia di rete per una DMZ dove si trovano server visibili esternamente.
+    
+    \item[Doppio bastion in-line] Il DMZ è posizionato tra due firewall bastion. Questo tipo di configurazione è utilizzato da grandi aziende e enti governativi.
+    
+    \item[Doppio bastion host a T] Simile alla configurazione precedente, ma la DMZ è su una interfaccia di rete separata del firewall bastion. Comune in grandi aziende e enti governativi.
+    
+    \item[Configurazione di firewall distribuiti] Include firewall autonomi e basati su host, coordinati centralmente. Utilizzata in grandi organizzazioni e enti governativi.
+\end{description}
+
+\section{Intrusion Prevention System}
+
+\subsection{Introduzione}
+
+L'Intrusion Prevention System (IPS), anche noto come Intrusion Detection and Prevention System (IDPS), è un'estensione di un Intrusion Detection System (IDS) che include la capacità di bloccare o prevenire attività malevole rilevate. Mentre un IDS è progettato principalmente per rilevare intrusioni, l'IPS va oltre, intervenendo attivamente per fermarle. Può essere implementato a livello host-based, network-based o in una configurazione distribuita o ibrida.
+
+\subsection{Rilevamento degli Attacchi di un IPS}
+
+Può utilizzare tecniche di rilevamento anomalo per individuare comportamenti insoliti, non associati ad utenti legittimi, o tecniche basate su firme o euristiche per identificare comportamenti malevoli già noti. Se un IDS rileva un'attività malevola, un IPS può rispondere, sfruttando algoritmi avanzati, tramite la modifica o il blocco di pacchetti di rete o chiamate di sistema. Immaginiamo quindi l'IPS come un'evoluzione del firewall.
+
+\subsection{Host-Based IPS (HIPS)}
+
+Un Host-Based Intrusion Prevention System (HIPS) è un tipo di IPS specifico per singoli host.
+
+\subsubsection{Rilevamento degli Attacchi}
+
+\begin{itemize}
+    \item Nel rilevamento per firma, il sistema si concentra sul contenuto del traffico di rete delle applicazioni o sulle sequenze di chiamate di sistema, cercando schemi noti come malevoli.
+    \item Nel rilevamento di anomalie, invece, il sistema cerca comportamenti che indicano la presenza di malware.
+\end{itemize}
+
+\subsubsection{Comportamenti Malevoli}
+
+Alcuni esempi di comportamenti malevoli che un HIPS può rilevare includono:
+
+\begin{itemize}
+    \item Modifiche alle risorse di sistema: Operazioni da parte di rootkit, trojan o backdoor che alterano il sistema.
+    \item Escalation dei privilegi: Attacchi che cercano di concedere privilegi di root a utenti normali.
+    \item Esecuzione di attacchi buffer overflow: Tipologia di attacco che sfrutta vulnerabilità legate alla memoria.
+    \item Accesso alla lista dei contatti e-mail: Molti worm si diffondono inviando copie di se stessi tramite la lista dei contatti della vittima.
+    \item Directory traversal: Vulnerabilità che permettono a un attaccante di accedere a file esterni alla normale portata di un server.
+\end{itemize}
+
+\subsubsection{Le Sandbox}
+
+Una tecnica avanzata utilizzata da un HIPS è l'uso di sandbox, utile per applet Java o linguaggi di scripting. La sandbox isola il codice sospetto, esegue il codice e ne monitora il comportamento. Se il codice viola le politiche predefinite o corrisponde a firme di comportamenti malevoli, l'esecuzione viene interrotta e il codice viene impedito di operare nell'ambiente normale del sistema.
+
+\subsection{Network-Based IPS (NIPS)}
+
+Il Network-Based Intrusion Prevention System (NIPS) è una versione inline del Network Intrusion Detection System (NIDS), ma con l'autorità di modificare o scartare pacchetti e interrompere connessioni TCP.
+
+\subsubsection{Funzionamento}
+
+Il NIPS può intervenire attivamente bloccando il traffico malevolo in tempo reale, tramite tecniche di rilevamento per firma/euristiche che di rilevamento di anomalie, simili a quelle impiegate da un NIDS, ma con funzionalità aggiuntive di prevenzione.
+
+Una delle caratteristiche distintive del NIPS, rispetto ai firewall tradizionali, è la protezione del flusso di dati. Questa funzione richiede la ricostruzione del payload dell'applicazione in una sequenza di pacchetti, così da poter applicare filtri a ogni nuovo pacchetto ricevuto. Se un flusso viene identificato come malevolo, i pacchetti successivi appartenenti a quel flusso vengono immediatamente scartati.
+
+\subsubsection{Rilevamento degli Attacchi}
+
+Il NIPS utilizza diverse tecniche per identificare pacchetti malevoli, tra cui:
+
+\begin{itemize}
+    \item \textbf{Pattern matching:} Scansiona i pacchetti in arrivo alla ricerca di sequenze di byte specifiche, note come firme.
+    \item \textbf{Stateful matching:} Analizza le firme degli attacchi nel contesto di un flusso di traffico piuttosto che esaminare i singoli pacchetti isolati.
+    \item \textbf{Protocol anomaly:} Identifica deviazioni dagli standard definiti nei documenti RFC, che specificano il comportamento atteso dei protocolli.
+    \item \textbf{Traffic anomaly:} Analizza il traffico per identificare comportamenti anomali che possono indicare la presenza di un attacco.
+    \item \textbf{Statistical anomaly:} Utilizza modelli statistici per rilevare deviazioni nei modelli di traffico standard, suggerendo potenziali minacce.
+\end{itemize}
+
+\subsection{Sistema Immunitario Digitale}
+
+Il Sistema Immunitario Digitale rappresenta una difesa globale contro comportamenti malevoli causati da malware. Il sistema funziona raccogliendo dati da una vasta gamma di sensori IPS che inviano le informazioni a un sistema centrale di analisi. Questo sistema correlativo elabora i dati, identificando nuove minacce e comportamenti malevoli. Le informazioni raccolte vengono poi utilizzate per aggiornare firme e pattern comportamentali su tutti i sistemi coordinati, migliorando così la capacità di risposta collettiva agli attacchi.
+
+\subsubsection{Funzionamento del Sistema Immunitario Digitale}
+
+Quando un nuovo malware viene introdotto in un'organizzazione, il sistema immunitario digitale lo cattura, lo analizza, ne crea una firma di rilevamento e protezione, e infine lo rimuove. Le informazioni vengono poi distribuite ai client connessi, in modo che il malware possa essere identificato prima che possa diffondersi ulteriormente. Questo processo garantisce una risposta rapida e una protezione aggiornata e continua contro nuove varianti di malware.

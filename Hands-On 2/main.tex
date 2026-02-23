@@ -1,0 +1,339 @@
+\documentclass[a4paper, 12pt]{scrartcl}
+\usepackage[utf8]{inputenc} % supporto caratteri UTF-8
+\usepackage[T1]{fontenc} % migliore gestione dei font
+\usepackage{newtxtext, newtxmath} % Font Times New Roman-like
+\usepackage[main=italian, english]{babel} % imposta l'italiano come lingua principale
+\usepackage{graphicx} % per l'inserimento di immagini
+\usepackage{hyperref} % per link nell'indice
+\usepackage{listings} % per codice sorgente
+\usepackage{xcolor} % per colorare il codice
+\usepackage{amsmath} % per formule matematiche complesse
+
+% formattazione codice sorgente
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    captionpos=b
+}
+
+% informazioni sulla relazione
+\title{Hands-On 2}
+\subtitle{Socket Non Bloccanti - Fibonacci}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Nome e CdL
+\date{\today}
+
+\begin{document}
+
+\maketitle % Genera la copertina con titolo, sottotitolo e autore
+
+\newpage
+\tableofcontents % Inserisce l'indice automatico
+\newpage
+
+\section{Introduzione}
+\section{Definizione del Problema}
+Il problema da risolvere è quello di creare un server che possa gestire più connessioni client contemporaneamente in modo efficiente e senza l'uso di thread o processi separati. Tradizionalmente, i server che devono supportare più client simultaneamente adottano un modello basato su multithreading o multiprocessing, assegnando un thread o un processo dedicato a ciascuna connessione. Tuttavia, questo approccio presenta alcune limitazioni significative, come l'elevato consumo di risorse di sistema e la complessità nella gestione della concorrenza e della sincronizzazione tra i vari thread o processi.
+\noindent
+Per superare queste problematiche, si desidera implementare un server che utilizzi un modello di programmazione concorrente basato su operazioni di I/O non bloccanti. In particolare, il codice sfrutta la funzione 	extit{select()}, che consente di monitorare simultaneamente molteplici socket e rilevare quali di essi siano pronti per operazioni di lettura o scrittura. Questo approccio permette di ottimizzare l'utilizzo delle risorse e garantire una gestione efficiente delle connessioni, evitando il sovraccarico legato alla creazione e alla gestione di molteplici thread o processi.
+\noindent
+L'obiettivo di questa relazione è fornire una comprensione chiara del comportamento delle socket TCP in contesti bloccanti e non bloccanti, mostrando come esse influenzino la gestione delle connessioni e delle operazioni di I/O nel server.
+
+\section{Implementazione del Client TCP}
+
+\subsection{Creazione e Configurazione del Client}
+
+\begin{lstlisting}[caption={Creazione e configurazione del client TCP},label={lst:client_tcp}]
+int sockfd;
+struct sockaddr_in serv_addr;
+char buffer[BUFFER_SIZE];
+
+// Variabili per generare la sequenza di Fibonacci
+int fibonacci = 0, f1 = 0, f2 = 1; 
+
+// Creo il socket
+if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("socket fallita");
+    exit(EXIT_FAILURE);
+}
+
+// Configura l'indirizzo del server
+serv_addr.sin_family = AF_INET;   // Indirizzo IPv4
+serv_addr.sin_port = htons(PORT);
+
+if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) {
+    perror("indirizzo non valido");
+    exit(EXIT_FAILURE);
+}
+
+// Connette al server
+if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+    perror("connessione fallita");
+    exit(EXIT_FAILURE);
+}
+printf("Connesso al server.\n");
+\end{lstlisting}
+
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item \textit{sockfd}: File descriptor per il socket.
+    \item \textit{struct sockaddr\_in serv\_addr}: Struttura per l'indirizzo del server.
+    \item \textit{char buffer[BUFFER\_SIZE]}: Buffer per la comunicazione.
+    \item \textit{AF\_INET}: Indica che verrà utilizzato IPv4.
+    \item \textit{SOCK\_STREAM}: Specifica il protocollo TCP.
+    \item \textit{serv\_addr.sin\_port = htons(PORT)}: Specifica la porta del server (nel nostro caso 8080).
+    \item \textit{inet\_pton}: Converte un indirizzo IP in forma testuale (stringa) in una rappresentazione binaria utilizzabile a livello di rete.
+\end{itemize}
+
+\subsection{Invio della Sequenza di Fibonacci al Server}
+
+\begin{lstlisting}[caption={Invio della sequenza di Fibonacci al server},label={lst:fibonacci}]
+while (1) {
+    for (int i = 0; i <= 10; i++) {
+        fibonacci = f1 + f2; // Calcola il prossimo numero
+        f1 = f2;
+        f2 = fibonacci;
+        
+        sprintf(buffer, "%d", fibonacci);
+
+        send(sockfd, buffer, strlen(buffer), 0);
+        sleep(1); // Attende 1 secondo
+
+        int n = read(sockfd, buffer, BUFFER_SIZE - 1); // Legge la risposta del server
+        buffer[n] = '\0'; // Termina la stringa ricevuta
+        if (strcmp(buffer, "1") == 0) {
+            printf("ACK del server: %s\n", buffer);
+        } else {
+            break;
+        }
+    }
+}
+close(sockfd); // Chiude il socket
+return 0;
+\end{lstlisting}
+
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item \textit{while(1)}: Ciclo infinito per inviare la sequenza di Fibonacci al server.
+    \item \textit{for (int i = 0; i <= 10; i++)}: Genera i primi 10 numeri della sequenza di Fibonacci.
+    \item \textit{sprintf()}: Converte il numero in stringa.
+\end{itemize}
+
+\section{Implementazione del Server TCP Bloccante}
+
+\subsection{Creazione e Configurazione del Server}
+
+\begin{lstlisting}[caption={Creazione e configurazione del server TCP},label={lst:server_tcp}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define PORT 8080              // Porta del server
+#define BUFFER_SIZE 256        // Dimensione del buffer
+
+int main() {
+    int sockfd, newsockfd;
+    struct sockaddr_in serv_addr, cli_addr;
+    socklen_t clilen = sizeof(cli_addr);
+    char buffer[BUFFER_SIZE];
+    int fibonacci = 0, f1 = 0, f2 = 1;
+
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket fallita");
+        exit(EXIT_FAILURE);
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(PORT);
+    if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("bind fallito");
+        exit(EXIT_FAILURE);
+    }
+    if (listen(sockfd, 5) < 0) {
+        perror("listen fallito");
+        exit(EXIT_FAILURE);
+    }
+    printf("Server in ascolto sulla porta %d...\n", PORT);
+\end{lstlisting}
+
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item \textit{socket()}: Crea il socket del server.
+    \item \textit{bind()}: Assegna l'indirizzo e la porta al socket.
+    \item \textit{listen()}: Mette il server in ascolto per nuove connessioni.
+    \item \textit{serv\_addr.sin\_addr.s\_addr = INADDR\_ANY}: Accetta connessioni da qualsiasi indirizzo.
+\end{itemize}
+
+\subsection{Gestione della Connessione e Validazione della Sequenza Fibonacci}
+
+\begin{lstlisting}[caption={Gestione delle connessioni e validazione della sequenza Fibonacci},label={lst:server_logic}]
+while (1) {
+    if ((newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen)) < 0) {
+        perror("accept fallito");
+        continue;
+    }
+    printf("Nuovo client connesso\n");
+
+    for (int i = 0; i <= 10; i++) {
+        int n = read(newsockfd, buffer, BUFFER_SIZE - 1);
+        if (n <= 0) {
+            printf("Client disconnesso\n");
+            break;
+        }
+
+        fibonacci = f1 + f2;
+        f1 = f2;
+        f2 = fibonacci;
+
+        int buffer_intero = atoi(buffer);
+        printf("fibonacci: %d  buffer: %d\n", fibonacci, buffer_intero);
+
+        if (fibonacci == buffer_intero) {
+            write(newsockfd, "1", 1);
+        } else {
+            printf("Sequenza errata, disconnessione.\n");
+            write(newsockfd, "0", 1);
+            break;
+        }
+    }
+    close(newsockfd);
+}
+close(sockfd);
+return 0;
+\end{lstlisting}
+
+\textbf{Spiegazione:}
+\begin{itemize}
+    \item \textit{accept()}: Accetta una nuova connessione client.
+    \item \textit{read()}: Legge il numero ricevuto dal client.
+    \item \textit{atoi()}: Converte il numero ricevuto da stringa a intero.
+    \item \textit{write()}: Invia un ACK ("1") se il numero è corretto, oppure un NACK ("0") se errato.
+    \item \textit{close(newsockfd)}: Chiude la connessione con il client dopo la verifica.
+    \item \textit{close(sockfd)}: Chiude il server al termine.
+\end{itemize}
+
+\section{Implementazione del Server TCP Non Bloccante}
+
+\subsection{Inclusione delle Librerie e Definizione delle Costanti}
+
+\begin{lstlisting}[caption={Inclusione delle librerie e definizione delle costanti},label={lst:includes}]
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define PORT 8080              // Porta del server
+#define BUFFER_SIZE 256        // Dimensione del buffer
+#define MAX_FIBONACCI 10       // Limita la sequenza a 10 valori
+\end{lstlisting}
+
+\textbf{Spiegazione}:
+\begin{itemize}
+    \item Le prime righe includono le librerie necessarie per lavorare con i socket.
+    \item Le costanti \textit{PORT}, \textit{BUFFER\_SIZE} e \textit{MAX\_FIBONACCI} sono utilizzate per definire la porta su cui il server ascolterà, la dimensione del buffer e il numero massimo di valori da calcolare nella sequenza di Fibonacci.
+\end{itemize}
+
+\subsection{Modalità Non Bloccante}
+
+\begin{lstlisting}[caption={Funzione \textit{set\_nonblocking()}},label={lst:set_nonblocking}]
+// Funzione per settare il socket in modalita' non bloccante
+void set_nonblocking(int sockfd) {
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+}
+\end{lstlisting}
+
+\textbf{Spiegazione}:
+\begin{itemize}
+    \item La funzione \textit{set\_nonblocking()} imposta il socket in modalità non bloccante utilizzando la funzione \textit{fcntl()}. Questo significa che le operazioni su quel socket (come \textit{accept()}) non bloccheranno il programma in attesa di un client.
+    \item \textit{O\_NONBLOCK} viene aggiunto alle attuali impostazioni del socket per garantire che non ci siano blocchi nelle operazioni.
+\end{itemize}
+
+\subsection{Creazione e Configurazione del Server}
+
+\begin{lstlisting}[caption={Creazione e configurazione del server},label={lst:server_config}]
+int main() {
+    int sockfd, newsockfd;
+    struct sockaddr_in serv_addr, cli_addr;
+    socklen_t clilen = sizeof(cli_addr);
+    char buffer[BUFFER_SIZE];
+    int fibonacci = 0, f1 = 0, f2 = 1;
+
+    // Creazione e configurazione del socket
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        perror("socket fallita");
+        exit(EXIT_FAILURE);
+    }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(PORT);
+
+    if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("bind fallito");
+        exit(EXIT_FAILURE);
+    }
+
+    if (listen(sockfd, 5) < 0) {
+        perror("listen fallito");
+        exit(EXIT_FAILURE);
+    }
+
+    set_nonblocking(sockfd);
+    printf("Server con attesa attiva in ascolto su porta %d...\n", PORT);
+\end{lstlisting}
+
+\textbf{Spiegazione}:
+\begin{itemize}
+    \item La funzione \textit{main()} si occupa di creare il socket e configurarlo per l'ascolto delle connessioni.
+    \item La funzione \textit{socket()} crea un socket di tipo \textit{SOCK\_STREAM} (TCP) e il parametro \textit{AF\_INET} specifica che si tratta di un socket IPv4.
+    \item \textit{bind()} associa il socket all'indirizzo e alla porta definiti nella struttura \textit{serv\_addr}.
+    \item La funzione \textit{listen()} mette il server in ascolto su quella porta, con un massimo di 5 connessioni in attesa.
+    \item Il server viene configurato per non bloccare durante l'attesa di una connessione (chiamando \textit{set\_nonblocking()}).
+\end{itemize}
+
+\subsection{Gestione delle Connessioni Client}
+
+\begin{lstlisting}[caption={Gestione delle connessioni client},label={lst:client_connections}]
+while (1) {
+    newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+    if (newsockfd < 0) {
+        if (errno == EWOULDBLOCK || errno == EAGAIN) continue;
+        else {
+            perror("accept fallito");
+            exit(EXIT_FAILURE);
+        }
+    }
+    set_nonblocking(newsockfd);
+    printf("Nuovo client connesso\n");
+}
+close(sockfd);
+return 0;
+\end{lstlisting}
+
+\textbf{Spiegazione}:
+\begin{itemize}
+    \item Il server entra in un ciclo infinito dove tenta di accettare nuove connessioni client con la funzione \textit{accept()}.
+    \item Se \textit{accept()} non trova un client pronto a connettersi, restituirà un errore con il codice \textit{EWOULDBLOCK} o \textit{EAGAIN} (indicando che non ci sono connessioni disponibili al momento), in tal caso il ciclo continua senza bloccare l'esecuzione del programma.
+    \item Quando viene accettata una connessione, il server imposta il socket del client in modalità non bloccante tramite \textit{set\_nonblocking()} e stampa un messaggio di conferma.
+    \item Il server continua a lavorare senza bloccare in attesa di connessioni o altre operazioni.
+\end{itemize}
+
+\end{document}

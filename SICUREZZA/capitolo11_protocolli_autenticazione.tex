@@ -1,0 +1,135 @@
+\chapter{Protocolli di Autenticazione}
+
+\section{Kerberos}
+
+Kerberos è un protocollo di autenticazione sviluppato inizialmente al MIT, oggi standard de facto per l'autenticazione remota. Si basa su un sistema di terze parti fidato per garantire l'autenticazione sicura tra client e server.
+
+\subsection{Funzionamento di Base}
+
+Il principio di base è che ogni richiesta di servizio implica la verifica dell'identità del client, e in alcuni casi del server, tramite un meccanismo sicuro.
+
+\subsection{Architettura di Kerberos}
+
+Il protocollo coinvolge tre entità principali:
+
+\begin{description}
+    \item[Client] Che richiede un servizio al server
+    \item[Server applicativi] Che offre servizi sotto autenticazione
+    \item[Server Kerberos] Che effettuano il processo di autenticazione del client per conto del server applicativo
+\end{description}
+
+L'obiettivo è proteggere l'autenticazione nel dialogo client/server contro diversi tipi di attacchi, come il mascheramento. In un ambiente non protetto, un client potrebbe richiedere servizi a un server senza alcun controllo di identità, rischiando così di concedere accesso non autorizzato a utenti malintenzionati. Per mitigare questo rischio, Kerberos utilizza un server di autenticazione (AS) che conserva le password dei client in un database centralizzato.
+
+\subsection{Processo di Autenticazione}
+
+\subsubsection{Richiesta di Ticket-Granting Ticket (TGT)}
+
+Il client invia una richiesta al server di autenticazione (AS) includendo l'ID dell'utente e la richiesta di un TGT. L'AS verifica l'identità dell'utente confrontando la password nel proprio database e risponde con un TGT e una chiave di sessione temporanea, entrambi criptati con la password dell'utente.
+
+\subsubsection{Generazione e Validazione del Ticket}
+
+Il client decifra il messaggio ricevuto utilizzando la password dell'utente. Il ticket ottenuto costituisce le credenziali del client per richiedere ulteriori servizi. Il ticket contiene l'ID dell'utente, l'ID del server, un timestamp, una durata di validità e una copia della chiave di sessione. Il tutto è criptato con una chiave segreta condivisa tra l'AS e il server.
+
+\subsubsection{Uso del Ticket-Granting Server (TGS)}
+
+L'AS fornisce al client un ticket per il TGS anziché per un singolo server applicativo. Questo meccanismo consente di richiedere più ticket senza dover autenticarsi nuovamente per ciascun servizio. Il ticket per il TGS è riutilizzabile ma include un timestamp e una durata di validità per evitare usi impropri, come l'intercettazione e il riutilizzo da parte di malintenzionati.
+
+Quando un client desidera accedere a un servizio specifico, invia una richiesta al TGS includendo il ticket e un autenticatore criptato con la chiave di sessione. L'autenticatore, che ha una durata limitata, viene usato per verificare l'identità del client. Il TGS decripta il ticket, verifica l'autenticatore e, se tutto è valido, fornisce al client un nuovo ticket per il servizio richiesto.
+
+\subsubsection{Comunicazione con i Server Applicativi}
+
+Una volta ottenuto il ticket per il servizio specifico, il client può comunicare con il server applicativo utilizzando il ticket e un nuovo autenticatore. Se è richiesta un'autenticazione reciproca, il server può rispondere con un messaggio contenente un timestamp incrementato, criptato con la chiave di sessione. Ciò assicura al client che la comunicazione provenga effettivamente dal server.
+
+\subsection{Sicurezza e Crittografia}
+
+La sicurezza di Kerberos si basa sulla crittografia simmetrica (es. DES) e sulla condivisione di chiavi segrete tra le entità coinvolte. Il protocollo garantisce che le password degli utenti non vengano mai trasmesse in chiaro sulla rete e che ogni comunicazione tra client e server sia protetta da chiavi di sessione temporanee. Questo approccio riduce i rischi di attacchi basati su intercettazioni e impersonazioni, offrendo un livello elevato di protezione per le reti.
+
+\subsection{Kerberos Realms e Interoperabilità}
+
+Un ambiente Kerberos completo, chiamato realm, include un server Kerberos, diversi client e server applicativi. Il server Kerberos deve registrare tutti gli utenti e condividere una chiave segreta con ciascun server. I realms rappresentano domini amministrativi distinti; per supportare l'autenticazione tra domini diversi (interrealm), i server Kerberos di ciascun realm devono condividere una chiave segreta e fidarsi reciprocamente per l'autenticazione degli utenti. Tuttavia, il meccanismo non scala bene per molti realms a causa dell'alto numero di scambi di chiavi necessari.
+
+\subsection{Versione 4 e Versione 5 di Kerberos}
+
+Kerberos è disponibile in due versioni principali: la versione 4 e la versione 5. La versione 5 introduce miglioramenti significativi come l'uso di identificatori di algoritmo per i messaggi criptati (non limitandosi al DES), l'autenticazione forwarding (per consentire l'accesso a servizi tramite delega delle credenziali) e un meccanismo migliorato per l'autenticazione interrealm con meno scambi di chiavi rispetto alla versione 4.
+
+\subsection{Impatti sulle Prestazioni}
+
+In un ambiente client/server di grandi dimensioni, Kerberos ha un impatto limitato sulle prestazioni se configurato correttamente. L'uso di ticket riutilizzabili riduce il traffico di rete necessario per le richieste di autenticazione. È preferibile isolare il server Kerberos per motivi di sicurezza e performance, evitando di condividerlo con applicazioni ad alta intensità di risorse. La divisione in più realms può essere giustificata da motivazioni amministrative, piuttosto che prestazionali.
+
+\section{X.509}
+
+Lo standard X.509 è il formato più utilizzato per i certificati a chiave pubblica e trova applicazione in vari ambiti di sicurezza di rete, come IPsec, SSL e molte altre.
+
+\subsection{Struttura del Certificato X.509}
+
+Il certificato X.509 contiene diversi elementi chiave, tra cui:
+
+\begin{itemize}
+    \item Nome del soggetto che possiede la chiave, spesso rappresentato tramite il nome X.500.
+    \item Informazioni sulla chiave pubblica del soggetto.
+    \item Periodi di validità.
+    \item Nome dell'emittente, ovvero la CA che ha rilasciato il certificato.
+    \item Firma digitale che lega e protegge tutte queste informazioni.
+\end{itemize}
+
+Gli attuali certificati X.509 utilizzano la versione 3, che supporta un meccanismo di estensioni per maggiore flessibilità. Tra le estensioni più significative vi è il campo ``Basic Constraints'', che specifica se il certificato appartiene a una CA o a un utente finale. I certificati di CA possono firmare altri certificati, mentre quelli di utenti finali sono utilizzati per la verifica dell'identità, la firma di email, o altre attività di crittografia, ma non possono firmare altri certificati, con l'eccezione dei proxy-certificates.
+
+\subsection{Revoca dei Certificati}
+
+Un certificato può essere revocato se la chiave è stata compromessa o se sono necessari aggiornamenti. Lo standard X.509 definisce una lista di revoca dei certificati (CRL), firmata dall'emittente, che include i numeri di serie dei certificati revocati e la data di revoca.
+
+\subsection{Varianti dei Certificati X.509}
+
+I certificati X.509 sono di solito classificati come segue:
+
+\subsubsection{Certificati Convenzionali (a Lunga Durata)}
+
+Comprendono i certificati rilasciati sia alle autorità di certificazione (CA) sia agli utenti finali. Hanno periodi di validità che vanno da diversi mesi fino a diversi anni. La CA utilizza il proprio certificato per firmare e convalidare i certificati di altri utenti, mentre i certificati di utenti finali vengono utilizzati per scopi come l'autenticazione di identità, la firma digitale di documenti e la protezione delle comunicazioni.
+
+\subsubsection{Certificati a Breve Durata}
+
+Pensata per ridurre i rischi di compromissione e per ottimizzare i processi di autenticazione in ambienti che richiedono frequenti verifiche, come il grid computing. I certificati a breve durata hanno validità in termini di ore o giorni, limitando il periodo di tempo in cui un certificato compromesso possa causare danni.
+
+\subsubsection{Proxy-certificates}
+
+Rappresentano una sotto-categoria particolare di certificati X.509. Consentono a un utente finale (che possiede un certificato ``principale'') di creare e firmare un altro certificato temporaneo con restrizioni specifiche relative all'identità, al periodo di validità e ai permessi associati. Questi certificati sono spesso utilizzati per fornire accesso temporaneo o limitato a risorse in un ambiente specifico, senza dover rivelare l'intero contenuto del proprio certificato originale o i diritti completi.
+
+\subsubsection{Certificati di Attributo}
+
+Non sono direttamente collegati alla chiave pubblica di un utente, ma a un insieme di attributi definiti per l'autorizzazione e il controllo degli accessi. Un utente può avere più certificati di attributi, ciascuno con un set di attributi specifico per determinati scopi, che possono essere associati al proprio certificato principale. Questo approccio offre maggiore flessibilità per la gestione delle autorizzazioni, evitando di includere troppi dettagli in un unico certificato.
+
+\subsection{Vulnerabilità Legate all'MD5}
+
+Alcuni certificati X.509 utilizzano l'hash MD5, il quale, a causa delle collisioni create dai progressi della ricerca, può essere sfruttato per generare nuovi certificati falsificati con la stessa firma. Un esempio è stato il malware Flame, che ha utilizzato una tecnica di collisione MD5 per ottenere una firma valida simile a quella di Microsoft, restando nascosto per anni.
+
+\section{Public-Key Infrastructure}
+
+La Public-Key Infrastructure (conosciuta anche come PKI), è definita come un insieme di politiche, processi, server, software e workstation progettati per gestire certificati e coppie di chiavi pubbliche e private.
+
+La PKI consente di emettere, mantenere e revocare certificati a chiave pubblica, rendendo sicuro, efficiente e conveniente l'accesso alle chiavi pubbliche.
+
+\subsection{Componenti Principali della PKI}
+
+\subsubsection{Entità Terminali}
+
+Le entità terminali possono includere utenti finali, dispositivi come router o server, processi o altri elementi identificabili tramite il nome del soggetto di un certificato di chiave pubblica. Possono sia consumare sia fornire servizi PKI; un esempio è la Register Authority (RA), che dal punto di vista della Certification Authority (CA) è considerata un'entità finale.
+
+\subsubsection{Certification Authority (CA)}
+
+La Certification Authority (CA) è un'entità fidata che emette certificati a chiave pubblica, associando digitalmente il nome del soggetto alla sua chiave pubblica. Oltre a generare e firmare certificati, la CA è responsabile della creazione di Certificate Revocation List (CRL), contenenti i certificati revocati per ragioni come la compromissione della chiave privata dell'utente o la perdita di fiducia verso il certificato.
+
+\subsubsection{Registration Authority (RA)}
+
+La Registration Authority (RA) è un componente opzionale che può gestire alcune funzioni amministrative della CA, tra cui la verifica dell'identità dell'entità terminale durante il processo di registrazione. La RA può facilitare l'ottenimento di un certificato per una chiave pubblica, svolgendo così un ruolo fondamentale nell'integrità della PKI.
+
+\subsubsection{Repository}
+
+Il repository immagazzina e consente il recupero delle informazioni PKI, come i certificati a chiave pubblica e le CRL. Esso può essere strutturato come una directory X.500 accessibile tramite il Lightweight Directory Access Protocol (LDAP) o come una semplice risorsa recuperabile tramite protocolli come FTP o HTTP.
+
+\subsubsection{Parte Affidataria (Relying Party)}
+
+La parte affidataria (Relying Party) è qualsiasi entità o agente che utilizza i dati contenuti in un certificato per prendere decisioni, basando la propria fiducia sulla validità e autenticità del certificato.
+
+\subsection{Interazione tra le Componenti PKI}
+
+Per inviare dati cifrati a un destinatario, una parte affidataria (come Alice) deve ottenere il certificato della chiave pubblica del destinatario (ad esempio, Bob) dal repository e verificarne la validità. Alice usa la chiave pubblica della CA per verificare l'autenticità del certificato, quindi utilizza la chiave pubblica di Bob per cifrare i dati destinati a lui. Se Bob invia ad Alice un documento firmato, Alice verifica la firma utilizzando la chiave pubblica di Bob e conferma la validità del certificato tramite la chiave pubblica della CA.

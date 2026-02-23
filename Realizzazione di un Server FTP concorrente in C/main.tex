@@ -1,0 +1,843 @@
+\documentclass{beamer}
+\usetheme{Madrid}
+
+% Pacchetti base
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage[italian]{babel}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Pacchetti per tabelle e schemi
+\usepackage{booktabs} % Per tabelle più professionali
+\usepackage{makecell}
+\usepackage{multirow}
+\usepackage{tikz}
+\usepackage{float}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, shadows, calc, fit}
+
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.97,0.97,0.96} % Sfondo chiaro per codice C
+\definecolor{consoleback}{rgb}{0.1,0.1,0.1}   % Sfondo scuro per console
+\definecolor{consoletext}{rgb}{0.9,0.9,0.9} % Testo chiaro per console
+\definecolor{consolegreen}{rgb}{0.1,0.8,0.1} % Verde per comandi console
+
+
+\lstdefinestyle{cstyle}{
+    language=C,
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen}\itshape,
+    keywordstyle=\color{blue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\scriptsize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=tb, 
+    framerule=0.5pt,
+    rulecolor=\color{black!30},
+    xleftmargin=4pt,
+    xrightmargin=4pt,
+    morekeywords={*, extern, static, void, int, return, printf, include, define, ifndef, endif, pthread_t, pthread_cond_t, pthread_cond_wait, pthread_cond_signal, pthread_cond_broadcast, pthread_cond_destroy, pthread_mutex_t, pthread_mutex_init, PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, pthread_mutex_lock, pthread_mutex_unlock, pthread_mutex_destroy, sem_t, sem_init, sem_wait, sem_post, sem_destroy, intptr_t, FILE, NULL, perror, pthread_create, pthread_join, pthread_exit, srand, time, rand, sleep, pthread_self, PTHREAD_BARRIER_SERIAL_THREAD, NUM_THREADS}
+}
+
+% Stile per l'output della console
+\lstdefinestyle{consolestyle}{
+    backgroundcolor=\color{consoleback},
+    basicstyle=\ttfamily\scriptsize\color{consoletext},
+    stringstyle=\color{white},
+    keywordstyle=\color{consolegreen}\bfseries,
+    morekeywords={ftp, put, get, ls, cd, EXIT, local, remote},
+    commentstyle=\color{codegray},
+    numbers=none,
+    frame=tb,
+    framerule=0.5pt,
+    rulecolor=\color{white!40},
+    breaklines=true,
+}
+
+
+
+\title{Realizzazione di un Server FTP concorrente in C}
+\subtitle{Reti di calcolatori e sistemi distribuiti - Modulo B}
+\author{Antonio Venuti, Sandi Russo}
+\institute{Università degli Studi di Messina}
+\date{A.A. 2024/2025}
+
+
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=\paperwidth,ht=2.5ex,dp=1ex]{author in head/foot}%
+      \hbox to \paperwidth{%
+        \parbox[b][2.5ex][c]{.33\paperwidth}{\centering\usebeamerfont{author in head/foot}Antonio Venuti, Sandi Russo}%
+        \parbox[b][2.5ex][c]{.34\paperwidth}{\centering\usebeamerfont{title in head/foot}Server FTP Concorrente}%
+        \parbox[b][2.5ex][c]{.33\paperwidth}{\centering\usebeamerfont{page number in head/foot}A.A. 2024/25 -- \insertframenumber/\inserttotalframenumber}%
+      }%
+    \end{beamercolorbox}%
+  }%
+}
+
+\begin{document}
+
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}
+    \frametitle{Indice}
+    \tableofcontents
+\end{frame}
+
+\section{Introduzione}
+
+\begin{frame}
+    \frametitle{Contesto e Obiettivi}
+    \begin{block}{Cos'è un Server FTP?}
+        Un Server FTP è un programma che implementa il protocollo FTP (File Transfer Protocol) e consente lo scambio di file tra computer attraverso la rete
+    \end{block}
+
+    \begin{alertblock}{Obiettivo del Progetto}
+    Realizzare un Server FTP \textbf{Multithread} in C, che sia:
+    \begin{itemize}
+        \item \textbf{Robusto} e in grado di gestire più client simultaneamente
+        \item \textbf{Compatibile} con client standard (es. FileZilla)
+        \item \textbf{Conforme} agli standard della \textbf{RFC 959}
+    \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Perché l'FTP è ancora rilevante?}
+    \begin{itemize}
+        \item \textbf{Condivisione centralizzata}: Permette a più utenti di caricare e scaricare file da un unico punto
+        \item \textbf{Ampia compatibilità}: Supportato nativamente da quasi tutti i sistemi operativi
+        \item \textbf{Rilevanza didattica e storica}: La sua architettura a due canali è un caso di studio fondamentale nella programmazione di rete e ha ispirato protocolli moderni come SFTP e FTPS
+    \end{itemize}
+\end{frame}
+
+
+\section{Definizione del Problema}
+
+\begin{frame}
+    \frametitle{Analisi del Protocollo: L'Architettura a Due Canali}
+    A differenza di HTTP, il protocollo FTP (RFC 959) si basa su \textbf{due connessioni TCP separate}:
+    
+    \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+            \begin{block}{1. Canale di Controllo}
+                \begin{itemize}
+                    \item Porta \textbf{21} (standard)
+                    \item \textbf{Persistente}: resta attivo per tutta la sessione
+                    \item Usato per \textbf{comandi} e \textbf{risposte}
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \begin{block}{2. Canale Dati}
+                \begin{itemize}
+                    \item Porta \textbf{dinamica}
+                    \item \textbf{Effimero}: creato solo quando serve
+                    \item Usato per il \textbf{trasferimento dei file}
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Architettura del Protocollo FTP: Schema Visivo}
+    Questa separazione è formalizzata dalla RFC 959 tramite due componenti logici: il \textbf{Protocol Interpreter (PI)} per il controllo e il \textbf{Data Transfer Process (DTP)} per i dati
+    
+    \begin{center}
+    \begin{tikzpicture}[
+        scale=0.75,
+        transform shape,
+        auto,
+        blocco/.style={
+            rectangle, 
+            draw, 
+            fill=gray!15, 
+            minimum height=12em, 
+            minimum width=8em, 
+            rounded corners
+        },
+        componente/.style={
+            rectangle, 
+            draw, 
+            fill=white, 
+            minimum height=2em,
+            minimum width=6em,
+            rounded corners=3pt
+        },
+        arrow/.style={
+            <->,
+            thick,
+            >=Stealth
+        }
+    ]
+    
+        \node[blocco, label=above:\textbf{Client FTP}] (client) {};
+        \node[blocco, label=above:\textbf{Server FTP}, right=9cm of client] (server) {};
+
+        \node[componente, align=center] (client_pi) at ([yshift=2.5em]client.center) {\textbf{User}\\\small \texttt{PI}};
+    
+        \node[componente, align=center] (client_dtp) at ([yshift=-2.5em]client.center) {\textbf{User}\\\small \texttt{DTP}};
+
+        \node[componente, align=center] (server_pi) at ([yshift=2.5em]server.center) {\textbf{Server}\\\small \texttt{PI}};
+        \node[componente, align=center] (server_dtp) at ([yshift=-2.5em]server.center) {\textbf{Server}\\\small \texttt{DTP}};
+
+        \draw[arrow] (client_pi.east) -- (server_pi.west) node[midway, above, font=\small, align=center] {\textbf{Canale di Controllo}\\comandi e risposte};
+
+        \draw[arrow, dashed] (client_dtp.east) -- (server_dtp.west) node[midway, below, font=\small, align=center] {\textbf{Canale Dati}\\trasferimento dati};
+
+    \end{tikzpicture}
+    \end{center}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Modalità di Trasferimento: Attiva vs. Passiva}
+    Il canale dati può essere stabilito in due modi, con ruoli invertiti:
+    
+    \begin{alertblock}{Modalità Attiva (\texttt{PORT})}
+        \begin{itemize}
+            \item Il \textbf{client} apre una porta e comunica il proprio IP/porta al server.
+            \item Il \textbf{server si connette attivamente al client}
+            \item \textit{Svantaggio}: Spesso bloccata da Firewall e NAT lato client
+        \end{itemize}
+    \end{alertblock}
+    
+    \begin{exampleblock}{Modalità Passiva (\texttt{PASV})}
+        \begin{itemize}
+            \item Il \textbf{server} apre una porta e comunica il proprio IP/porta al client
+            \item Il \textbf{client si connette al server}
+            \item \textit{Vantaggio}: Molto più compatibile con le reti moderne
+        \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Requisito Chiave: la Concorrenza}
+    
+    \begin{block}{Il Problema di un Server Sequenziale}
+        Un client che avvia un trasferimento lungo (es. un file di grandi dimensioni) \textbf{blocca tutti gli altri client} in attesa, rendendo il servizio inutilizzabile a causa di timeout e connessioni rifiutate
+    \end{block}
+    
+    \begin{alertblock}{La Nostra Soluzione: Multithreading}
+    Abbiamo adottato il modello \textbf{"un thread per client"} usando Pthreads:
+        \begin{itemize}
+            \item Un \textbf{thread principale} accetta le connessioni in ingresso.
+            \item Per ogni client viene creato un \textbf{thread di lavoro} che gestisce la sessione in modo isolato
+            \item \textbf{Vantaggi}: il server rimane sempre reattivo e può servire molti utenti contemporaneamente
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Requisiti Funzionali: Comandi Implementati}
+    Per garantire l'interoperabilità, abbiamo implementato un set di comandi "core" suddivisi per funzionalità
+    
+    \begin{columns}[T]
+        \begin{column}{.3\textwidth}
+            \begin{block}{Accesso}
+                \begin{itemize}
+                    \item \texttt{USER}
+                    \item \texttt{PASS}
+                    \item \texttt{QUIT}
+                    \item \texttt{SYST}
+                    \item \texttt{TYPE}
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{.3\textwidth}
+            \begin{block}{Navigazione}
+                \begin{itemize}
+                    \item \texttt{PWD}
+                    \item \texttt{CWD}
+                    \item \texttt{LIST}
+                    \item \texttt{MKD}
+                    \item \texttt{RMD}
+                    \item \texttt{DELE}
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{.3\textwidth}
+            \begin{block}{Trasferimento}
+                \begin{itemize}
+                    \item \texttt{PORT}
+                    \item \texttt{PASV}
+                    \item \texttt{RETR}
+                    \item \texttt{STOR}
+                    \item \texttt{ABOR}
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\section{Metodologia}
+
+
+
+
+
+
+
+
+
+
+\begin{frame}
+    \frametitle{Architettura Software: Un Design Modulare}
+    Il codice è stato suddiviso per \textbf{separazione delle responsabilità}, al fine di favorire chiarezza, manutenibilità e riuso.
+
+\begin{center}
+\begin{tikzpicture}[
+    scale=0.75,
+    transform shape,
+    auto,
+    componente/.style={
+        rectangle, 
+        draw, 
+        fill=white, 
+        minimum height=2em,
+        minimum width=6em,
+        rounded corners=3pt
+    },
+    linker/.style={
+        rectangle, 
+        draw, 
+        fill=gray!15, 
+        minimum height=8em, 
+        minimum width=6em,
+        rounded corners=3pt
+    },
+    prodotto/.style={
+        rectangle, 
+        draw, 
+        fill=blue!10, 
+        minimum height=2.5em,
+        minimum width=8em,
+        rounded corners=3pt
+    },
+    arrow/.style={
+        ->,
+        thick,
+        >=Stealth
+    }
+]
+
+    \node[componente, align=center] (main) {\textbf{main.o}};
+    \node[componente, below=of main] (server) {\textbf{server.o}};
+    \node[componente, below=of server] (socket) {\textbf{socket.o}};
+    \node[componente, below=of socket] (comandi) {\textbf{comandi.o}};
+
+    \node[linker] (linker) at ($(main)!0.5!(comandi)+(15em,0)$) {\textbf{linker}};
+
+    \node[prodotto, right=6em of linker] (output) {\textbf{server\_ftp}};
+
+    \path (linker.west) ++(0,3em) coordinate (L1);
+    \path (linker.west) ++(0,1em) coordinate (L2);
+    \path (linker.west) ++(0,-1em) coordinate (L3);
+    \path (linker.west) ++(0,-3em) coordinate (L4);
+
+
+    \draw[arrow] (main.east) -- ++(2,0) |- (L1);
+    \draw[arrow] (server.east) -- ++(2,0) |- (L2);
+    \draw[arrow] (socket.east) -- ++(2,0) |- (L3);
+    \draw[arrow] (comandi.east) -- ++(2,0) |- (L4);
+
+    \draw[arrow] (linker.east) -- (output.west);
+
+\end{tikzpicture}
+\end{center}
+
+
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Gestione della Concorrenza: Il Modello "Thread-per-Client"}
+    
+    \begin{block}{Flusso Operativo}
+    \begin{enumerate}
+        \item Il \textbf{thread principale} è in attesa perenne sulla funzione \texttt{accept()}
+        \item All'arrivo di un client, \texttt{accept()} sblocca e restituisce un nuovo \textit{file descriptor} per la connessione
+        \item Viene creato un \textbf{thread di lavoro} con \texttt{pthread\_create()}, passandogli una copia del file descriptor
+        \item Il thread principale torna immediatamente al punto 1, pronto per un nuovo client, senza attendere la fine della sessione precedente
+    \end{enumerate}
+    \end{block}
+    
+    \begin{alertblock}{Dettaglio Chiave: Evitare Race Condition}
+    Il \textit{file descriptor} viene passato al thread tramite memoria allocata dinamicamente con \texttt{malloc}. Questo garantisce che ogni thread riceva un puntatore univoco e stabile, evitando che una nuova chiamata ad \texttt{accept()} sovrascriva il valore destinato a un thread appena creato
+    \end{alertblock}
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{La Macchina a Stati: la struct \texttt{sessione\_ftp}}
+    \begin{block}{Il Cuore di Ogni Thread}
+    Ogni thread di lavoro mantiene lo stato del proprio client attraverso una struct \texttt{sessione\_ftp}. Non è un semplice contenitore di dati, ma una vera e propria \textbf{macchina a stati}
+    \end{block}
+    \begin{columns}[T]
+       \begin{column}{.5\textwidth}
+            \textbf{Contiene informazioni vitali come:}
+            \begin{itemize}
+                \item Il file descriptor del canale di controllo
+                \item La directory di lavoro corrente (\texttt{CWD})
+                \item La modalità di trasferimento attiva (\texttt{PORT} o \texttt{PASV})
+                \item L'IP e la porta per il canale dati
+                \item Il socket passivo in attesa
+            \end{itemize}
+       \end{column}
+       \begin{column}{.5\textwidth}
+            \begin{exampleblock}{Perché è importante?}
+            Permette al server di prendere decisioni contestuali. Ad esempio, un comando \texttt{RETR} può essere eseguito solo se l'utente è autenticato e una modalità di trasferimento è stata negoziata
+            \end{exampleblock}
+       \end{column}
+    \end{columns}
+\end{frame}
+
+
+
+
+
+
+
+
+\begin{frame}
+    \frametitle{Logica dei Comandi: La Pipeline di Esecuzione}
+    Ogni comando inviato dal client segue una pipeline a due fasi gestita dal modulo \texttt{comandi.c}
+
+    \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+            \begin{block}{Fase 1: Parsing}
+                \begin{itemize}
+                    \item \textbf{Funzione}: \texttt{analizzaComando()}
+                    \item \textbf{Scopo}: Trasforma la stringa grezza (es. "RETR file.txt\textbackslash r\textbackslash n") in una struttura dati pulita, separando il comando dall'argomento
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \begin{block}{Fase 2: Dispatching}
+                \begin{itemize}
+                    \item \textbf{Funzione}: \texttt{eseguiComando()}
+                    \item \textbf{Scopo}: Indirizza la richiesta alla funzione di gestione corretta (es. \texttt{gestisciRETR()}) tramite un costrutto \texttt{switch-case}
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+    
+    \vspace{1cm}
+    \begin{center}
+        \large
+        Questo approccio centralizzato semplifica l'aggiunta di nuovi comandi e la gestione degli errori
+    \end{center}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+    \frametitle{Comunicazione e Risposte: \texttt{inviaRisposta()}}
+    \begin{block}{Standardizzazione delle Risposte}
+    Per essere compatibile, un server FTP deve inviare risposte formattate secondo la RFC: un \textbf{codice numerico a 3 cifre}, uno spazio, e un messaggio testuale, il tutto terminato da \texttt{\textbackslash r\textbackslash n}
+    \end{block}
+    \begin{alertblock}{La Funzione di Utility}
+    Abbiamo centralizzato questa logica in una singola funzione, \texttt{inviaRisposta}, per garantire consistenza e ridurre la duplicazione del codice
+    \end{alertblock}
+    
+    \begin{lstlisting}[style=cstyle]
+void inviaRisposta(int fd, int codice, const char *messaggio) {
+    char risposta[DIMENSIONE_BUFFER];
+    // compone la stringa di risposta nel formato standard
+    snprintf(risposta, sizeof(risposta), "%d %s\r\n", codice, messaggio);
+    // scrive la risposta sul socket del canale di controllo
+    write(fd, risposta, strlen(risposta));
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Focus Implementativo: Gestione dei Percorsi}
+    \begin{block}{La Sfida: Percorsi Assoluti vs. Relativi}
+        Un server FTP deve gestire correttamente sia percorsi \textbf{assoluti} (che iniziano con \texttt{/}) sia \textbf{relativi} (rispetto alla directory corrente del client)
+        \vspace{0.5cm}
+        
+        La funzione \texttt{costruisciPercorso} astrae questa logica, garantendo che ogni comando operi sul path corretto nel filesystem del server
+    \end{block}
+    \begin{exampleblock}{Logica della Funzione}
+        \begin{itemize}
+            \item Se il percorso ricevuto inizia con \texttt{/}, viene usato così com'è.
+            \item Altrimenti, viene concatenato alla directory di lavoro corrente della sessione utente.
+            \item Previene attacchi di \textit{directory traversal} (es. \texttt{CWD ../../})
+        \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Codice: \texttt{costruisciPercorso()}}
+    \begin{lstlisting}[style=cstyle, caption={\textbf{comandi.c} - funzione per la gestione dei percorsi}]
+char *costruisciPercorso(const char *base, const char *aggiunta) {
+    char *percorso_completo = NULL;
+    // se il percorso inizia con '/', e' assoluto
+    if (aggiunta[0] == '/') {
+        percorso_completo = strdup(aggiunta);
+    } else {
+    // altrimenti, e' relativo: lo uniamo alla directory base
+        int needed = snprintf(NULL, 0, "%s/%s", base, aggiunta);
+        percorso_completo = malloc(needed + 1);
+        if (percorso_completo) {
+             snprintf(percorso_completo, needed + 1, "%s/%s", base, aggiunta);
+        }
+    }
+    return percorso_completo;
+}
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Focus Implementativo: Negoziazione Canale Dati (PASV)}
+    \begin{block}{Implementazione di \texttt{gestisciPASV}}
+        Questa funzione è cruciale per la compatibilità con i client moderni, specialmente dietro NAT e firewall
+    \end{block}
+    \begin{alertblock}{Passaggi Fondamentali}
+        \begin{enumerate}
+            \item \textbf{Creazione Socket}: Il server crea un nuovo socket di ascolto su una porta effimera (lasciando che sia il sistema operativo a sceglierla)
+            \item \textbf{Recupero Info}: Recupera il proprio indirizzo IP e la porta appena assegnata dal sistema.
+            \item \textbf{Formattazione Risposta}: Costruisce la risposta \texttt{227} come da \textbf{RFC 959}, codificando l'indirizzo IP e la porta in sei byte separati da virgole
+            \item \textbf{Invio al Client}: Invia la stringa formattata, permettendo al client di avviare la connessione dati
+        \end{enumerate}
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Codice: \texttt{gestisciPASV()} (1/2)}
+    \begin{lstlisting}[style=cstyle, caption={\textbf{comandi.c} - preparazione dati per PASV}]
+int gestisciPASV(sessione_ftp *sessione) {
+    int porta_passiva;
+    // crea un socket su una porta effimera
+    sessione->socket_passivo = CreaSocketPassivo(&porta_passiva);
+
+    // recupera l'IP del server
+    struct sockaddr_in indirizzo;
+    socklen_t dim = sizeof(indirizzo);
+    getsockname(sessione->fd_controllo, (struct sockaddr *)&indirizzo, &dim);
+    unsigned char *ip = (unsigned char *) &indirizzo.sin_addr.s_addr;
+    
+    // ...continua nella prossima slide
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Codice: \texttt{gestisciPASV()} (2/2)}
+    \begin{lstlisting}[style=cstyle, caption={\textbf{comandi.c} - formattazione e invio risposta}]
+    // ...dalla slide precedente
+    
+    // calcola i byte della porta
+    unsigned char p1 = porta_passiva / 256;
+    unsigned char p2 = porta_passiva % 256;
+
+    // formatta la stringa di risposta
+    char risposta[128];
+    snprintf(risposta, sizeof(risposta), 
+             "Entering Passive Mode (%d,%d,%d,%d,%d,%d)", 
+             ip[0], ip[1], ip[2], ip[3], p1, p2);
+    
+    // Invia la risposta 227 al client
+    inviaRisposta(sessione->fd_controllo, 227, risposta);
+    return 0;
+}
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Focus Implementativo: Trasferimento Dati (RETR)}
+    \begin{block}{Implementazione di \texttt{gestisciRETR}}
+        Una volta che il canale dati è stato stabilito (in modo attivo o passivo), il trasferimento di un file (\texttt{RETR}) segue un pattern classico
+    \end{block}
+    \begin{exampleblock}{Ciclo di Lettura/Scrittura}
+        \begin{itemize}
+            \item \textbf{Notifica}: Il server invia il codice \texttt{150}
+            \item \textbf{Accettazione}: Accetta la connessione dati dal client
+            \item \textbf{Trasferimento}: Legge dal file e scrive sul socket a blocchi
+            \item \textbf{Chiusura}: Chiude il canale dati e invia il codice \texttt{226}
+        \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Codice: gestisciRETR() (1/2): Setup Connessione}
+
+    \begin{block}{Fase 1: Apertura Canale Dati}
+        Prima di inviare i dati, il server accetta la connessione sul canale dati (precedentemente negoziato con \texttt{PASV} o \texttt{PORT}) e invia il codice \textbf{150} per notificare al client l'inizio imminente del trasferimento
+    \end{block}
+
+    \begin{lstlisting}[style=cstyle]
+int gestisciRETR(sessione_ftp *sessione, const char *nome_file) {
+    // accetta la connessione in ingresso sul canale dati
+    int fd_dati = AccettaConnessioneDati(sessione);
+    if (fd_dati < 0) { return -1; }
+    
+    // notifica al client che il trasferimento sta per iniziare
+    inviaRisposta(sessione->fd_controllo, 150, "Apertura connessione dati");
+    
+    char buffer[4096];
+    size_t byte_letti;
+    
+    // prossima slide...
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Codice: gestisciRETR() (2/2): Ciclo di Trasferimento}
+    
+    \begin{block}{Fase 2: Invio dei Dati}
+        Il cuore della funzione è un ciclo \texttt{while} che legge il file a blocchi e scrive ogni blocco direttamente sul socket del canale dati, fino al completamento
+    \end{block}
+
+    \begin{lstlisting}[style=cstyle]
+    // legge dal file e scrive sul socket
+    while ((byte_letti = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        if (write(fd_dati, buffer, byte_letti) < 0) {
+            perror("errore scrittura su socket dati");
+            break;
+        }}
+
+    // chiusura delle risorse
+    fclose(file);
+    close(fd_dati);
+    
+    // notifica al client che il trasferimento e' completato
+    inviaRisposta(sessione->fd_controllo, 226, "Trasferimento completato");
+    return 0;
+}
+\end{lstlisting}
+\end{frame}
+
+\section{Presentazione dei Risultati}
+
+\begin{frame}[fragile]{Esecuzione del programma}
+    \begin{block}{Verifica dei risultati ottenuti}
+        Per verificare i risultati, sono stati utilizzati un terminale per il server e uno o più terminali per i client.
+        Di seguito vengono riportati i risultati ottenuti eseguendo i vari comandi FTP, connettendo i client al server tramite il comando:
+    \end{block}
+    \begin{lstlisting}[style=consolestyle, caption={Connessione da Client}]
+ftp localhost 2121
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempio di Sessione: Accesso e Navigazione}
+    \begin{columns}[T]
+        \begin{column}{.45\textwidth}
+            \textbf{Flusso di Login e Navigazione}:
+            \begin{itemize}
+                \item Il client si connette e riceve il benvenuto (\textbf{220})
+                \item Invia le credenziali anonime, confermate da \textbf{331} e \textbf{230}
+                \item Controlla la directory corrente con \texttt{ls} (LIST da protocollo)
+                \item Cambia directory con \texttt{cd} (CWD), confermato da \textbf{250}
+            \end{itemize}
+        \end{column}
+        \begin{column}{.55\textwidth}
+            \begin{lstlisting}[style=consolestyle, caption={Output Client FTP}]
+Connected to localhost.
+220 Server FTP pronto
+Name (localhost:user): anonymous
+331 Nome utente valido...
+Password: 
+230 Utente autenticato
+ftp> ls
+227 Entering Passive Mode...
+150 Apertura connessione dati...
+tp > ls
+227 Entering Passive Mode (127 ,0 ,0 ,1 ,165 ,159)
+150 apertura connessione dati per la lista - passiva
+Nome Tipo Dimensione
+dati Directory <DIR>
+...
+226 Invio completato
+ftp> cd dati
+250 Directory cambiata con successo
+            \end{lstlisting}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+    \frametitle{Esempio di Sessione: Upload e Download}
+     \begin{columns}[T]
+        \begin{column}{.5\textwidth}
+             \begin{lstlisting}[style=consolestyle, caption={Upload (\texttt{put})}]
+ftp> put ricetta.txt
+227 Entering Passive Mode...
+150 Apertura connessione dati...
+226 Trasferimento completato
+ftp> ls
+Nome Tipo Dimensione
+ricetta .txt File 0 B
+226 invio della directory completato
+            \end{lstlisting}
+        \end{column}
+        \begin{column}{.5\textwidth}
+             \begin{lstlisting}[style=consolestyle, caption={Download (\texttt{get})}]
+ftp> get prova.txt
+227 Entering Passive Mode...
+150 Apertura connessione dati...
+   28 651.04 KiB/s
+226 Trasferimento completato
+28 bytes received.
+            \end{lstlisting}
+        \end{column}
+    \end{columns}
+    \begin{block}{Flusso di Trasferimento}
+    Per ogni trasferimento, viene negoziato un canale dati temporaneo (risposta \textbf{227}). Il server segnala la prontezza (\textbf{150}) e conferma il successo (\textbf{226})
+    \end{block}
+\end{frame}
+
+\section{Conclusione}
+
+\begin{frame}
+    \frametitle{Sintesi dei Risultati Ottenuti}
+    
+    \begin{block}{Obiettivi Raggiunti}
+    \begin{itemize}
+        \item \textbf{Server Funzionante}: È stato creato con successo un server FTP stabile, concorrente e conforme alle specifiche della RFC 959
+        \item \textbf{Gestione Concorrente}: Il modello "thread-per-client" garantisce reattività e la capacità di servire più utenti in parallelo
+        \item \textbf{Compatibilità}: L'implementazione corretta dei comandi base e delle modalità Attiva/Passiva assicura l'interoperabilità con i client standard
+    \end{itemize}
+    \end{block}
+
+    \begin{alertblock}{Margini di Miglioramento}
+    L'attuale implementazione, sebbene funzionale, presenta delle aree di miglioramento, principalmente legate alla sicurezza e alla gestione dei dati, che aprono la strada a interessanti sviluppi futuri
+    \end{alertblock}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Criticità di Sicurezza}
+    \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+             \begin{alertblock}{Accesso Anonimo}
+                \begin{itemize}
+                    \item \textbf{Problema}: Chiunque può connettersi e caricare file, esponendo il server ad abusi (es. esaurimento dello spazio su disco, hosting di file illegali)
+                    \item \textbf{Soluzione}: Implementare un sistema di autenticazione basato su utenti registrati (username/password) e gestione dei permessi
+                \end{itemize}
+             \end{alertblock}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \begin{alertblock}{Dati in Chiaro}
+                \begin{itemize}
+                    \item \textbf{Problema}: Credenziali e file vengono trasmessi sulla rete senza crittografia, rendendoli vulnerabili a intercettazioni (attacchi \textit{man-in-the-middle})
+                    \item \textbf{Soluzione}: Integrare i protocolli SSL/TLS per trasformare il server in un \textbf{FTPS} (FTP Secure), crittografando sia il canale di controllo che quello dati
+                \end{itemize}
+             \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+
+\begin{frame}
+    \frametitle{Limitazioni Operative}
+     \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+             \begin{block}{Mancanza di Tracciabilità}
+                \begin{itemize}
+                    \item \textbf{Problema}: Il server non tiene traccia delle operazioni eseguite. È impossibile sapere chi ha caricato o cancellato un file
+                    \item \textbf{Soluzione}: Implementare un sistema di \textbf{logging} che registri le connessioni, i comandi eseguiti e i trasferimenti, sia per l'auditing di sicurezza che per il debug
+                \end{itemize}
+             \end{block}
+        \end{column}
+        \begin{column}{.48\textwidth}
+            \begin{block}{Dati Locali}
+                \begin{itemize}
+                    \item \textbf{Problema}: I file sono salvati solo sul disco locale del server. Un guasto hardware o un errore umano comporterebbe la perdita irrecuperabile dei dati (\textit{single point of failure})
+                    \item \textbf{Soluzione}: Integrare un sistema di \textbf{backup} periodico, ad esempio su un'unità di rete separata o un servizio cloud, per garantire la durabilità dei dati
+                \end{itemize}
+             \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Proposte per Sviluppi Futuri}
+    Partendo dalle criticità e limitazioni analizzate, il progetto può essere esteso in diverse direzioni per aumentarne robustezza e funzionalità:
+    \begin{itemize}
+        \item \textbf{Sicurezza Avanzata (FTPS)}: Implementazione completa del supporto SSL/TLS per crittografare tutte le comunicazioni
+        
+        \item \textbf{Sistema di Utenti e Permessi}: Creazione di un sistema di autenticazione granulare, dove ogni utente può avere permessi di lettura/scrittura specifici su determinate directory
+        
+        \item \textbf{Logging e Monitoraggio}: Integrazione di un sistema di log dettagliato per tracciare le attività e monitorare lo stato del server in tempo reale
+        
+        \item \textbf{Interfaccia Web}: Sviluppo di un'interfaccia web che permetta agli utenti di gestire i file tramite browser, rendendo il servizio più accessibile
+        
+        \item \textbf{Supporto Comandi Estesi}: Aggiunta di comandi avanzati della RFC, come la ripresa di trasferimenti interrotti (\texttt{REST}) o il calcolo di checksum (\texttt{HASH})
+    \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Punto di Forza: Architettura Estensibile}
+    \begin{block}{Un Design Pensato per il Futuro}
+    La scelta di un'architettura modulare non è stata casuale. La netta separazione tra la gestione delle connessioni (\texttt{socket.c}), la logica dei comandi (\texttt{comandi.c}) e la gestione delle sessioni (\texttt{server.c}) rende il progetto facilmente estensibile
+    \end{block}
+
+    \begin{exampleblock}{Come si estende il server?}
+    \begin{itemize}
+        \item \textbf{Implementare FTPS}: La logica di crittografia può essere incapsulata nel modulo \texttt{socket.c}, senza modificare la logica dei comandi in \texttt{comandi.c}
+        \item \textbf{Cambiare sistema di storage}: Si può modificare la gestione dei file nei comandi \texttt{RETR/STOR} per salvare su un database o cloud, senza alterare la gestione della rete
+    \end{itemize}
+    \end{exampleblock}
+\end{frame}
+
+
+
+\begin{frame}
+    \frametitle{Sfide Affrontate e Competenze Acquisite}
+    \begin{columns}[T]
+        \begin{column}{.48\textwidth}
+            \begin{block}{Principali Sfide Tecniche}
+                \begin{itemize}
+                    \item Gestione della concorrenza con Pthreads per evitare race condition
+                    \item Interpretazione e aderenza rigorosa alla specifica \textbf{RFC 959}
+                    \item Programmazione di rete a basso livello con l'API dei socket
+                    \item Gestione della macchina a stati di ogni sessione client
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{.48\textwidth}
+             \begin{exampleblock}{Competenze Sviluppate}
+                \begin{itemize}
+                    \item Padronanza della programmazione concorrente e multithread in C
+                    \item Comprensione approfondita dei protocolli di rete e della loro implementazione pratica
+                    \item Capacità di tradurre una specifica formale in un'applicazione software robusta
+                    \item Debug di sistemi distribuiti e gestione delle risorse di sistema
+                \end{itemize}
+             \end{exampleblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}
+    \frametitle{Riflessioni Finali sul Progetto}
+    \begin{itemize}
+        \item \textbf{Valore Didattico}: Implementare un protocollo "storico" come l'FTP si è rivelato un eccellente esercizio pratico, consolidando le basi della programmazione di rete e dei sistemi concorrenti che sono fondamentali ancora oggi
+        \item \textbf{Architettura Solida}: Il design modulare adottato ha semplificato lo sviluppo e il debug, creando una base di codice chiara e facilmente estensibile per futuri miglioramenti
+        \item \textbf{Successo Funzionale}: Il server ha raggiunto tutti gli obiettivi prefissati, dimostrando di essere un'applicazione stabile e pienamente funzionante, capace di interagire con il mondo reale dei client FTP
+    \end{itemize}
+\end{frame}
+
+\end{document}    

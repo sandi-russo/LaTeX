@@ -1,0 +1,152 @@
+\chapter{Attacchi Denial-of-Service}
+
+\section{Introduzione}
+
+Un attacco Denial-of-Service (DoS) è un tentativo di compromettere la disponibilità di un servizio ostacolandone o bloccandone completamente la fornitura.
+
+L'attacco tenta di esaurire alcune risorse critiche associate al servizio. Un esempio è inviare ad un server web un numero elevato di richieste tale da impedirgli di rispondere tempestivamente alle richieste valide degli utenti.
+
+\subsection{Gli Attacchi DDoS}
+
+Gli attacchi DDoS (Distributed Denial-of-Service) raggiungono l'efficacia sfruttando come fonti di attacco più sistemi informatici compromessi. Queste reti sono costituite da computer e altre macchine che vengono infettati da malware che ne permette il controllo a distanza da parte di un attaccante. Questi singoli dispositivi sono noti come bot.
+
+\section{TCP SYN Flood}
+
+Un attacco SYN flood è un tipo di attacco Denial-of-Service che mira a rendere un server indisponibile al traffico legittimo consumandone tutte le risorse. Inviando ripetutamente pacchetti di richieste di connessione iniziale SYN, l'attaccante è in grado di sopraffare tutte le porte disponibili di una macchina server, obbligando così la vittima designata a rispondere lentamente, o non rispondere affatto, al traffico legittimo.
+
+\subsection{Funzionamento del TCP SYN Flood}
+
+\subsubsection{Funzionamento Base di una Connessione TCP}
+
+Gli attacchi SYN flood sfruttano il processo di handshake di una connessione TCP. In condizioni normali, per stabilire una connessione TCP sono necessari tre processi distinti:
+
+\begin{enumerate}
+    \item Il client invia un pacchetto SYN al server per avviare la connessione.
+    \item Il server risponde con un pacchetto SYN/ACK attraverso il quale conferma esplicitamente la comunicazione.
+    \item Infine, il client restituisce un pacchetto ACK per confermare a sua volta la ricezione del pacchetto dal server. Dopo aver completato questa sequenza di invio e ricezione di pacchetti, la connessione TCP è aperta e in grado di inviare e ricevere dati.
+\end{enumerate}
+
+\subsubsection{Provocare un Denial-of-Service}
+
+Per provocare un Denial-of-Service, l'attaccante sfrutta il fatto che dopo aver ricevuto un pacchetto SYN iniziale, il server designato risponderà con uno o più pacchetti SYN/ACK e attenderà la fase finale dell'handshake.
+
+Quando un server lascia una connessione aperta ma la macchina dall'altra parte della connessione non lo è, la connessione viene considerata semi-aperta.
+
+\subsection{Come si Verifica un TCP SYN Flood}
+
+\begin{enumerate}
+    \item L'attaccante invia un elevato volume di pacchetti SYN al server vittima, spesso con indirizzi IP spoofati.
+    \item Il server risponde a ciascuna delle richieste di connessione e lascia una porta aperta pronta per ricevere la risposta.
+    \item Mentre il server attende il pacchetto ACK finale (che non arriverà mai) l'attaccante continua a inviare altri pacchetti SYN. La ricezione di ogni nuovo pacchetto SYN costringe il server a mantenere temporaneamente una connessione con una nuova porta aperta per un certo periodo di tempo. Così, una volta utilizzate tutte le porte disponibili, il server non sarà più in grado di funzionare normalmente.
+\end{enumerate}
+
+\subsection{Tipologie di Attacco SYN Flood}
+
+\begin{enumerate}
+    \item \textbf{Attacco diretto:} in cui l'indirizzo IP dell'attaccante non è spoofato. In questo genere di attacco, l'attaccante è altamente vulnerabile alla scoperta e alla mitigazione. Questo metodo viene usato raramente, poiché la mitigazione è abbastanza semplice: basta bloccare l'indirizzo IP di qualsiasi sistema antagonista. Se l'aggressore invece usa una botnet non gli importerà di mascherare l'IP del dispositivo infetto.
+    
+    \item \textbf{Attacco di spoofing:} l'attaccante può anche spoofare l'indirizzo IP in ciascun pacchetto SYN inviato per rendere più difficile la propria identificazione. Pur potendo essere spoofati, tali pacchetti possono essere eventualmente ricondotti alla loro origine. Svolgere questo tipo di indagine è difficile ma non impossibile, soprattutto se i provider di servizi Internet (ISP) sono disposti a collaborare.
+    
+    \item \textbf{Attacco distribuito (DDoS):} se un attacco viene creato utilizzando una botnet, la probabilità di rintracciare l'origine dell'attacco è scarsa. Per aumentare il livello di camuffamento, l'aggressore può disporre che ogni dispositivo distribuito falsifichi anche gli indirizzi IP da cui invia i pacchetti.
+\end{enumerate}
+
+\subsection{Mitigazione degli Attacchi SYN Flood}
+
+Cloudflare mitiga in parte questo tipo di attacco posizionandosi tra il server aggredito e il SYN flood. Quando viene effettuata la richiesta SYN iniziale, Cloudflare gestisce il processo di handshake nel cloud, trattenendo la connessione con il server preso di mira fino al completamento dell'handshake TCP. Questa strategia sposta il consumo di risorse sulla rete di Cloudflare.
+
+\section{ICMP Flood}
+
+Un ICMP flood (o ping flood) è un attacco Denial-of-Service in cui l'attaccante tenta di sommergere un dispositivo target con pacchetti ICMP echo-request, rendendo il bersaglio inaccessibile al traffico normale.
+
+\subsection{Funzionamento dell'ICMP Flood}
+
+L'Internet Control Message Protocol (ICMP) è un protocollo utilizzato dai dispositivi di rete per comunicare. Gli strumenti di diagnostica di rete traceroute e ping funzionano entrambi con ICMP. In genere, questi messaggi vengono utilizzati per diagnosticare lo stato della connettività del dispositivo.
+
+\subsection{Provocare un ICMP Flood}
+
+L'attacco in questione mira a sopraffare la capacità del dispositivo bersaglio di rispondere all'elevato numero di richieste e a saturarne la banda.
+
+La forma DDoS di un ICMP Flood può essere suddivisa in 2 fasi ripetute:
+
+\begin{enumerate}
+    \item L'attaccante invia molti pacchetti ICMP al server bersaglio utilizzando più dispositivi.
+    \item Il server bersaglio invia quindi un pacchetto di risposta ICMP all'indirizzo IP di ciascun dispositivo richiedente come risposta.
+\end{enumerate}
+
+\subsection{Mitigare l'ICMP Flood}
+
+Per mitigare un ping flood è più facile disabilitare la funzionalità ICMP del dispositivo vittima. Un amministratore di rete può accedere all'interfaccia amministrativa del dispositivo e disabilitare la sua capacità di inviare e ricevere richieste utilizzando ICMP, eliminando di fatto sia l'elaborazione della richiesta che la risposta.
+
+\section{UDP Flood}
+
+Un UDP flood è un tipo di attacco Denial-of-Service in cui un gran numero di pacchetti User Datagram Protocol viene inviato a un server vittima con l'obiettivo di sovraccaricare la capacità del dispositivo di elaborare e rispondere. Anche il firewall che protegge il server preso di mira può esaurirsi a causa del flooding UDP.
+
+\subsection{Funzionamento dell'UDP Flood}
+
+Un flood UDP funziona principalmente sfruttando le fasi che un server compie quando risponde a un pacchetto UDP inviato a una delle sue porte. Quando un server riceve un pacchetto UDP su una determinata porta, esegue due fasi di risposta:
+
+\begin{enumerate}
+    \item Il server controlla se ci sono programmi in esecuzione che sono attualmente in ascolto di richieste sulla porta specificata.
+    \item Se nessun programma riceve pacchetti su quella porta, il server risponde con un pacchetto ICMP (ping) per informare il mittente che la destinazione non è raggiungibile.
+\end{enumerate}
+
+\subsection{Parallelismo dell'UDP Flood}
+
+Si può pensare a un flood UDP nel contesto di una receptionist d'albergo che smista le chiamate. In primo luogo, l'addetto alla reception riceve una telefonata in cui il chiamante chiede di essere collegato a una stanza specifica. L'addetto alla reception deve quindi scorrere l'elenco di tutte le camere per assicurarsi che l'ospite sia disponibile in quella stanza e che sia disposto a rispondere alla chiamata. Quando l'addetto alla reception si accorge che l'ospite non risponde alle chiamate, deve riprendere il telefono e dire al chiamante che l'ospite non risponderà alla chiamata. Se all'improvviso tutte le linee telefoniche si accendono contemporaneamente con richieste simili, l'addetto alla reception sarà rapidamente sopraffatto.
+
+\subsection{Mitigare l'UDP Flood}
+
+La maggior parte dei sistemi operativi limita la velocità di risposta dei pacchetti ICMP, in parte per interrompere gli attacchi DDoS che richiedono una risposta ICMP. Un inconveniente di questo tipo di mitigazione è che durante un attacco possono essere filtrati anche pacchetti legittimi. Se il flood UDP ha un volume sufficiente a saturare la tabella di stato del firewall del server preso di mira, qualsiasi mitigazione a livello di server sarà insufficiente, poiché il collo di bottiglia si verificherà a monte del dispositivo preso di mira.
+
+\section{HTTP Flood}
+
+Un attacco HTTP flood è un tipo di attacco Denial-of-Service progettato per sommergere un server mirato con richieste HTTP. Una volta che il bersaglio è stato saturato dalle richieste e non è in grado di rispondere al traffico normale, si verificherà un denial-of-service per ulteriori richieste da parte degli utenti effettivi.
+
+\subsection{Funzionamento dell'HTTP Flood}
+
+Gli attacchi HTTP flood sono un tipo di attacco DDoS di livello 7. Il livello 7 è il livello applicativo del modello OSI e si riferisce ai protocolli Internet come l'HTTP, protocollo alla base delle richieste Internet basate su browser. La mitigazione degli attacchi di livello applicativo è particolarmente complessa, poiché il traffico dannoso è difficile da distinguere dal traffico normale.
+
+Per ottenere la massima efficienza, i malintenzionati di solito utilizzano o creano botnet per massimizzare l'impatto del loro attacco.
+
+\subsection{Tipologie di Attacco HTTP Flood}
+
+\begin{description}
+    \item[HTTP GET] In questa forma di attacco, più computer o altri dispositivi vengono coordinati per inviare richieste multiple di immagini, file o altre risorse da un server mirato.
+    
+    \item[HTTP POST] In genere quando viene inviato un modulo su un sito Web, il server deve gestire la richiesta in arrivo e inviare i dati ad un database. La gestione dei dati del modulo e l'esecuzione dei comandi necessari per il database sono processi relativamente intensivi rispetto alla potenza necessaria per inviare la richiesta POST. Questo attacco sfrutta la disparità nel consumo di risorse relative, inviando molte richieste POST.
+\end{description}
+
+\subsection{Mitigare un HTTP Flood}
+
+La mitigazione degli attacchi di livello 7 è piuttosto complessa. Un metodo consiste nell'implementare una challenge al client per verificare se si tratta o meno di un bot.
+
+\section{DNS Amplification Attack}
+
+\subsection{Reflection Attack}
+
+Il reflection attack è un tipo di attacco Denial-of-Service che sfrutta la tecnica di IP spoofing e il protocollo TCP o UDP. Il server risponde alla richiesta inviando una risposta all'indirizzo IP della vittima. Qualsiasi server che opera su servizi basati su UDP o TCP può essere sfruttato come ``riflettore''.
+
+\subsection{Amplification Attack}
+
+L'amplification attack genera un alto volume di pacchetti con lo scopo di sovraccaricare il sito web bersaglio senza allertare il servizio intermediario. Questo accade quando un servizio vulnerabile risponde con una risposta di grandi dimensioni a fronte di una richiesta dell'attaccante, spesso chiamata trigger packet. L'attaccante può inviare migliaia di queste richieste a servizi vulnerabili, causando risposte che sono notevolmente più grandi rispetto alla richiesta originale e amplificano significativamente il traffico e la larghezza di banda diretti verso il bersaglio.
+
+\subsection{DNS Amplification Attack}
+
+Il DNS amplification attack sfrutta i server DNS per amplificare la quantità di traffico inviato verso il sistema bersaglio. L'attacco si basa sulla capacità del protocollo DNS di trasformare una piccola richiesta in una risposta molto più grande, con l'obiettivo di sovraccaricare il target con traffico eccessivo.
+
+\subsubsection{Funzionamento del DNS Amplification Attack}
+
+Un DNS amplification attack può essere suddiviso in quattro fasi:
+
+\begin{enumerate}
+    \item L'attaccante utilizza un endpoint compromesso per inviare pacchetti UDP con indirizzi IP spoofati a un server DNS.
+    \item Ciascuno dei pacchetti UDP effettua una richiesta a un resolver DNS, spesso passando un argomento come ANY o record DNS complessi (ad esempio, indirizzi IPv6) per ricevere la risposta più grande possibile.
+    \item Dopo aver ricevuto le richieste, il resolver DNS, che rispondendo sta cercando di essere utile, invia una risposta di grandi dimensioni all'indirizzo IP spoofato.
+    \item L'indirizzo IP della vittima riceve la risposta e l'infrastruttura di rete circostante viene sovraccaricata da una marea di traffico che provoca una negazione del servizio.
+\end{enumerate}
+
+Sebbene poche richieste non siano sufficienti ad abbattere l'infrastruttura di rete, quando questa sequenza viene moltiplicata tra più richieste e resolver DNS, l'amplificazione dei dati ricevuti dal bersaglio può essere sostanziale.
+
+\subsection{Mitigare il DNS Amplification Attack}
+
+La difesa principale consiste nel bloccare lo spoofing degli indirizzi IP a livello di rete, tramite tecniche come Ingress Filtering, che verifica che il traffico in uscita da una rete provenga da indirizzi IP legittimi. Inoltre, limitare l'accesso ai server DNS restringendo l'uso della funzionalità di recursione ai soli utenti interni, può prevenire che i server DNS aperti vengano sfruttati per amplificare attacchi.

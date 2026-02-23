@@ -1,0 +1,156 @@
+\documentclass[a4paper, 12pt]{scrartcl}
+\usepackage[utf8]{inputenc} % supporto caratteri UTF-8
+\usepackage[T1]{fontenc} % migliore gestione dei font
+\usepackage{newtxtext, newtxmath} % Font Times New Roman-like
+\usepackage[main=italian, english]{babel} % imposta l'italiano come lingua principale
+\usepackage{graphicx} % per l'inserimento di immagini
+\usepackage{hyperref} % per link nell'indice
+\usepackage{listings} % per codice sorgente
+\usepackage{xcolor} % per colorare il codice
+\usepackage{amsmath} % per formule matematiche complesse
+\usepackage{tikz} % per i disegni
+\usetikzlibrary{positioning} % per una migliore gestione delle posizioni degli elementi
+\usetikzlibrary{decorations.pathreplacing} % per le graffe
+\usetikzlibrary{shapes.geometric, arrows}
+\usepackage{caption}
+\usepackage{subcaption}
+
+% formattazione codice sorgente
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{red},
+    numbers=left,
+    numberstyle=\tiny,
+    stepnumber=1,
+    breaklines=true,
+    frame=single,
+    captionpos=b
+}
+
+% informazioni sulla relazione
+\title{Hands-On 8}
+\subtitle{MULTITHREAD}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche} % Nome e CdL
+\date{\today}
+
+\begin{document}
+
+\maketitle % Genera la copertina con titolo, sottotitolo e autore
+
+\newpage
+\tableofcontents % Inserisce l'indice automatico
+\newpage
+
+\section{Introduzione}
+In questo documento andremo ad analizzare il funzionamento e l'implementazione dell'algoritmo di calcolo dei numeri primi utilizzando il multithreading in C. Il multithreading consente di suddividere il lavoro tra più thread, migliorando l'efficienza e le prestazioni del programma.
+\\
+Un thread, o \textit{filo} di esecuzione, rappresenta il più piccolo insieme di istruzioni che possono essere gestite in modo indipendente da un \textit{scheduler} di un sistema operativo. Ogni programma ha almeno un thread, il \textit{main thread}, che viene creato automaticamente all'avvio del programma. Il multithreading è una tecnica che permette di eseguire più thread contemporaneamente, sfruttando al meglio le capacità di elaborazione parallela delle moderne CPU multi-core.
+\\
+Lavorare con i thread in C richiede l'uso della libreria \texttt{pthread}, che fornisce le funzioni necessarie per creare, gestire e sincronizzare i thread. La libreria \texttt{pthread} è conforme allo standard POSIX (Portable Operating System Interface) e permette di scrivere programmi portabili su diverse piattaforme Unix-like.
+
+\section{Definizione del Problema}
+Il problema che andremo a risolvere riguarda il calcolo dei numeri primi fino a un milione utilizzando quattro thread. L'obiettivo è sfruttare il multithreading per accelerare il processo di verifica dei numeri primi, distribuendo il carico di lavoro su più core della CPU.
+
+\section{Metodologia}
+In questa sezione, descriviamo la metodologia utilizzata per implementare e testare il codice di calcolo dei numeri primi utilizzando il multithreading. Il codice è stato sviluppato per dividere il range dei numeri da verificare tra i thread disponibili.
+
+\subsection{Descrizione del Codice}
+Il codice è suddiviso in diverse parti principali:
+\begin{enumerate}
+    \item \textbf{Definizione delle Costanti e delle Funzioni}: Definiamo i valori costanti e implementiamo la funzione per verificare se un numero è primo.
+    \item \textbf{Funzione di Controllo dei Numeri Primi}: Implementiamo la funzione che ogni thread eseguirà per controllare i numeri primi nel proprio range.
+    \item \textbf{Creazione e Gestione dei Thread}: Creiamo i thread, assegniamo a ciascuno un range di numeri da controllare e attendiamo la loro terminazione.
+\end{enumerate}
+
+\subsection{Test}
+Per verificare il corretto funzionamento del programma, abbiamo eseguito il codice su una macchina con supporto per il multithreading e confrontato i risultati con quelli ottenuti da un programma sequenziale.
+
+\section{Presentazione dei Risultati}
+I risultati ottenuti dai test del codice multithreading sono stati soddisfacenti. Di seguito sono riportati alcuni esempi di numeri primi trovati:
+
+\begin{verbatim}
+Il numero 2 è primo
+Il numero 3 è primo
+Il numero 5 è primo
+... (output abbreviato)
+Il numero 999983 è primo
+\end{verbatim}
+
+Il programma ha dimostrato di essere in grado di trovare correttamente i numeri primi fino a un milione, distribuendo il carico di lavoro tra i thread. Inoltre, il tempo di esecuzione è stato notevolmente ridotto grazie all'uso del multithreading.
+
+\subsection{Descrizione Dettagliata del Codice}
+Qui descriviamo il funzionamento del codice passo dopo passo, utilizzando il pacchetto \texttt{listings} per includere i frammenti di codice.
+
+\begin{lstlisting}[caption={Inclusione delle librerie necessarie}]
+#include <stdio.h>
+#include <pthread.h>
+#include <stdbool.h>
+\end{lstlisting}
+Le librerie incluse forniscono le funzioni necessarie per la gestione dei thread, la manipolazione dei dati e altre funzionalità di sistema.
+
+\begin{lstlisting}[caption={Definizione di costanti per il range di numeri e il numero di thread}]
+#define MAX_NUMBER 1000000
+#define MAX_THREAD 4
+\end{lstlisting}
+Definiamo il limite massimo del range di numeri da verificare e il numero di thread da utilizzare.
+
+\begin{lstlisting}[caption={Funzione per verificare se un numero è primo}]
+bool is_prime(int n) {
+    if (n <= 1) return false;
+    if (n == 2) return true;
+    if (n % 2 == 0) return false;
+    for (int i = 3; i * i <= n; i += 2) {
+        if (n % i == 0) return false;}
+    return true;}
+\end{lstlisting}
+Implementiamo la funzione \texttt{is\_prime()} che verifica se un numero è primo. La funzione utilizza un algoritmo efficiente per ridurre il numero di divisioni necessarie.
+
+\begin{lstlisting}[caption={Funzione eseguita dai thread per controllare i numeri primi}]
+void* check_primes(void* arg) {
+    int start = *(int*)arg;
+    int end = start + (MAX_NUMBER / MAX_THREAD);
+    
+    for (int i = start; i < end; i++) {
+        if (is_prime(i)) {
+            printf("Il numero %d e' primo\n", i);
+        }
+    }
+
+    return NULL;
+}
+\end{lstlisting}
+La funzione \texttt{check\_primes()} viene eseguita da ciascun thread. Ogni thread verifica i numeri primi nel proprio range e stampa i numeri primi trovati.
+
+\begin{lstlisting}[caption={Funzione principale per la creazione e gestione dei thread}]
+int main() {
+    pthread_t threads[MAX_THREAD];
+    int range[MAX_THREAD];
+
+    for (int i = 0; i < MAX_THREAD; i++) {
+        range[i] = i * (MAX_NUMBER / MAX_THREAD);
+        
+        // Creazione del thread
+        int result = pthread_create(&threads[i], NULL, check_primes, &range[i]);
+        
+        if(result != 0) {
+            perror("Errore nella creazione del thread");
+            return 1;
+        }
+    }
+    
+    for (int i = 0; i < MAX_THREAD; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    printf("Tutti i thread sono terminati.\n");
+    return 0;
+}
+\end{lstlisting}
+Nella funzione \texttt{main()} creiamo i thread, assegnando a ciascuno un range di numeri da controllare. Utilizziamo \texttt{pthread\_create()} per creare i thread e \texttt{pthread\_join()} per attendere la loro terminazione. Alla fine del programma, stampiamo un messaggio indicando che tutti i thread sono terminati.
+
+\section{Conclusione}
+In questa relazione abbiamo descritto l'implementazione di un programma in C per il calcolo dei numeri primi utilizzando il multithreading. Abbiamo illustrato i vantaggi dell'uso del multithreading in termini di efficienza e prestazioni, suddividendo il carico di lavoro tra i thread. La metodologia adottata per lo sviluppo e il test del codice ha garantito il corretto funzionamento del programma, che è risultato in grado di trovare numeri primi fino a un milione in modo affidabile e veloce. Infine, i risultati dei test hanno confermato l'efficacia del programma nel contesto del calcolo parallelo.
+\end{document}

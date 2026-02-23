@@ -1,0 +1,292 @@
+\documentclass[a4paper, 12pt]{scrartcl} % Classe KOMA-Script
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsthm} % Per le definizioni
+\usepackage{newtxtext, newtxmath} % Font New TX
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Opzioni Hyperref migliorate
+\usepackage{listings} % Per il codice
+\usepackage{xcolor}     % Per i colori
+\usepackage{amsmath}    % Per la matematica (se serve)
+\usepackage{caption}    % Per le didascalie
+\usepackage{subcaption} % Per sotto-figure/tabelle (se servono)
+\usepackage{geometry} % Per i margini
+\geometry{a4paper, margin=2.5cm} % Margini come specificato
+\usepackage{multirow} % Per tabelle con celle unite
+\usepackage{array}      % Per opzioni avanzate array/tabular
+\usepackage{float}      % Per migliorare il posizionamento [H]
+
+\theoremstyle{definition}
+\newtheorem{definizione}{Definizione}[section] % Definizione numerata per sezione
+
+% Definizione colori per listings (come da specifica)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings (come da specifica)
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black},
+}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    keywordstyle=\color{orange!80!black}\bfseries,
+    morekeywords={*, import, re, os, time, from, class, def, self, return, if, else, for, in, with, as, print, ray, remote, defaultdict, Counter, list, dict, str, int, tuple},
+    stringstyle=\color{codepurple},
+    commentstyle=\color{codegreen},
+}
+
+\begin{document}
+
+% Titolo e autore
+\title{Hands-On 18}
+\subtitle{Paradigma MapReduce con Python e Ray.io}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche}
+\date{10 giugno 2025}
+\maketitle
+
+\newpage
+\tableofcontents % Indice dei contenuti
+\newpage
+
+\section{Introduzione}
+Nell'era dei Big Data, l'elaborazione di enormi quantità di dati in tempi ragionevoli è diventata una sfida cruciale. I sistemi tradizionali, basati su un singolo processore, non sono in grado di gestire carichi di lavoro così imponenti. Per superare questa limitazione, è stato introdotto il paradigma del calcolo distribuito, in cui un compito complesso viene suddiviso e processato in parallelo da più macchine o processori.
+\\ \noindent
+Il \textbf{MapReduce} è uno dei modelli di programmazione più influenti e diffusi per l'elaborazione di dati su larga scala. Originariamente sviluppato da Google, astrae la complessità del calcolo distribuito, permettendo agli sviluppatori di concentrarsi sulla logica di elaborazione dei dati piuttosto che sulla gestione di errori, comunicazioni di rete e parallelizzazione. Il modello si basa su due funzioni principali definite dall'utente: \textit{Map} e \textit{Reduce}.
+\\ \noindent
+Questa relazione esplora un'implementazione pratica del paradigma MapReduce per risolvere un problema classico: il conteggio delle parole (word count) in un vasto corpus di testo. Per simulare un ambiente di calcolo distribuito su una singola macchina, utilizzeremo \textbf{Ray.io}, un moderno framework open-source per il calcolo distribuito in Python. Ray semplifica notevolmente la creazione di applicazioni parallele e distribuite, consentendo di trasformare funzioni e classi Python in "task" e "actor" remoti con minime modifiche al codice.
+\\ \noindent
+Analizzeremo in dettaglio ogni fase del processo MapReduce, dalla lettura dei dati di input alla generazione del report finale, illustrando come Ray.io faciliti l'orchestrazione delle fasi di mappatura, distribuzione (shuffling) e riduzione, e come le ottimizzazioni implementate nel codice migliorino le prestazioni del sistema.
+
+\section{Definizione del Problema}
+L'obiettivo di questo esercizio è implementare un programma che esegua il conteggio della frequenza di tutte le parole presenti in un grande corpus di testo. Il corpus è composto da tre file di testo di grandi dimensioni (`lotr\_01.txt`, `lotr\_02.txt`, `lotr\_03.txt`), contenenti il testo della trilogia de "Il Signore degli Anelli".
+\\ \noindent
+Il programma deve aderire al paradigma MapReduce e soddisfare i seguenti requisiti:
+\begin{itemize}
+    \item \textbf{Elaborazione Parallela:} Il processo di analisi del testo deve essere parallelizzato per simulare un'elaborazione su un cluster di macchine. Questo sarà realizzato utilizzando il framework Ray.io.
+    \item \textbf{Scalabilità:} L'architettura deve essere configurabile, permettendo di specificare il numero di processi "Mapper" e "Reducer" da utilizzare, in modo da poter scalare in base alle risorse disponibili.
+    \item \textbf{Logica MapReduce:} Il programma deve implementare chiaramente le fasi canoniche del modello MapReduce:
+    \begin{enumerate}
+        \item Lettura e suddivisione dei dati di input.
+        \item Una fase di \textbf{Mapping} in cui i dati vengono elaborati e trasformati in coppie chiave-valore.
+        \item Una fase di \textbf{Shuffling} in cui le coppie intermedie vengono raggruppate per chiave.
+        \item Una fase di \textbf{Reducing} in cui i valori raggruppati per ogni chiave vengono aggregati per produrre il risultato finale.
+    \end{enumerate}
+    \item \textbf{Output:} Il risultato finale deve essere un singolo file di testo (`report\_conteggio\_parole.txt`) contenente l'elenco di tutte le parole uniche trovate, ordinate alfabeticamente, ciascuna con il rispettivo conteggio di occorrenze, in formato CSV (es. `parola,conteggio`).
+\end{itemize}
+
+\section{Metodologia}
+La soluzione è implementata in Python e si avvale del framework Ray.io per orchestrare il calcolo distribuito. La metodologia si articola sull'adozione di Ray come motore di parallelizzazione e sull'implementazione fedele delle fasi del paradigma MapReduce.
+
+\subsection{Ray.io: Un Framework per il Calcolo Distribuito}
+\textbf{Ray.io} è un framework open-source progettato per semplificare la creazione e l'esecuzione di applicazioni distribuite. Invece di costringere gli sviluppatori a gestire manualmente la comunicazione di rete, la serializzazione dei dati e la tolleranza ai guasti, Ray fornisce astrazioni semplici e potenti.
+\\ \noindent
+I due concetti fondamentali in Ray sono:
+\begin{itemize}
+    \item \textbf{Task Remoti:} Qualsiasi funzione Python può essere trasformata in un "task" eseguibile in modo asincrono su un processo separato (un "worker") aggiungendo il decoratore `@ray.remote`. La chiamata a tale funzione (es. `mia\_funzione.remote()`) non blocca l'esecuzione e restituisce immediatamente un \textit{future} o \textit{object reference}, un puntatore al risultato futuro.
+    \item \textbf{Actor Remoti:} Qualsiasi classe Python può essere trasformata in un "actor" (un servizio stateful) con il decoratore `@ray.remote`. Un actor è un processo worker che possiede uno stato interno. È possibile invocare i suoi metodi in modo remoto, e le chiamate vengono eseguite in serie su quell'actor, garantendo la consistenza del suo stato.
+\end{itemize}
+In questo progetto, usiamo Ray perché ci permette di simulare un cluster MapReduce su un singolo computer multi-core in modo molto intuitivo. I Mapper e i Reducer sono implementati come \textbf{actor remoti}, consentendoci di creare facilmente più istanze di ciascuno e di distribuire il lavoro tra di loro.
+
+\subsection{Il Paradigma MapReduce}
+MapReduce è un modello di programmazione che astrae il processo di elaborazione di grandi dataset in due fasi principali. Immaginiamo di dover contare un'enorme quantità di schede elettorali. Non lo faremmo da soli; divideremmo il lavoro.
+\begin{itemize}
+    \item \textbf{Fase Map:} Assegniamo pile di schede a diversi scrutatori (i \textit{Mapper}). Ogni scrutatore conta i voti nella sua pila e produce un foglietto per ogni candidato con un "1" (es. `('Candidato A', 1)`, `('Candidato B', 1)`).
+    \item \textbf{Fase Reduce:} Raccogliamo tutti i foglietti. Li ordiniamo per candidato (questa è la fase di \textit{Shuffling}). Poi, per ogni candidato, un responsabile (il \textit{Reducer}) prende tutti i foglietti corrispondenti e somma i conteggi per ottenere il totale.
+\end{itemize}
+Questo semplice modello è incredibilmente potente perché le operazioni di Map e Reduce sono indipendenti e possono essere eseguite in parallelo su un vasto numero di macchine.
+
+\subsection{Le Fasi del Processo MapReduce Implementato}
+La nostra implementazione segue fedelmente questo schema, con alcune ottimizzazioni.
+\begin{enumerate}
+    \item \textbf{Fase 1: Input:} Il processo inizia leggendo tutto il contenuto dei file di testo specificati (`lotr\_01.txt`, etc.) e caricandolo in memoria come una singola, grande stringa di testo.
+    \item \textbf{Fase 2: Splitting:} Il testo completo viene suddiviso in un numero predefinito di "chunk" o porzioni. Invece di dividere il file a metà in modo arbitrario (rischiando di tagliare parole), la suddivisione avviene per righe. Ogni riga viene assegnata a un chunk in modo ciclico (round-robin). Questo assicura una distribuzione del lavoro relativamente bilanciata tra i Mapper.
+    \item \textbf{Fase 3: Mapping:} Ogni chunk di testo viene inviato a un attore \textbf{Mapper}. Il Mapper esegue le seguenti operazioni:
+        \begin{itemize}
+            \item \textbf{Pre-elaborazione:} Converte il testo in minuscolo e rimuove tutti i caratteri di punteggiatura.
+            \item \textbf{Tokenizzazione:} Suddivide il testo pulito in una lista di parole (token).
+            \item \textbf{Emissione delle coppie:} Invece di emettere una coppia `(parola, 1)` per ogni occorrenza (che genererebbe un'enorme quantità di dati intermedi), viene applicata un'\textbf{ottimizzazione (Combiner)}: il Mapper pre-aggrega i conteggi a livello locale. Utilizzando una struttura come `collections.Counter`, calcola la frequenza delle parole all'interno del proprio chunk e restituisce una lista di coppie `(parola, conteggio\_locale)`. Questo riduce drasticamente la quantità di dati da trasferire nella fase successiva.
+        \end{itemize}
+    \item \textbf{Fase 4: Shuffling:} Questa è la fase di ridistribuzione dei dati. Il processo principale raccoglie le liste di coppie da tutti i Mapper. Per ogni coppia `(parola, conteggio\_locale)`, decide a quale \textbf{Reducer} inviarla. La strategia di partizionamento standard è basata sull'hash della chiave: `indice\_reducer = hash(parola)
+    \item \textbf{Fase 5: Reducing:} Ogni attore \textbf{Reducer} riceve un insieme di coppie `(parola, conteggio\_locale)`. Il suo compito è semplice: per ogni coppia ricevuta, somma il `conteggio\_locale` a un totale parziale che mantiene per quella `parola`. In pratica, aggrega i conteggi parziali provenienti dai vari Mapper.
+\end{enumerate}
+Al termine, il processo principale raccoglie i dizionari di conteggi finali da tutti i Reducer, li unisce in un unico risultato globale, ordina le parole alfabeticamente e scrive il report finale su file.
+
+\section{Presentazione dei Risultati}
+Di seguito viene presentato il codice Python completo che implementa il flusso MapReduce descritto, seguito da una spiegazione dettagliata del suo funzionamento.
+
+\begin{lstlisting}[style=pythonstyle, caption={Codice sorgente MapReduce per Word Count con Ray}, label={lst:mapreduce_py}]
+import ray
+import re
+import os
+import time
+from collections import defaultdict, Counter
+
+INPUT_FILES = ["lotr_01.txt", "lotr_02.txt", "lotr_03.txt"]
+OUTPUT_FILE = "report_conteggio_parole.txt"
+NUM_MAPPERS = 4
+NUM_REDUCERS = 4
+
+def read_input_files(files: list[str]) -> list[str]:
+    print(f"INPUT: Leggendo i file: {', '.join(files)}...")
+    all_text = []
+    for file_path in files:
+        if not os.path.exists(file_path):
+            print(f"Il file '{file_path}' non e' stato trovato.")
+            continue
+        with open(file_path, 'r', encoding='latin-1') as f:
+            all_text.append(f.read())
+    print("Lettura dei file completata.\n")
+    return all_text
+
+def split_text_into_chunks(texts: list[str], num_chunks: int) -> list[list[str]]:
+    print("SPLITTING")
+    all_lines = "\n".join(texts).splitlines()
+    chunks = [[] for _ in range(num_chunks)]
+    for i, line in enumerate(all_lines):
+        chunks[i % num_chunks].append(line)
+    print(f"Il testo e' stato suddiviso in {num_chunks} parti per i mappers.\n")
+    return chunks
+
+@ray.remote
+class Mapper:
+    def _preprocess_text(self, text: str) -> list[str]:
+        text = text.lower()
+        text = re.sub(r'[^\w\s]', '', text)
+        return text.split()
+
+    def map(self, text_chunk: list[str]) -> list[tuple[str, int]]:
+        text = "\n".join(text_chunk)
+        words = self._preprocess_text(text)
+        return list(Counter(words).items())
+
+@ray.remote
+class Reducer:
+    def __init__(self):
+        self.counts = defaultdict(int)
+    
+    def reduce_batch(self, batch: list[tuple[str, int]]):
+        for word, count in batch:
+            self.counts[word] += count
+
+    def get_results(self) -> dict:
+        return dict(self.counts)
+
+def run_map_reduce():
+    ray.init()
+    texts = read_input_files(INPUT_FILES)
+    if not texts:
+        print("Nessun file di input valido trovato. Interruzione del processo.")
+        ray.shutdown()
+        return
+    chunks = split_text_into_chunks(texts, NUM_MAPPERS)
+    
+    mappers = [Mapper.remote() for _ in range(NUM_MAPPERS)]
+    reducers = [Reducer.remote() for _ in range(NUM_REDUCERS)]
+
+    print("MAPPING")
+    mapped_results_refs = [mappers[i % NUM_MAPPERS].map.remote(chunks[i]) for i in range(len(chunks))]
+    mapped_outputs = ray.get(mapped_results_refs)
+    print("Mappatura completata.\n")
+
+    print(" SHUFFLING: Preparazione dei batch per i reducers...")
+    
+    batches = [[] for _ in range(NUM_REDUCERS)]
+    for result_list in mapped_outputs:
+        for word, count in result_list:
+            reducer_index = hash(word) % NUM_REDUCERS
+            batches[reducer_index].append((word, count))
+
+    print(f"Invio di {len(reducers)} batch ai reducers...")
+    shuffle_promises = [
+        reducers[i].reduce_batch.remote(batches[i]) for i in range(NUM_REDUCERS) if batches[i]
+    ]
+    
+    ray.get(shuffle_promises)
+    print("Shuffling completato.\n")
+    
+    print("REDUCING: Recupero dei risultati finali dai reducers...")
+    reducer_results_refs = [r.get_results.remote() for r in reducers]
+    final_counts_list = ray.get(reducer_results_refs)
+    print("Conteggio finale aggregato.\n")
+    
+    final_word_counts = defaultdict(int)
+    for counts_dict in final_counts_list:
+        for word, count in counts_dict.items():
+            final_word_counts[word] += count
+            
+    sorted_word_counts = sorted(final_word_counts.items())
+    
+    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+        for word, count in sorted_word_counts:
+            f.write(f"{word},{count}\n")
+            
+    print(f"Report finale salvato in '{OUTPUT_FILE}'.")
+    print(f"Trovate {len(sorted_word_counts)} parole uniche.")
+
+    ray.shutdown()
+
+if __name__ == "__main__":
+    run_map_reduce()
+\end{lstlisting}
+\noindent
+Il codice implementa il flusso MapReduce in modo strutturato. La funzione `run\_map\_reduce` agisce da orchestratore principale.
+\begin{itemize}
+    \item \textbf{Inizializzazione:} Con `ray.init()`, viene avviato l'ambiente Ray. Le funzioni `read\_input\_files` e `split\_text\_into\_chunks` preparano i dati, implementando le fasi 1 e 2.
+    \item \textbf{Creazione degli Actor:} Vengono create `NUM\_MAPPERS` istanze della classe `Mapper` e `NUM\_REDUCERS` istanze della classe `Reducer`. La chiamata `.remote()` è ciò che le trasforma in actor remoti, pronti a ricevere lavoro.
+    \item \textbf{Fase di Mapping:} Viene creato un elenco di task remoti, uno per ogni chunk di testo, invocando il metodo `map.remote()` sui mapper disponibili. `ray.get()` è una chiamata bloccante che attende il completamento di tutti i task di mappatura e raccoglie i loro risultati (le liste di coppie `(parola, conteggio\_locale)`).
+    \item \textbf{Fase di Shuffling:} Questa fase è implementata nel processo principale. I risultati dei mapper vengono iterati, e per ogni parola, si calcola l'indice del reducer di destinazione tramite `hash(word)
+    \item \textbf{Fase di Reducing:} Con una singola chiamata `reduce\_batch.remote()` per reducer, interi lotti di dati vengono inviati agli actor `Reducer` per l'aggregazione. Questa è un'ottimizzazione per ridurre il numero di chiamate remote. `ray.get()` attende che tutti i reducer abbiano processato i loro batch.
+    \item \textbf{Risultato Finale:} I risultati finali (dizionari di conteggi) vengono recuperati da ogni reducer con `get\_results.remote()`. Questi risultati parziali vengono aggregati in un unico dizionario, ordinati e scritti nel file di output.
+    \item \textbf{Chiusura:} `ray.shutdown()` termina l'ambiente Ray e rilascia le risorse.
+\end{itemize}
+
+\subsection{Output Atteso e Discussione}
+Eseguendo lo script Python, l'output a console mostrerà i log che annunciano l'inizio e la fine di ogni fase del processo MapReduce. Al termine, verrà creato un file chiamato `report\_conteggio\_parole.txt`.
+\\ \noindent
+Il contenuto di questo file sarà un elenco di parole e delle loro frequenze, ordinate alfabeticamente. Un piccolo estratto del file potrebbe assomigliare a questo:
+\begin{verbatim}
+a,11677
+abandon,10
+abandoned,37
+abbey,1
+...
+gandalf,1048
+...
+ring,827
+...
+zion,1
+\end{verbatim}
+\noindent
+Questo output rappresenta la corretta aggregazione di tutte le occorrenze di parole dai tre file di input. Il successo dell'operazione dimostra l'efficacia del paradigma MapReduce nell'affrontare compiti di elaborazione dati su larga scala e la semplicità con cui Ray.io permette di implementare tali modelli complessi.
+
+\section{Conclusioni}
+Questo progetto ha dimostrato con successo l'implementazione del paradigma \textbf{MapReduce} per un'applicazione reale di analisi testuale, utilizzando Python e il framework di calcolo distribuito \textbf{Ray.io}. L'esercizio ha evidenziato come MapReduce scomponga un problema complesso in sotto-problemi più piccoli e gestibili che possono essere eseguiti in parallelo, fornendo un modello potente per la scalabilità.
+\\ \noindent
+L'uso di Ray.io si è rivelato fondamentale per la facilità di implementazione. Le sue semplici astrazioni, come i decoratori `@ray.remote` per creare task e actor, hanno permesso di concentrarsi sulla logica algoritmica di Map e Reduce, piuttosto che sulle complessità della programmazione concorrente e distribuita.
+\\ \noindent
+Sono state inoltre implementate importanti ottimizzazioni. La pre-aggregazione locale nei \textbf{Mapper} (pattern del Combiner) e l'invio di dati in \textbf{batch} ai \textbf{Reducer} sono tecniche cruciali che riducono significativamente il traffico di rete e il carico di lavoro nella fase di shuffling, migliorando le prestazioni complessive.
+\\ \noindent
+In conclusione, l'esperienza ha fornito una profonda comprensione pratica del funzionamento di MapReduce e ha messo in luce come strumenti moderni come Ray.io stiano rendendo il calcolo distribuito ad alte prestazioni sempre più accessibile agli sviluppatori Python.
+
+\end{document}

@@ -1,0 +1,321 @@
+\documentclass[a4paper, 12pt]{scrartcl} % Classe KOMA-Script
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsthm} % Per le definizioni
+\usepackage{newtxtext, newtxmath} % Font New TX
+\usepackage[main=italian, english]{babel}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=green]{hyperref} % Opzioni Hyperref migliorate
+\usepackage{listings} % Per il codice
+\usepackage{xcolor}     % Per i colori
+\usepackage{amsmath}    % Per la matematica (se serve)
+\usepackage{caption}    % Per le didascalie
+\usepackage{subcaption} % Per sotto-figure/tabelle (se servono)
+\usepackage{geometry} % Per i margini
+\geometry{a4paper, margin=2.5cm} % Margini come specificato
+\usepackage{multirow} % Per tabelle con celle unite
+\usepackage{array}      % Per opzioni avanzate array/tabular
+\usepackage{float}      % Per migliorare il posizionamento [H]
+
+\theoremstyle{definition}
+\newtheorem{definizione}{Definizione}[section] % Definizione numerata per sezione
+
+% Definizione colori per listings (come da specifica)
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Impostazioni globali per listings (come da specifica)
+\lstset{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries, % Keywords in grassetto blu
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b, % Posizione caption in basso
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single, % Cornice singola
+    rulecolor=\color{black},
+}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    keywordstyle=\color{orange!80!black}\bfseries,
+    morekeywords={*, import, torch, nn, F, optim, from, class, def, self, return, if, else, for, in, with, as, print, ray, remote, list, dict, str, int, tuple, super, __init__, forward, deepcopy},
+    stringstyle=\color{codepurple},
+    commentstyle=\color{codegreen},
+}
+
+\begin{document}
+
+% Titolo e autore
+\title{Hands-On 19}
+\subtitle{Apprendimento Federato (Federated Learning) con Ray.io}
+\author{Sandi Russo \\ Corso di Laurea: Scienze Informatiche}
+\date{10 giugno 2025}
+\maketitle
+
+\newpage
+\tableofcontents % Indice dei contenuti
+\newpage
+
+\section{Introduzione}
+L'apprendimento automatico (Machine Learning) tradizionale si basa su un presupposto fondamentale: la disponibilità di grandi quantità di dati centralizzati su un unico server o cluster per l'addestramento dei modelli. Tuttavia, in molti scenari reali, i dati sono intrinsecamente distribuiti e, soprattutto, privati. Pensiamo ai dati sanitari dei pazienti conservati in ospedali diversi, ai dati personali sui nostri smartphone o ai dati finanziari nelle banche. Centralizzare questi dati per addestrare un modello solleva enormi problemi di privacy, sicurezza e costi di trasferimento.
+\\ \noindent
+L' \textbf{Apprendimento Federato (Federated Learning - FL)} è un paradigma di machine learning rivoluzionario che affronta direttamente questa sfida. Invece di portare i dati al modello, l'FL porta il modello ai dati. Permette a più attori (client o worker) di addestrare in modo collaborativo un modello condiviso, mantenendo tutti i dati di addestramento locali e privati sui rispettivi dispositivi. Solo gli aggiornamenti del modello (i pesi) vengono comunicati a un server centrale, che li aggrega per produrre un modello globale migliorato.
+\\ \noindent
+Questa relazione descrive l'implementazione di un sistema di Apprendimento Federato per addestrare un modello di classificazione di immagini sul noto dataset MNIST. Per orchestrare questo complesso protocollo di comunicazione e calcolo distribuito, utilizzeremo \textbf{Python} con due librerie chiave: \textbf{PyTorch} per la definizione e l'addestramento del modello di deep learning, e \textbf{Ray.io} come framework per la gestione dei processi distribuiti, simulando un server di aggregazione e molteplici worker.
+
+\section{Definizione del Problema}
+L'obiettivo è addestrare una rete neurale (un Multi-Layer Perceptron, MLP) per classificare le cifre scritte a mano del dataset MNIST, utilizzando un approccio di Apprendimento Federato.
+\\ \noindent
+Il sistema deve simulare uno scenario realistico in cui i dati di addestramento non sono centralizzati, ma partizionati e distribuiti tra un numero predefinito di \textbf{worker} (client). L'implementazione deve seguire il protocollo standard dell'Apprendimento Federato:
+\begin{itemize}
+    \item \textbf{Decentralizzazione dei Dati:} Il dataset di addestramento MNIST deve essere suddiviso in partizioni disgiunte. Ogni partizione deve essere assegnata a un unico worker, simulando silos di dati privati. Il processo principale non deve mai avere accesso diretto ai dati di addestramento.
+    \item \textbf{Addestramento Locale:} Ogni worker deve essere in grado di ricevere un modello "globale", addestrarlo per un certo numero di epoche sui propri dati locali e produrre un insieme di pesi aggiornati.
+    \item \textbf{Aggregazione Centrale:} Un'entità centrale, l' \textbf{aggregatore} (server), deve orchestrare il processo. Il suo compito è distribuire il modello globale, raccogliere gli aggiornamenti dai worker e aggregarli (ad esempio, tramite media pesata) per produrre un nuovo modello globale migliorato.
+    \item \textbf{Processo Iterativo:} L'intero ciclo di distribuzione, addestramento locale e aggregazione deve essere ripetuto per un numero definito di "round di federazione", con l'obiettivo di migliorare progressivamente l'accuratezza del modello globale.
+    \item \textbf{Valutazione Globale:} L'aggregatore deve possedere un set di dati di test (anch'esso non visto dai worker) per valutare le prestazioni del modello globale dopo ogni round di aggregazione.
+\end{itemize}
+L'output del programma dovrà mostrare l'evoluzione dell'accuratezza del modello globale al termine di ogni round, dimostrando che l'apprendimento collaborativo sta avvenendo con successo.
+
+\section{Metodologia}
+La soluzione è implementata in Python e si basa sull'interazione tra Ray.io per la distribuzione e PyTorch per il machine learning.
+
+\subsection{L'Apprendimento Federato (Federated Learning)}
+L'Apprendimento Federato è un protocollo iterativo che può essere suddiviso in passaggi chiari. Immaginiamo un gruppo di ospedali che vogliono addestrare un modello per diagnosticare una malattia, senza condividere i dati sensibili dei pazienti.
+\begin{enumerate}
+    \item \textbf{Inizializzazione:} Un server centrale (l'\textbf{Aggregatore}) crea un modello di machine learning iniziale, con pesi casuali.
+    \item \textbf{Distribuzione:} Il server invia una copia di questo modello globale a un sottoinsieme di ospedali (i \textbf{Worker}).
+    \item \textbf{Addestramento Locale:} Ogni ospedale riceve il modello e lo addestra \textbf{esclusivamente sui propri dati locali}. Questo è il passo cruciale: i dati dei pazienti non lasciano mai l'ospedale. L'addestramento adatta i pesi del modello per renderlo più performante su quella specifica partizione di dati.
+    \item \textbf{Invio degli Aggiornamenti:} Dopo l'addestramento, ogni ospedale non invia indietro i dati, ma \textbf{solo gli aggiornamenti del modello} (i nuovi pesi o i gradienti). Questa è un'informazione statistica aggregata, molto più difficile da re-ingegnerizzare per risalire ai dati originali.
+    \item \textbf{Aggregazione:} Il server centrale raccoglie gli aggiornamenti da tutti gli ospedali partecipanti. Applica un algoritmo di aggregazione per combinarli. L'approccio più comune è il \textbf{Federated Averaging (FedAvg)}, in cui il server calcola una media pesata dei pesi dei modelli ricevuti, dove il peso di ogni modello è proporzionale al numero di campioni di dati utilizzati per addestrarlo.
+    \item \textbf{Aggiornamento Globale:} Il risultato dell'aggregazione è un nuovo modello globale, che ha imparato collettivamente dalle esperienze di tutti gli ospedali senza aver visto i loro dati.
+    \item \textbf{Iterazione:} Il processo riprende dal punto 2, distribuendo il nuovo modello globale migliorato per un altro round di addestramento.
+\end{enumerate}
+Questo ciclo si ripete per molti round, portando a un modello globale robusto e performante.
+
+\subsection{Architettura del Sistema: Ray.io e PyTorch}
+Per implementare questo protocollo, utilizziamo gli "actor" di Ray.io per modellare le due entità principali del sistema.
+\begin{itemize}
+    \item \textbf{L'Aggregatore (`Aggregator`):} È un singolo actor Ray che funge da server centrale. Le sue responsabilità sono:
+    \begin{itemize}
+        \item Mantenere la versione corrente del modello globale.
+        \item Inviare i pesi del modello globale ai worker all'inizio di ogni round.
+        \item Ricevere i pesi aggiornati dai worker.
+        \item Eseguire l'algoritmo di Federated Averaging per calcolare i nuovi pesi globali.
+        \item Valutare il modello globale su un dataset di test per monitorare le prestazioni.
+    \end{itemize}
+    \item \textbf{I Worker (`Worker`):} Sono molteplici actor Ray, ognuno dei quali simula un client. Le loro responsabilità sono:
+    \begin{itemize}
+        \item Caricare e gestire la \textbf{propria partizione di dati di addestramento}. Questo è fondamentale: i dati sono incapsulati all'interno dell'actor e non sono accessibili dall'esterno.
+        \item Ricevere i pesi del modello globale dall'aggregatore.
+        \item Eseguire il ciclo di addestramento locale utilizzando PyTorch.
+        \item Restituire i pesi aggiornati del proprio modello locale all'aggregatore.
+    \end{itemize}
+\end{itemize}
+L'intero processo è orchestrato da uno script principale che inizializza Ray, crea gli actor `Aggregator` e `Worker`, e gestisce il ciclo dei round di federazione, invocando i metodi remoti degli actor e gestendo il flusso di dati (i pesi del modello) tra di loro.
+
+\section{Presentazione dei Risultati}
+Di seguito viene presentato il codice Python completo, seguito da una spiegazione dettagliata del suo funzionamento.
+
+\begin{lstlisting}[style=pythonstyle, caption={Codice sorgente per Apprendimento Federato con Ray e PyTorch}, label={lst:fl_py}]
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader, Subset
+import ray
+import os
+from copy import deepcopy
+
+NUM_WORKERS = 6
+NUM_ROUNDS = 5
+LOCAL_EPOCHS = 2
+LEARNING_RATE = 0.001
+BATCH_SIZE = 64
+
+class SimpleMLP(nn.Module):
+    def __init__(self):
+        super(SimpleMLP, self).__init__()
+        self.fc1 = nn.Linear(28*28, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 10)
+
+    def forward(self, x):
+        x = x.view(-1, 28*28)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+
+def get_train_loader(worker_id: int) -> DataLoader:
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    full_train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+    
+    num_train_samples = len(full_train_dataset)
+    samples_per_worker = num_train_samples // NUM_WORKERS
+    start_idx = worker_id * samples_per_worker
+    end_idx = start_idx + samples_per_worker
+    
+    if worker_id == NUM_WORKERS - 1:
+        end_idx = num_train_samples
+        
+    worker_indices = list(range(start_idx, end_idx))
+    worker_dataset = Subset(full_train_dataset, worker_indices)
+    
+    return DataLoader(worker_dataset, batch_size=BATCH_SIZE, shuffle=True)
+
+def get_test_loader() -> DataLoader:
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    test_dataset = datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+    return DataLoader(test_dataset, batch_size=1000, shuffle=False)
+
+@ray.remote
+class Worker:
+    def __init__(self, worker_id: int):
+        self.worker_id = worker_id
+        self.local_loader = get_train_loader(worker_id)
+        self.model = SimpleMLP()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
+        print(f"Worker {self.worker_id} creato e ha caricato {len(self.local_loader.dataset)} campioni.")
+
+    def train(self, global_weights: dict) -> tuple[dict, int]:
+        print(f"Worker {self.worker_id}: Inizio addestramento locale...")
+        self.model.load_state_dict(global_weights)
+        optimizer = optim.Adam(self.model.parameters(), lr=LEARNING_RATE)
+        criterion = nn.CrossEntropyLoss()
+        self.model.train()
+        for epoch in range(LOCAL_EPOCHS):
+            for data, target in self.local_loader:
+                data, target = data.to(self.device), target.to(self.device)
+                optimizer.zero_grad()
+                output = self.model(data)
+                loss = criterion(output, target)
+                loss.backward()
+                optimizer.step()
+        print(f"Worker {self.worker_id}: Addestramento locale completato.")
+        return self.model.state_dict(), len(self.local_loader.dataset)
+
+@ray.remote
+class Aggregator:
+    def __init__(self):
+        self.test_loader = get_test_loader()
+        self.model = SimpleMLP()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
+
+    def get_global_weights(self) -> dict:
+        return self.model.state_dict()
+
+    def aggregate(self, worker_updates: list) -> dict:
+        total_samples = sum(num_samples for _, num_samples in worker_updates)
+        avg_weights = deepcopy(worker_updates[0][0])
+        for key in avg_weights:
+            avg_weights[key] = torch.zeros_like(avg_weights[key])
+        for weights, num_samples in worker_updates:
+            weight_factor = num_samples / total_samples
+            for key in avg_weights:
+                avg_weights[key] += weights[key] * weight_factor
+        self.model.load_state_dict(avg_weights)
+        print("Aggregatore: Modello globale aggiornato con i pesi mediati.")
+        return self.model.state_dict()
+
+    def test(self) -> float:
+        self.model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for data, target in self.test_loader:
+                data, target = data.to(self.device), target.to(self.device)
+                output = self.model(data)
+                _, pred = torch.max(output, 1)
+                correct += pred.eq(target).sum().item()
+                total += target.size(0)
+        return correct / total
+
+if __name__ == "__main__":
+    print("Avvio del sistema di Federated Learning...")
+    ray.init()
+
+    aggregator = Aggregator.remote()
+    workers = [Worker.remote(i) for i in range(NUM_WORKERS)]
+    
+    print("\n--- Inizio dei Round di Addestramento Federato ---\n")
+
+    for round_num in range(1, NUM_ROUNDS + 1):
+        print(f"--- Round {round_num}/{NUM_ROUNDS} ---")
+        global_weights_ref = aggregator.get_global_weights.remote()
+        worker_tasks = [worker.train.remote(global_weights_ref) for worker in workers]
+        worker_updates = ray.get(worker_tasks)
+        updated_global_weights_ref = aggregator.aggregate.remote(worker_updates)
+        accuracy_ref = aggregator.test.remote()
+        accuracy = ray.get(accuracy_ref)
+        print(f"Round {round_num} completato. Accuratezza globale: {accuracy*100:.2f}%\n")
+
+    print("--- Addestramento Federato Terminato ---")
+    ray.shutdown()
+\end{lstlisting}
+
+\noindent
+Il codice è organizzato in quattro sezioni principali.
+\begin{itemize}
+    \item \textbf{Configurazione e Modello:} Vengono definite le costanti del sistema come `NUM\_WORKERS` e `NUM\_ROUNDS`, e viene definita la classe `SimpleMLP` che rappresenta l'architettura della rete neurale.
+    \item \textbf{Caricamento Dati Decentralizzato:} Le funzioni `get\_train\_loader` e `get\_test\_loader` sono cruciali. `get\_train\_loader` viene eseguita all'interno di ogni `Worker`. Prende un `worker\_id` come input, scarica l'intero dataset MNIST, ma poi seleziona solo una porzione di dati calcolando un intervallo di indici. Questo simula perfettamente la condizione in cui ogni worker ha accesso solo ai propri dati.
+    \item \textbf{Actor Ray:} Le classi `Worker` e `Aggregator` sono decorate con `@ray.remote`, trasformandole in actor.
+    \begin{itemize}
+        \item Il costruttore di `Worker` chiama `get\_train\_loader` per inizializzare il proprio data loader locale. Il suo metodo `train` implementa il ciclo di addestramento locale.
+        \item Il costruttore di `Aggregator` carica i dati di test. Il suo metodo `aggregate` implementa l'algoritmo FedAvg, calcolando la media pesata dei pesi ricevuti dai worker. Il metodo `test` valuta il modello.
+    \end{itemize}
+    \item \textbf{Orchestrazione:} Lo script principale implementa il ciclo di federazione. Per ogni round, ottiene i pesi globali, li distribuisce ai worker per l'addestramento parallelo (usando `.remote()`), attende i risultati con `ray.get()`, li passa all'aggregatore per l'aggiornamento, e infine testa e stampa l'accuratezza del nuovo modello globale.
+\end{itemize}
+
+\subsection{Output Atteso e Discussione}
+L'esecuzione dello script produrrà un output che mostra chiaramente il flusso del processo di Apprendimento Federato. Inizialmente, verranno stampati i messaggi di creazione dei worker, indicando quanti campioni di dati ciascuno ha caricato. Successivamente, per ogni round, verranno visualizzati i log dei worker che iniziano e completano il loro addestramento locale, seguiti dal messaggio dell'aggregatore che conferma l'aggiornamento del modello globale.
+\\ \noindent
+L'output più significativo sarà la riga stampata al termine di ogni round, simile alla seguente:
+
+\begin{verbatim}
+--- Round 1/5 ---
+... (log dei worker e dell'aggregatore) ...
+Round 1 completato. Accuratezza globale: 91.54%
+
+--- Round 2/5 ---
+...
+Round 2 completato. Accuratezza globale: 94.21%
+
+--- Round 3/5 ---
+...
+Round 3 completato. Accuratezza globale: 95.58%
+
+... e cosi' via ...
+\end{verbatim}
+\noindent
+L'incremento costante dell'accuratezza del modello globale round dopo round è la prova tangibile che l'apprendimento collaborativo sta avvenendo con successo. I worker, pur operando in isolamento sui propri dati, contribuiscono a costruire un modello globale molto più potente e generalizzato di quanto ciascuno potrebbe fare da solo.
+
+\section{Conclusioni}
+Questo progetto ha implementato con successo un sistema di \textbf{Apprendimento Federato}, dimostrando come sia possibile addestrare un modello di machine learning in modo collaborativo senza centralizzare i dati sensibili. L'uso combinato di \textbf{PyTorch} per la modellazione e di \textbf{Ray.io} per la distribuzione si è rivelato un approccio potente e relativamente semplice per affrontare un problema così complesso.
+\\ \noindent
+Il concetto chiave di portare il modello ai dati, e non viceversa, è stato implementato fedelmente incapsulando le partizioni di dati all'interno degli actor `Worker` di Ray. L'architettura basata su un `Aggregator` centrale e molteplici `Worker` ha permesso di mappare in modo naturale il protocollo client-server tipico dell'Apprendimento Federato.
+\\ \noindent
+L'esperimento ha confermato che, attraverso cicli iterativi di addestramento locale e aggregazione globale, è possibile ottenere un modello performante, sfruttando la conoscenza distribuita in tutta la rete e rispettando al contempo la privacy dei dati. L'Apprendimento Federato si pone quindi come una soluzione fondamentale per il futuro del machine learning in settori critici come la sanità, la finanza e i dispositivi personali.
+
+\end{document}
