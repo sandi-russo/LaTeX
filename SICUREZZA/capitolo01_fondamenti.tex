@@ -24,37 +24,52 @@ I tre obiettivi chiave al centro della sicurezza informatica, noti anche come tr
     \item[Availability (Disponibilità)] Assicura che il servizio non sia negato agli utenti autorizzati.
 \end{description}
 
-\subsection{Livelli di Impatto}
+\subsection{Livelli di Impatto delle Violazioni}
 
 La sicurezza informatica definisce tre livelli di impatto per valutare le conseguenze potenziali di una violazione:
 
 \begin{description}
-    \item[Basso] La perdita potrebbe avere un effetto limitato.
-    \item[Moderato] La perdita potrebbe avere un serio effetto negativo.
-    \item[Alto] La perdita potrebbe avere un effetto negativo grave.
+    \item[Basso] La perdita potrebbe avere un effetto limitato (es. efficacia ridotta).
+    \item[Moderato] La perdita potrebbe avere un serio effetto negativo (es. operatività svolta con grandi difficoltà).
+    \item[Alto] La perdita potrebbe avere un effetto negativo grave o catastrofico (es. impossibilità di svolgere funzioni primarie).
 \end{description}
+
+\section{Le Sfide della Sicurezza Informatica}
+La sicurezza informatica presenta complessità intrinseche che la rendono una disciplina difficile da gestire:
+\begin{enumerate}
+    \item \textbf{Mentalità avversaria}: Bisogna sempre anticipare i potenziali attacchi contro ogni meccanismo di difesa.
+    \item \textbf{Procedure controintuitive}: Spesso i meccanismi non sono ovvi e la loro necessità sfugge ai non addetti ai lavori.
+    \item \textbf{Gestione delle chiavi}: I sistemi si basano su segreti, sollevando problemi di creazione, distribuzione e protezione.
+    \item \textbf{Lotta continua}: È uno scontro perenne tra l'attaccante che cerca falle e il difensore che cerca di chiuderle.
+    \item \textbf{Sicurezza vs Usabilità}: Spesso la sicurezza è percepita come un ostacolo all'efficienza.
+    \item \textbf{Progettazione built-in}: Necessità di integrare la sicurezza fin dalle fasi iniziali della progettazione (anziché aggiungerla a posteriori come \textit{bolt-on}).
+\end{enumerate}
 
 \section{Terminologia della Sicurezza}
 
-Le vulnerabilità rappresentano delle minacce per il sistema e rappresentano un potenziale danno per quest'ultimo. Una minaccia che si concretizza rappresenta un attacco.
+Le vulnerabilità rappresentano delle minacce per il sistema e un potenziale danno per quest'ultimo. Una minaccia che si concretizza rappresenta un attacco. Di seguito un riepilogo rapido e le definizioni dettagliate:
 
-\begin{description}
-    \item[Asset] La risorsa che si vuole difendere, che sia essa un sistema o dei dati.
-    
-    \item[Minaccia] Qualsiasi evento con il potenziale di avere un impatto negativo sulle attività organizzative.
-    
-    \item[Vulnerabilità] Debolezza che potrebbe essere sfruttata per effettuare un attacco.
-    
-    \item[Avversario (agente che minaccia)] Individuo con l'intenzione di condurre attività dannose.
-    
-    \item[Attacco] Qualsiasi tipo di attività malevola che tenta di raccogliere, interrompere o distruggere le risorse del sistema informativo o le informazioni stesse.
-    
-    \item[Contromisura] Ha come obiettivo quello di compromettere l'efficacia di un attacco.
-    
-    \item[Rischio] Indica la gravità di una minaccia e le probabilità che essa si verifichi.
-    
-    \item[Politica di sicurezza] Un insieme di regole per garantire la sicurezza. Definisce e vincola le attività al fine di mantenere una condizione di sicurezza per i sistemi e i dati.
-\end{description}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|p{8cm}|}
+\hline
+\textbf{Termine} & \textbf{Definizione} \\ \hline
+Asset & La risorsa che si vuole difendere, che sia essa un sistema o dei dati. \\ \hline
+Vulnerabilità & Qualsiasi evento con il potenziale di avere un impatto negativo sulle attività organizzative. \\ \hline
+Minaccia & Evento con il potenziale di causare un danno. \\ \hline
+Attacco & Qualsiasi tipo di attività malevola che tenta di raccogliere, interrompere o distruggere le risorse del sistema informativo o le informazioni stesse. \\ \hline
+Contromisura & Azione o tecnica che riduce minacce o vulnerabilità. \\ \hline
+Rischio & Probabilità che una minaccia sfrutti una vulnerabilità $\times$ Impatto. \\ \hline
+\end{tabular}
+\caption{Terminologia di base della sicurezza.}
+\end{table}
+
+\subsection{Modelli di Controllo degli Accessi}
+Il controllo degli accessi definisce chi può accedere a cosa.
+\begin{itemize}
+    \item \textbf{RBAC (Role-Based Access Control)}: Il controllo è basato sui \textit{ruoli} (es. admin, user) a cui gli utenti vengono assegnati. Semplifica enormemente la gestione in grandi organizzazioni.
+    \item \textbf{ABAC (Attribute-Based Access Control)}: Modello più granulare e dinamico, basato su \textit{attributi} del soggetto, dell'oggetto e dell'ambiente (es. orario, posizione geografica).
+\end{itemize}
 
 \section{Tipologie di Attacco e di Minacce}
 
@@ -63,71 +78,104 @@ Le vulnerabilità rappresentano delle minacce per il sistema e rappresentano un 
 Gli attacchi possono essere classificati secondo diverse dimensioni:
 
 \begin{description}
-    \item[Attacco passivo] Il cui obiettivo è quello di apprendere informazioni del sistema senza alterarne il funzionamento.
-    
-    \item[Attacco attivo] Che altera le risorse del sistema o ne influenza il funzionamento.
-    
-    \item[Attacco interno] Effettuato da un insider, utente autorizzato ad accedere alle risorse ma utilizzate in modo non autorizzato.
-    
-    \item[Attacco esterno] Effettuato da un outsider, ossia un utente non autorizzato del sistema.
+    \item[Attacco passivo] Tentativo di apprendere informazioni del sistema senza alterarne il funzionamento (es. intercettazione). L'obiettivo principale è la \textbf{prevenzione} (tramite cifratura).
+    \item[Attacco attivo] Tentativo di alterare le risorse del sistema o influenzarne il funzionamento. L'obiettivo principale è la \textbf{rilevazione} e la risposta.
+    \item[Attacco interno] Effettuato da un \textit{insider}, utente autorizzato ad accedere alle risorse ma utilizzate in modo non autorizzato.
+    \item[Attacco esterno] Effettuato da un \textit{outsider}, ossia un utente non autorizzato del sistema.
 \end{description}
 
 \subsection{Le Minacce}
 
 \subsubsection{Divulgazione Non Autorizzata}
-
-La divulgazione non autorizzata (unauthorized disclosure) è una minaccia alla confidenzialità. I seguenti tipi di attacchi possono portare a conseguenze da questa minaccia:
-
+La divulgazione non autorizzata (unauthorized disclosure) è una minaccia alla confidenzialità. I seguenti tipi di attacchi possono portare a questa conseguenza:
 \begin{description}
-    \item[Esposizione (exposure)] Può essere intenzionale (provocato da un insider) o essere il risultato di un errore umano, hardware o software, che si concretizza nella conoscenza non autorizzata di dati sensibili da parte di un'entità.
-    
-    \item[Intercettazione (interception)] Attacco comune nelle comunicazioni e consiste nella ricezione di una copia di informazioni destinate a un altro dispositivo.
-    
-    \item[Inferenza (inference)] È noto come analisi del traffico, in cui un avversario è in grado di ottenere informazioni dall'osservazione del pattern del traffico su una rete, o, nell'ambito dei database, informazioni riguardo la sua struttura.
-    
-    \item[Intrusione (intrusion)] Consiste nell'ottenimento di un accesso non autorizzato a dati sensibili superando le protezioni di controllo di accesso al sistema.
+    \item[Esposizione (exposure)] Può essere intenzionale o risultato di un errore umano/software, che si concretizza nella conoscenza non autorizzata di dati sensibili.
+    \item[Intercettazione (interception)] Attacco comune nelle comunicazioni: ricezione di una copia di informazioni destinate a un altro dispositivo.
+    \item[Inferenza (inference)] Nota come analisi del traffico; un avversario ottiene informazioni dall'osservazione del pattern del traffico su una rete o dalla struttura di un database.
+    \item[Intrusione (intrusion)] Ottenimento di un accesso non autorizzato a dati sensibili superando le protezioni del sistema.
 \end{description}
 
 \subsubsection{Inganno}
-
-L'inganno (deception) è una minaccia all'integrità del sistema o dei dati. Questa conseguenza può scaturire dai seguenti tipi di attacchi:
-
+L'inganno (deception) è una minaccia all'integrità del sistema o dei dati:
 \begin{description}
-    \item[Mascheramento (masquerade)] Tentativo da parte di un utente non autorizzato di ottenere l'accesso a un sistema fingendosi un utente autorizzato.
-    
+    \item[Mascheramento (masquerade)] Tentativo di un utente non autorizzato di accedere fingendosi un utente autorizzato.
     \item[Falsificazione (falsification)] Alterazione o sostituzione di dati validi con dati falsi.
-    
-    \item[Ripudio (repudiation)] Un utente rinnega di aver inviato dei dati, o un utente rinnega di averli ricevuti o posseduti.
+    \item[Ripudio (repudiation)] Un utente rinnega falsamente di aver inviato, ricevuto o posseduto determinati dati.
 \end{description}
 
 \subsubsection{Interruzione}
-
-L'interruzione (disruption) è una minaccia alla disponibilità o all'integrità del sistema. Questa conseguenza può scaturire dai seguenti tipi di attacchi:
-
+L'interruzione (disruption) è una minaccia alla disponibilità o all'integrità del sistema:
 \begin{description}
-    \item[Interdizione (incapacitation)] È un attacco alla disponibilità del sistema. Potrebbe verificarsi come risultato di danneggiamento dell'hardware del sistema o della disattivazione, tramite software malevolo, di servizi di sistema.
-    
-    \item[Corruzione (corruption)] È un attacco all'integrità del sistema. Il software malevolo potrebbe operare in modo tale che le risorse o i servizi del sistema funzionino in modo non voluto.
-    
-    \item[Ostruzione (obstruction)] Interferisce con le comunicazioni del sistema disabilitandone i collegamenti o alterando le informazioni di controllo delle comunicazioni.
+    \item[Interdizione (incapacitation)] Attacco alla disponibilità (es. danneggiamento hardware o disattivazione servizi tramite malware).
+    \item[Corruzione (corruption)] Attacco all'integrità in cui le risorse o i servizi funzionano in modo non voluto.
+    \item[Ostruzione (obstruction)] Interferisce con le comunicazioni disabilitando collegamenti o alterando le informazioni di controllo.
 \end{description}
 
 \subsubsection{Usurpazione}
-
-L'usurpazione (usurpation) è una minaccia all'integrità del sistema. Questa conseguenza può scaturire dai seguenti tipi di attacchi:
-
+L'usurpazione (usurpation) è una minaccia all'integrità del sistema:
 \begin{description}
-    \item[Appropriazione indebita (misappropriation)] Può includere la sottrazione di servizio. Un esempio è un attacco denial of service distribuito, ovvero quando un software malevolo viene installato su un certo numero di host per essere usato come piattaforma per lanciare del traffico verso un host bersaglio.
-    
-    \item[Uso improprio (misuse)] L'uso improprio può verificarsi per mezzo di programmi malevoli. Le funzioni di sicurezza potrebbero essere disabilitate o ostacolate.
+    \item[Appropriazione indebita (misappropriation)] Sottrazione di servizio, come l'uso di un host come piattaforma per lanciare attacchi DDoS (Distributed Denial of Service) verso altri bersagli.
+    \item[Uso improprio (misuse)] Disabilitazione o ostacolo delle funzioni di sicurezza tramite programmi malevoli o abusi di privilegi.
 \end{description}
+
+\section{Valutazione delle Minacce}
+
+\subsection{Superfici di Attacco}
+Una superficie di attacco è l'insieme di tutte le vulnerabilità raggiungibili e sfruttabili all'interno di un sistema. Si dividono in:
+\begin{itemize}
+    \item \textbf{Superficie di Rete}: Porte aperte, protocolli di rete, interfacce web.
+    \item \textbf{Superficie Software}: Vulnerabilità nel codice di applicazioni o sistemi operativi.
+    \item \textbf{Superficie Umana}: Vulnerabilità legate alle persone (ingegneria sociale, errori operativi).
+\end{itemize}
+
+
+
+L'\textbf{analisi della superficie di attacco} è una tecnica cruciale per valutare le minacce. L'obiettivo è ridurla il più possibile per rendere più difficile il compito dell'avversario.
+
+\begin{center}
+    \begin{tikzpicture}[>=stealth, font=\footnotesize, scale=0.9]
+
+    % Definizione dei colori (sfumature di grigio)
+    \colorlet{lightgray}{gray!20}
+    \colorlet{mediumgray}{gray!40}
+    \colorlet{darkgray}{gray!60}
+
+    % Quadranti (Riempimento e Bordi)
+    % In basso a sinistra
+    \fill[lightgray] (0,0) rectangle (3,3);
+    \draw (0,0) rectangle (3,3) node[midway, align=center] {Rischio di\\sicurezza basso};
+    
+    % In alto a sinistra
+    \fill[mediumgray] (0,3) rectangle (3,6);
+    \draw (0,3) rectangle (3,6) node[midway, align=center] {Rischio di\\sicurezza medio};
+    
+    % In basso a destra
+    \fill[mediumgray] (3,0) rectangle (6,3);
+    \draw (3,0) rectangle (6,3) node[midway, align=center] {Rischio di\\sicurezza medio};
+    
+    % In alto a destra
+    \fill[darkgray] (3,3) rectangle (6,6);
+    \draw (3,3) rectangle (6,6) node[midway, align=center] {Rischio di\\sicurezza alto};
+
+    % Assi con frecce
+    \draw[->, thick] (0,0) -- (7,0) node[below=20pt, pos=0.5, font=\small\bfseries] {Superficie di attacco};
+    \draw[->, thick] (0,0) -- (0,7) node[left=40pt, pos=0.7, rotate=90, font=\small\bfseries] {Stratificazione};
+
+    % Etichette Assi (Piccola/Grande e Profonda/Superficiale)
+    \node at (1.5, -0.4) {Piccola};
+    \node at (4.5, -0.4) {Grande};
+    
+    \node[rotate=90] at (-0.4, 1.5) {Profonda};
+    \node[rotate=90] at (-0.4, 4.5) {Superficiale};
+
+\end{tikzpicture}
+\end{center}
 
 \section{Minacce alle Risorse del Sistema}
 
 Le minacce possono colpire diverse categorie di risorse:
 
 \subsection{Hardware}
-
 \begin{description}
     \item[Disponibilità] L'attrezzatura viene rubata o disabilitata, impedendo così l'erogazione del servizio.
     \item[Confidenzialità] Viene rubata una chiavetta USB non cifrata.
@@ -135,25 +183,15 @@ Le minacce possono colpire diverse categorie di risorse:
 \end{description}
 
 \subsection{Software}
-
 \begin{description}
     \item[Disponibilità] Vengono cancellati dei programmi, negando l'accesso agli utenti.
     \item[Confidenzialità] Viene fatta una copia non autorizzata del software.
-    \item[Integrità] Un programma funzionante viene modificato, sia per farlo fallire durante l'esecuzione, sia per fargli eseguire qualche operazione non desiderata.
+    \item[Integrità] Un programma funzionante viene modificato per farlo fallire durante l'esecuzione o fargli eseguire operazioni non desiderate.
 \end{description}
 
 \subsection{Dati}
-
 \begin{description}
     \item[Disponibilità] Vengono cancellati i file, negando l'accesso agli utenti.
-    \item[Confidenzialità] Viene eseguita una lettura non autorizzata di dati. Un'analisi statistica dei dati rivela informazioni sottese.
-    \item[Integrità] I file esistenti vengono modificati o vengono creati nuovi file.
-\end{description}
-
-\subsection{Linee di Comunicazione e Reti}
-
-\begin{description}
-    \item[Disponibilità] I messaggi vengono distrutti o cancellati. Le linee di comunicazione o le reti sono rese non disponibili.
-    \item[Confidenzialità] Vengono letti i messaggi. Viene osservato il modello di traffico dei messaggi.
-    \item[Integrità] I messaggi vengono modificati, ritardati, riordinati o duplicati. Vengono fabbricati falsi messaggi.
+    \item[Confidenzialità] Lettura non autorizzata di dati o analisi statistica che rivela informazioni sottese.
+    \item[Integrità] I file esistenti vengono modificati o vengono creati nuovi file illeciti.
 \end{description}

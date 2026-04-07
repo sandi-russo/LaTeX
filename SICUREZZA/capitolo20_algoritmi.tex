@@ -1,0 +1,116 @@
+\chapter{Algoritmi di Crittografia}
+
+\section{Principi degli Algoritmi Crittografici}
+
+Un aspetto fondamentale nella progettazione di un algoritmo crittografico è la sua semplicità di analisi: se può essere descritto in modo chiaro e conciso, risulta più facile individuarne eventuali vulnerabilità e valutarne l'affidabilità. Questo approccio aperto segue il \textbf{Principio di Kerckhoffs}: la sicurezza di un crittosistema non deve basarsi sulla segretezza dell'algoritmo, ma esclusivamente su quella della chiave.
+
+Nei cifrari a blocchi simmetrici basati su una struttura di Feistel, il processo di decifratura è essenzialmente identico a quello di cifratura. La regola è la seguente: si usa il testo cifrato come input per l'algoritmo, ma si utilizzano le sottochiavi (subkeys) $K_i$ in ordine inverso. A livello operativo, l'elaborazione avviene dividendo il blocco di dati in due metà (sinistra e destra): a ogni round, la metà destra viene processata da una funzione non lineare $F$ (insieme alla sottochiave) e il risultato viene unito in XOR con la metà sinistra, procedendo poi con lo scambio delle due metà. Questa caratteristica è estremamente vantaggiosa perché garantisce la perfetta reversibilità del processo senza dover implementare due algoritmi distinti, a prescindere da quanto sia complessa la funzione matematica $F$.
+
+\section{Data Encryption Standard (DES)}
+
+Gli algoritmi di cifratura simmetrica più comuni sono i cifrari a blocchi (block ciphers), i quali elaborano l'input in chiaro (plaintext) in blocchi di dimensione fissa per produrre un blocco di testo cifrato (ciphertext) di uguale dimensione.
+
+Il DES, adottato nel 1977 dal NIST e basato sul Data Encryption Algorithm (DEA), presenta le seguenti caratteristiche tecniche:
+
+\begin{itemize}
+    \item \textbf{Dimensione del Blocco:} 64 bit. L'algoritmo prevede inoltre l'applicazione di una Permutazione Iniziale (IP) al blocco prima dei round di elaborazione, e di una Permutazione Finale inversa ($IP^{-1}$) al termine di questi.
+    \item \textbf{Dimensione della Chiave:} 56 bit effettivi. Sebbene la chiave fornita in input sia nominalmente di 64 bit, ogni ottavo bit viene scartato dall'algoritmo crittografico poiché utilizzato esclusivamente come bit di controllo di parità per rilevare eventuali errori.
+    \item \textbf{Struttura:} Variante della rete di Feistel, composta da 16 round di elaborazione. La struttura è appositamente progettata per massimizzare l'\textbf{effetto valanga} (\textit{avalanche effect}): una proprietà crittografica fondamentale per cui la variazione di un singolo bit nel plaintext o nella chiave innesca un cambiamento in circa metà dei bit del ciphertext, complicando enormemente il lavoro della crittoanalisi.
+    \item \textbf{Sottochiavi:} Dalla chiave originale a 56 bit vengono generate 16 sottochiavi a 48 bit, una per ogni round.
+\end{itemize}
+
+Il processo di decifratura utilizza il testo cifrato come input e applica le sottochiavi in ordine inverso (da $K_{16}$ a $K_1$).
+
+\section{Triple DES (3DES)}
+
+Il Triple DES (3DES) è stato standardizzato per superare i limiti di sicurezza del DES, la cui chiave a 56 bit era diventata vulnerabile ad attacchi a forza bruta. Utilizza tre chiavi e tre esecuzioni dell'algoritmo DES, secondo una sequenza EDE (Encrypt-Decrypt-Encrypt):
+
+$$C = E(K_3, D(K_2, E(K_1, P)))$$
+
+dove:
+\begin{itemize}
+    \item $C$ è il testo cifrato.
+    \item $P$ è il plaintext.
+    \item $E(K, X)$ è la cifratura DES di $X$ con la chiave $K$.
+    \item $D(K, Y)$ è la decifratura DES di $Y$ con la chiave $K$.
+\end{itemize}
+
+La decifratura avviene invertendo la sequenza e l'ordine delle chiavi:
+
+$$P = D(K_1, E(K_2, D(K_3, C)))$$
+
+L'uso della decifratura nella fase centrale offre il vantaggio di permettere la compatibilità con il DES singolo se tutte e tre le chiavi sono uguali ($K_1 = K_2 = K_3$). 
+
+\textbf{Lunghezza della Chiave:}
+\begin{itemize}
+    \item Con tre chiavi distinte, la lunghezza effettiva è di 168 bit ($3 \times 56$).
+    \item Con la variante a due chiavi ($K_1 = K_3$), la lunghezza effettiva scende a 112 bit.
+\end{itemize}
+
+\section{Advanced Encryption Standard (AES)}
+
+L'AES è stato pubblicato dal NIST nel 2001 (FIPS 197) per sostituire definitivamente DES e 3DES.
+
+\subsection{Panoramica dell'Algoritmo}
+L'AES opera su blocchi di 128 bit e supporta lunghezze di chiave di 128, 192 o 256 bit. A differenza del DES, non utilizza una struttura di Feistel: elabora l'intero blocco in parallelo durante ogni round.
+
+L'input viene copiato in una matrice $4 \times 4$ di byte chiamata \textit{State}, modificata in ogni fase. La struttura della cifratura prevede:
+\begin{enumerate}
+    \item Una fase iniziale di \textit{Add Round Key}.
+    \item Un numero di round completi (es. 9 round per chiavi a 128 bit).
+    \item Un round finale privo della fase \textit{Mix Columns}.
+\end{enumerate}
+
+La sicurezza dell'AES deriva dall'alternanza tra la fase di introduzione della chiave e le fasi che forniscono confusione e diffusione dei bit.
+
+\subsection{Dettagli delle Trasformazioni AES}
+\begin{description}
+    \item[Substitute Bytes (SubBytes):] Sostituzione byte per byte non lineare tramite una S-box $16 \times 16$ predefinita, progettata per resistere ad attacchi crittanalitici.
+    \item[Shift Rows (ShiftRows):] Permutazione sulle righe della matrice \textit{State}: la prima riga resta inalterata, la seconda trasla a sinistra di 1 byte, la terza di 2 e la quarta di 3. Garantisce un'ottima diffusione.
+    \item[Mix Columns (MixColumns):] Opera sulle colonne della matrice, combinando i quattro byte di ogni colonna. Insieme a \textit{ShiftRows}, assicura che dopo pochi round ogni bit di output dipenda da ogni bit di input.
+    \item[Add Round Key (AddRoundKey):] Operazione di XOR bit a bit tra i 128 bit della matrice \textit{State} e i 128 bit della sottochiave di round. Essendo lo XOR inverso di se stesso, la trasformazione inversa è identica.
+\end{description}
+
+\section{Cifrari a Flusso (Stream Ciphers) e RC4}
+
+A differenza dei cifrari a blocchi, i cifrari a flusso elaborano gli elementi di input in modo continuo (spesso un byte alla volta). 
+
+\subsection{Struttura e Funzionamento}
+Un tipico cifrario a flusso si basa su un generatore di bit pseudocasuali:
+\begin{enumerate}
+    \item Una chiave inizializza il generatore.
+    \item Il generatore produce un flusso pseudocasuale imprevedibile chiamato \textit{keystream}.
+    \item Il \textit{keystream} viene combinato in XOR con il plaintext per produrre il ciphertext (e viceversa per la decifratura).
+\end{enumerate}
+
+\textbf{Vantaggi e Svantaggi:} Sono estremamente veloci e leggeri in termini di codice. Il limite principale è che \textbf{una chiave non può mai essere riutilizzata}: cifrare due plaintext diversi con la stessa chiave rende banale la crittoanalisi (lo XOR tra i due testi cifrati equivale allo XOR dei plaintext originali).
+
+\subsection{L'Algoritmo RC4}
+Progettato nel 1987, l'RC4 utilizza una chiave variabile (da 1 a 256 byte) per inizializzare un vettore di stato $S$ di 256 byte, contenente una permutazione dei numeri da 0 a 255.
+
+\begin{itemize}
+    \item \textbf{Inizializzazione:} Il vettore $S$ viene riempito e permutato in base a un vettore temporaneo $T$ derivato dalla chiave.
+    \item \textbf{Generazione del Keystream:} La chiave viene scartata. L'algoritmo cicla permutando continuamente gli elementi di $S$ per generare un byte del keystream $k$ a ogni iterazione, applicando poi lo XOR con il plaintext/ciphertext.
+\end{itemize}
+
+\section{Modalità Operative dei Cifrari a Blocchi}
+
+Per elaborare messaggi più lunghi del singolo blocco (es. 64 o 128 bit), il NIST definisce diverse modalità operative:
+
+\begin{description}
+    \item[Electronic Codebook (ECB):] Ogni blocco è cifrato indipendentemente. \textbf{Svantaggio:} Blocchi di plaintext uguali producono ciphertext uguali, esponendo pattern.
+    \item[Cipher Block Chaining (CBC):] L'input dell'algoritmo è lo XOR tra il plaintext corrente e il ciphertext precedente. Usa un Vettore di Inizializzazione (IV) per il primo blocco. Nasconde i pattern ripetuti.
+    \item[Cipher Feedback (CFB):] Trasforma un cifrario a blocchi in un cifrario a flusso. L'input dell'algoritmo è il ciphertext precedente, e il suo output subisce uno XOR con il plaintext corrente.
+    \item[Counter (CTR):] Utilizza un contatore incrementale che viene cifrato e unito in XOR al plaintext. Offre \textbf{parallelismo}, efficienza e accesso casuale (possibilità di decifrare un singolo blocco isolato).
+\end{description}
+
+\section{Distribuzione delle Chiavi}
+
+Per la crittografia simmetrica, la distribuzione sicura delle chiavi è fondamentale. I metodi includono la consegna fisica (diretta o tramite terzi) o la trasmissione cifrata. Per le reti su larga scala, si utilizza comunemente un \textbf{Key Distribution Center (KDC)}:
+
+\begin{enumerate}
+    \item \textbf{Session Key:} Chiave temporanea usata per cifrare i dati utente.
+    \item \textbf{Permanent Key (Master Key):} Chiave a lungo termine condivisa solo tra il singolo host e il KDC.
+\end{enumerate}
+
+Quando l'Host A vuole comunicare con B, richiede al KDC una \textit{Session Key}. Il KDC la genera e la invia ad A (cifrata con la Master Key di A) e a B (cifrata con la Master Key di B). A questo punto, A e B condividono una chiave sicura per la sessione.

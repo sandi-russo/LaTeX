@@ -1,0 +1,81 @@
+\chapter{Autenticazione su Internet}
+
+\section{Kerberos}
+
+Kerberos è uno standard Internet e \textit{de facto} per l'autenticazione remota, sviluppato originariamente al MIT. È un servizio di autenticazione basato su una terza parte fidata (\textit{trusted third party}). Client e server si affidano a Kerberos per mediare la loro autenticazione reciproca, richiedendo all'utente di provare la propria identità per ogni servizio invocato e, opzionalmente, ai server di provare la loro identità ai client.
+
+\subsection{Il Protocollo Kerberos}
+
+Il protocollo Kerberos coinvolge client, server applicativi e un server Kerberos. È progettato per contrastare varie minacce (in particolare l'impersonificazione) centralizzando l'autenticazione. L'Authentication Server (AS) conosce le password di tutti i client: non si limita a validare l'identità, ma fornisce al client un \textit{ticket} per richiedere servizi in modo sicuro tramite crittografia (originariamente DES, ora AES).
+
+
+
+\subsubsection{Funzionamento del Protocollo}
+Il flusso di autenticazione si articola in passaggi ben definiti:
+
+\begin{enumerate}
+    \item \textbf{Richiesta di un Ticket-Granting Ticket (TGT):}
+    L'utente si collega a una workstation e il client invia una richiesta all'AS contenente l'ID dell'utente. L'AS verifica l'ID, crea un TGT e una chiave di sessione temporanea. Entrambi vengono cifrati con una chiave derivata dalla password dell'utente e inviati al client. \textit{La password non viene mai trasmessa sulla rete.}
+    
+    \item \textbf{Ottenimento del TGT da parte del Client:}
+    Il client richiede la password all'utente per decifrare il messaggio dell'AS, recuperando TGT e chiave di sessione. Il TGT è una credenziale riutilizzabile (cifrata con una chiave segreta condivisa solo tra AS e il Ticket-Granting Server - TGS) contenente l'ID utente, un timestamp, una scadenza e una copia della chiave di sessione.
+    
+    \item \textbf{Richiesta di un Service-Granting Ticket (SGT):}
+    Per accedere a un server applicativo (es. Server V), il client invia al TGS una richiesta contenente il TGT e un \textit{Authenticator} (struttura dati monouso e a vita breve, contenente ID e timestamp, cifrata con la chiave di sessione). L'Authenticator previene gli attacchi di \textit{replay}.
+    
+    \item \textbf{Concessione del Service-Granting Ticket:}
+    Il TGS decifra il TGT e verifica l'Authenticator. Se valido, crea un SGT specifico per il Server V e lo invia al client insieme a una nuova chiave di sessione, il tutto cifrato con la chiave di sessione precedente. Il SGT è cifrato con una chiave segreta condivisa solo tra TGS e Server V.
+    
+    \item \textbf{Richiesta del Servizio:}
+    Il client invia al Server V il SGT e un nuovo Authenticator. Il Server V decifra il ticket, verifica l'Authenticator e concede l'accesso. Se è richiesta l'autenticazione mutua, il server risponde con un messaggio cifrato per dimostrare la propria autenticità.
+\end{enumerate}
+
+\subsection{Realm Kerberos e Kerberi Multipli}
+Un ambiente Kerberos completo (server, client, server applicativi) è definito \textbf{realm}, gestito da un dominio amministrativo. Per l'autenticazione \textit{inter-realm}, i server Kerberos di due realm diversi devono condividere una chiave segreta e fidarsi reciprocamente, permettendo al client di ottenere un ticket per un TGS remoto.
+
+\subsection{Versioni di Kerberos}
+\begin{itemize}
+    \item \textbf{Versione 4:} La prima ampiamente utilizzata, basata esclusivamente su DES.
+    \item \textbf{Versione 5:} Introdotta nel 1993 (e inclusa in Microsoft Active Directory). Introduce il supporto per algoritmi crittografici multipli (come AES), l'\textit{Authentication Forwarding} (delega delle credenziali a un server per conto del client) e una maggiore scalabilità per l'autenticazione inter-realm.
+\end{itemize}
+
+\section{X.509}
+
+Lo standard X.509 è il formato più accettato per i certificati a chiave pubblica, utilizzati in IPsec, TLS, S/MIME. Un certificato lega una chiave pubblica all'identità del suo proprietario ed è firmato digitalmente da una terza parte fidata, la \textbf{Certificate Authority (CA)}.
+
+
+
+\subsection{Formato del Certificato}
+Un certificato X.509 include elementi chiave come:
+\begin{itemize}
+    \item Nome del Soggetto (proprietario della chiave).
+    \item Informazioni sulla chiave pubblica del soggetto.
+    \item Periodo di validità.
+    \item Nome dell'Emittente (la CA).
+    \item Firma digitale della CA.
+\end{itemize}
+La versione 3 include estensioni flessibili, come i \textit{Basic Constraints}, che specificano se il certificato appartiene a una CA (abilitata a firmare altri certificati) o a un utente finale.
+
+\subsection{Revoca dei Certificati}
+Un certificato può essere revocato prima della scadenza (es. compromissione della chiave privata):
+\begin{description}
+    \item[Certificate Revocation List (CRL):] Liste firmate dalla CA contenenti i numeri di serie dei certificati revocati. La loro gestione è spesso onerosa e poco pratica.
+    \item[Online Certificate Status Protocol (OCSP):] Alternativa più leggera che permette a un'applicazione di interrogare direttamente e dinamicamente la CA sullo stato di un certificato specifico.
+\end{description}
+
+\section{Public-Key Infrastructure (PKI)}
+
+Una PKI è l'insieme di hardware, software, persone, policy e procedure necessarie per creare, gestire, distribuire e revocare certificati digitali. 
+
+
+
+\subsection{Modello di Trust e Problemi}
+La verifica di un certificato richiede di fidarsi della CA emittente, creando una "catena di fiducia" fino a una \textit{Root CA}. I sistemi attuali includono un \textit{trust store} con molte Root CA considerate ugualmente affidabili. Questo modello presenta criticità:
+\begin{itemize}
+    \item \textbf{Decisioni dell'utente:} Gli utenti spesso non hanno le competenze per valutare avvisi di sicurezza sui certificati.
+    \item \textbf{Fiducia incondizionata:} Si presume che tutte le CA nel trust store siano ugualmente sicure (l'incidente DigiNotar del 2011 ha dimostrato le falle di questo presupposto).
+    \item \textbf{Trust store frammentati:} Browser e OS diversi usano trust store differenti, portando a visioni di sicurezza non uniformi.
+\end{itemize}
+
+\subsection{Public Key Infrastructure X.509 (PKIX)}
+Il gruppo di lavoro PKIX dell'IETF ha definito un modello formale per implementare una PKI su Internet, identificando gli elementi chiave (End entity, CA, Registration Authority) e le funzioni di gestione (registrazione, certificazione, revoca).

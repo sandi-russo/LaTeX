@@ -1,0 +1,22 @@
+\chapter{Controlli di Sicurezza}
+\section{Classificazione dei Controlli di Sicurezza}
+Un \textbf{Controllo di Sicurezza} (o contromisura) è un'azione, un dispositivo, una procedura o una direttiva implementata per mitigare un rischio, riducendo la probabilità che si verifichi una violazione o minimizzandone l'impatto.
+\begin{enumerate}
+    \item \textbf{Controlli di Gestione (\textit{Management Controls}):} Di natura direttiva e strategica. Riguardano l'emanazione di policy, la pianificazione, il \textit{Risk Assessment} e l'autorizzazione dei sistemi.
+    \item \textbf{Controlli Operativi (\textit{Operational Controls}):} Eseguiti prevalentemente dal personale. Includono la formazione (\textit{Awareness}), la sicurezza fisica, la gestione del personale e la risposta agli incidenti.
+    \item \textbf{Controlli Tecnici (\textit{Technical Controls}):} Implementati a livello hardware e software dal sistema informatico. Includono il Controllo degli Accessi, la crittografia, l'autenticazione e i meccanismi di \textit{audit/logging}.
+\end{enumerate}
+
+Dal punto di vista funzionale, i controlli agiscono come: \textbf{Preventivi} (bloccano la minaccia alla fonte), \textbf{Rilevativi} (segnalano un'intrusione in corso, es. IDS) o \textbf{Correttivi/Di Ripristino} (ripristinano lo stato sicuro post-incidente, es. backup).
+
+\section{Selezione e Analisi Costi-Benefici}
+La selezione dei controlli avviene a valle del \textit{Risk Assessment}. L'organizzazione adotta generalmente un approccio ibrido: implementa una \textbf{Baseline} di controlli standard per tutti i sistemi e aggiunge controlli \textbf{Basati sul Rischio} per gli asset critici.
+
+La selezione finale è una decisione di \textit{management} governata da un'\textbf{Analisi Costi-Benefici}. Un controllo è ritenuto fattibile solo se il costo (in termini finanziari e di impatto operativo) è inferiore al valore della riduzione del rischio (danno atteso) che esso garantisce. I controlli selezionati vengono formalizzati nell'\textbf{IT Security Plan}, un documento che assegna risorse, responsabilità e scadenze per l'implementazione.
+
+\section{Monitoraggio e Gestione dei Cambiamenti}
+Le fasi di verifica e mantenimento sono cruciali per prevenire l'obsolescenza difensiva:
+\begin{itemize}
+    \item \textbf{Security Compliance e Audit:} Verifiche periodiche per accertare che i controlli siano utilizzati correttamente e che le configurazioni non abbiano subito derive (\textit{configuration drift}).
+    \item \textbf{Change Management:} Valutazione rigorosa dell'impatto sulla sicurezza di qualsiasi modifica architetturale o aggiornamento software prima della sua messa in produzione.
+\end{itemize}

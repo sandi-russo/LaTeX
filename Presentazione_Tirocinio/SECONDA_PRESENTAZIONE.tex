@@ -1,0 +1,674 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{fontawesome5}
+\usepackage{colortbl}
+\usepackage{comment}
+\usetikzlibrary{arrows.meta,shadows,shapes.geometric,positioning}
+
+\usetheme{metropolis}
+\usecolortheme{default}
+
+\definecolor{primaryDark}{RGB}{45,55,72}
+\definecolor{accentBlue}{RGB}{66,153,225}
+\definecolor{darkGray}{RGB}{74,85,104}
+\definecolor{lightGray}{RGB}{247,250,252}
+\definecolor{mediumGray}{RGB}{160,174,192}
+\definecolor{successGreen}{RGB}{72,187,120}
+\definecolor{warningRed}{RGB}{245,101,101}
+
+\setbeamercolor{palette primary}{bg=primaryDark,fg=white}
+\setbeamercolor{palette secondary}{bg=accentBlue,fg=white}
+\setbeamercolor{palette tertiary}{bg=darkGray,fg=white}
+\setbeamercolor{frametitle}{bg=primaryDark,fg=white}
+\setbeamercolor{title}{bg=primaryDark,fg=white}
+\setbeamercolor{block title}{bg=primaryDark,fg=white}
+\setbeamercolor{block body}{bg=lightGray,fg=darkGray}
+\setbeamercolor{alerted text}{fg=warningRed}
+\setbeamercolor{example text}{fg=successGreen}
+
+\setbeamertemplate{frame numbering}[fraction]
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1ex,left,leftskip=1em]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\textbf{Sandi Russo} \hspace{0.3cm} | \hspace{0.3cm} \textit{UniME - Scienze Informatiche}
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1ex,right,rightskip=1em]{date in head/foot}%
+    \usebeamerfont{date in head/foot}
+    \insertframenumber{} / \inserttotalframenumber
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+\setbeamertemplate{navigation symbols}{}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{accentBlue}\bfseries,
+    commentstyle=\color{successGreen}\itshape,
+    stringstyle=\color{warningRed},
+    breaklines=true,
+    backgroundcolor=\color{lightGray},
+    frame=none,
+    numbers=left,
+    numberstyle=\tiny\color{mediumGray},
+    xleftmargin=1.5em,
+    framexleftmargin=1em,
+    rulecolor=\color{primaryDark},
+    showstringspaces=false,
+    tabsize=2
+}
+
+\tikzset{
+    modernbox/.style={
+        rectangle, rounded corners=2pt, 
+        draw=primaryDark, thick, 
+        fill=lightGray,
+        drop shadow={shadow xshift=1.5pt, shadow yshift=-1.5pt, opacity=0.25}
+    },
+    technode/.style={
+        circle, draw=primaryDark, thick,
+        minimum size=1.1cm,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1pt, opacity=0.3}
+    },
+    modernArrow/.style={
+        ->, thick, >=stealth, 
+        color=primaryDark
+    }
+}
+
+\title[Graph ML con Oracle]{Knowledge Graph e Graph Machine Learning}
+\subtitle{Analisi Comparativa e Implementazione con Oracle}
+\author{Sandi Russo}
+\institute{Università degli Studi di Messina\\Corso di Laurea in Scienze Informatiche}
+\date{}
+
+\begin{document}
+
+{
+\setbeamertemplate{footline}{}
+\begin{frame}
+    \vspace{1cm}
+    \begin{center}
+        {\Large\textbf{Knowledge Graph e Graph Machine Learning}}
+        
+        \vspace{0.3cm}
+        
+        {\large Analisi Comparativa e Implementazione con Oracle}
+        
+        \vspace{1cm}
+        
+        \begin{tikzpicture}
+            \node[draw=primaryDark, thick, rounded corners=3pt, fill=lightGray!30, 
+                  text width=9cm, align=center, inner sep=0.5cm] {
+                \small
+                \begin{tabular}{cl}
+                    \faUser & \textbf{Sandi Russo} \\[0.15cm]
+                    \faUniversity & Università degli Studi di Messina \\[0.15cm]
+                    \faGraduationCap & Scienze Informatiche \\[0.15cm]
+                    \faCalendar & Anno Accademico 2024/2025 \\[0.15cm]
+                    \faChalkboardTeacher & Relatore: docente Antonio Celesti \\
+                \end{tabular}
+            };
+        \end{tikzpicture}
+    \end{center}
+\end{frame}
+}
+
+\begin{frame}{Agenda}
+    \tableofcontents
+\end{frame}
+
+\section{Il Dataset: L'Ecosistema PharMeBINet}
+
+\begin{frame}{L'Evoluzione dei Knowledge Graph Biomedici}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faTimesCircle \hspace{0.2cm} Il Punto di Partenza: Hetionet}
+                \small
+                \textbf{Hetionet (het.io)}
+                \begin{itemize}
+                    \item Storico Knowledge Graph biomedico.
+                    \item Ottimo punto di partenza teorico, ma limitato.
+                    \item Struttura obsoleta e instabile nell'importazione su DB moderni.
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faCheckCircle \hspace{0.2cm} L'Evoluzione: PharMeBINet}
+                \small
+                \textbf{The heterogeneous pharmacological network}
+                \begin{itemize}
+                    \item Fonde Hetionet con dati eterogenei moderni.
+                    \item \textit{Data Engineering}: parsing, mapping di identificativi complessi e rimozione di sub-grafi ridondanti.
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.3cm}
+    \begin{exampleblock}{\faQuoteLeft \hspace{0.2cm} Riferimento Scientifico}
+        \scriptsize
+        Königs C., Friedrichs M., Dietrich T. \textit{The heterogeneous pharmacological medical biochemical network PharMeBINet}. Scientific Data. 2022;9(1): 393.
+    \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Anatomia di PharMeBINet}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \textbf{\faProjectDiagram \hspace{0.2cm} Dati Generali del Grafo}
+            \vspace{0.2cm}
+            
+            \begin{tikzpicture}[
+                modernbox/.style={
+                    rectangle, rounded corners=3pt, 
+                    draw=primaryDark, thick, 
+                    fill=lightGray,
+                    drop shadow={shadow xshift=2pt, shadow yshift=-2pt, opacity=0.3}
+                }
+            ]
+                \node[modernbox, fill=accentBlue!20, minimum width=4cm, minimum height=1cm] (nodes) at (0, 0) {
+                    \textbf{Nodi}: 5.831.471
+                };
+                
+                \node[modernbox, fill=successGreen!20, minimum width=4cm, minimum height=1cm] (edges) at (0, -1.5) {
+                    \textbf{Relazioni}: 22.783.080
+                };
+                
+                \node[modernbox, fill=warningRed!20, minimum width=4cm, minimum height=1cm] (labels) at (0, -3) {
+                    \textbf{80 Labels} | \textbf{277 Edge Types}
+                };
+                
+                \draw[thick, primaryDark, dashed] (nodes) -- (edges);
+                \draw[thick, primaryDark, dashed] (edges) -- (labels);
+            \end{tikzpicture}
+        \end{column}
+        
+        \begin{column}{0.5\textwidth}
+            \textbf{\faDatabase \hspace{0.2cm} Integrazione Dati Massiva}
+            \small
+            \vspace{0.2cm}
+            
+            PharMeBINet non è un singolo file, ma aggrega e armonizza oltre \textbf{40 database biomedici}, tra cui:
+            \begin{itemize}
+                \item \textbf{DrugBank} (Farmacologia)
+                \item \textbf{ClinVar \& dbSNP} (Variazioni)
+                \item \textbf{Gene Ontology} (Ontologie)
+                \item \textbf{SIDER} (Effetti Collaterali)
+                \item \textbf{DisGeNET} (Malattie)
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Il Valore Aggiunto: Complessità e Multi-Modalità}
+    \begin{block}{\faDna \hspace{0.2cm} Molto più di un semplice grafo sociale}
+        \small
+        La maggior parte dei tutorial sul Graph ML utilizza dataset "giocattolo" e omogenei (es. reti di citazioni come Cora o Citeseer). PharMeBINet offre una rete \textbf{eterogenea e multi-modale}.
+    \end{block}
+    
+    \vspace{0.3cm}
+    \small
+    \textbf{Perché questa complessità è essenziale per i test?}
+    \begin{itemize}
+        \item[\faNetworkWired] Permette di testare la capacità dei database di gestire query complesse (\textit{multi-hop}) tra entità di natura profondamente diversa (es. \textit{Gene $\rightarrow$ Proteina $\rightarrow$ Malattia $\rightarrow$ Farmaco}).
+        \item[\faTags] Obbliga i modelli di Machine Learning a calcolare \textit{Node Embeddings} che tengano conto non solo della topologia pura, ma del \textit{tipo} di arco che collega i nodi.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Potenziale per il Graph Machine Learning}
+    \small
+    Le \textbf{Graph Neural Networks} applicate a questa struttura specifica sbloccano casi d'uso critici per la bioinformatica:
+    
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item[\faMagic] \textbf{Link Prediction (Riposizionamento Farmaci)}: Se la GNN apprende il pattern topologico per cui un "Farmaco A" cura la "Malattia B", può prevedere archi futuri suggerendo cure inedite.
+        \item[\faVial] \textbf{Previsione Effetti Collaterali}: Analizzando reti di interazione tra composti (\texttt{drug-drug interactions}), è possibile prevedere tossicità non documentate.
+        \item[\faUsersCog] \textbf{Community Detection}: Raggruppare entità in modo non supervisionato per scoprire pattern biologici nascosti, come network di geni co-espressi che partecipano alla stessa via metabolica.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Un banco di prova "Real-World"}
+    \begin{alertblock}{\faGlobe \hspace{0.2cm} La sfida dei dati reali}
+        \small
+        I dataset accademici standard sono perfettamente puliti. L'aggregazione di PharMeBINet porta con sé tutte le "sporcizie" tipiche degli scenari \textit{Enterprise}.
+    \end{alertblock}
+    
+    \vspace{0.2cm}
+    \small
+    \textbf{Perché sceglierlo come Benchmark?}
+    \begin{itemize}
+        \item Mettere sotto stress i motori di importazione (Neo4j APOC vs Oracle \texttt{SQL*Loader}).
+        \item Testare la tolleranza ai difetti dei parser (caratteri invisibili, \texttt{\textbackslash r}, EOF errati).
+        \item Valutare come i diversi database (RDBMS vs Nativi) gestiscono le violazioni topologiche ("Dangling edges").
+    \end{itemize}
+\end{frame}
+
+\section{Piani di Test: Analytics e Machine Learning}
+
+\begin{frame}{Obiettivi di Testing: Graph Analytics}
+    \begin{block}{\faChartBar \hspace{0.2cm} Analisi Topologica del Grafo}
+        \small
+        \begin{itemize}
+            \item[\faBullseye] \textbf{Centrality (Centralità)}
+            \begin{itemize}
+                \scriptsize \item \textit{Algoritmi}: PageRank, Betweenness Centrality.
+                \scriptsize \item \textit{Obiettivo}: Trovare i geni più influenti o i farmaci "hub".
+            \end{itemize}
+            
+            \item[\faNetworkWired] \textbf{Community Detection}
+            \begin{itemize}
+                \scriptsize \item \textit{Algoritmi}: Louvain, Weakly Connected Components.
+                \scriptsize \item \textit{Obiettivo}: Raggruppare entità biologiche con funzioni simili.
+            \end{itemize}
+            
+            \item[\faRoute] \textbf{Path Finding}
+            \begin{itemize}
+                \scriptsize \item \textit{Algoritmi}: Shortest Path, A*.
+                \scriptsize \item \textit{Obiettivo}: Trovare la catena più breve tra farmaco e sintomo.
+            \end{itemize}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Obiettivi di Testing: Graph Machine Learning}
+    \begin{block}{\faRobot \hspace{0.2cm} Task di ML su Grafi}
+        \small
+        \begin{itemize}
+            \item[\faVectorSquare] \textbf{Node Embeddings}
+            \begin{itemize}
+                \scriptsize \item Trasformare nodi in vettori preservando la struttura della rete.
+            \end{itemize}
+            
+            \item[\faTags] \textbf{Node Classification}
+            \begin{itemize}
+                \scriptsize \item Classificare entità sconosciute basandosi sui loro "vicini".
+            \end{itemize}
+            
+            \item[\faMagic] \textbf{Link Prediction}
+            \begin{itemize}
+                \scriptsize \item \textbf{Task critico}: Prevedere collegamenti mancanti (es. cure potenziali).
+            \end{itemize}
+            
+            \item[\faObjectGroup] \textbf{Unsupervised Learning}
+            \begin{itemize}
+                \scriptsize \item Clustering dei vettori per scoprire nuove tassonomie biomediche.
+            \end{itemize}
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\section{Implementazione Pratica: Setup e Ingestione Dati}
+
+\begin{frame}[fragile]{Setup dell'Ambiente e Strumentazione}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faLinux \hspace{0.2cm} Isolamento e Sviluppo}
+                \small
+                \begin{itemize}
+                    \item OS: Ubuntu tramite \textbf{WSL}
+                    \item Isolamento: \texttt{venv} Python
+                    \item Credenziali sicure via \texttt{.env}
+                \end{itemize}
+            \end{block}
+            
+            \vspace{0.2cm}
+            
+            \begin{exampleblock}{\faCogs \hspace{0.2cm} Stack Librerie}
+                \small
+                \begin{itemize}
+                    \item \textbf{oracledb}: Driver DB ufficiale
+                    \item \textbf{oml4py \& pypgx}: ML \& Grafi Oracle
+                    \item \textbf{neo4j}: Driver container
+                \end{itemize}
+            \end{exampleblock}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \textbf{\faTerminal \hspace{0.2cm} Inizializzazione Ambiente}
+            \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+# Creazione e attivazione venv
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Installazione dipendenze core
+pip install oracledb neo4j python-dotenv pandas numpy jupyter oml4py pypgx
+            \end{lstlisting}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Inizializzazione di Neo4j}
+    \textbf{\faDocker \hspace{0.2cm} Importazione del Dataset PharMeBINet}
+    \small
+    
+    I dati originali pre-processati (file \texttt{.dump}) sono stati caricati in un container temporaneo per popolare l'istanza definitiva.
+    
+    \vspace{0.2cm}
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+# 1. Assegnazione permessi per il mount dei volumi Docker
+sudo chown -R $USER:$USER $HOME/neo4j
+
+# 2. Importazione del dump tramite container temporaneo
+docker run --rm \
+  -v $HOME/neo4j/data:/data \
+  -v $HOME/neo4j/import:/import \
+  -e NEO4J_ACCEPT_LICENSE_AGREEMENT=yes \
+  neo4j:5-enterprise \
+  neo4j-admin database load neo4j --from-path=/import --overwrite-destination=true
+
+# 3. Avvio del container ufficiale
+docker start neo4j-gds
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{L'Ostacolo della Versione Always Free}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faBan \hspace{0.2cm} Il Limite di Oracle}
+                \small
+                \begin{itemize}
+                    \item Limite \textbf{hard-coded di 12 GB}.
+                    \item TSV originali: oltre \textbf{30 GB}.
+                    \item Impossibile caricare tutto il DB relazionale in Oracle.
+                \end{itemize}
+            \end{alertblock}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faLightbulb \hspace{0.2cm} Data Reduction Pipeline}
+                \small
+                Estrazione chirurgica (Bash/AWK) per estrarre un sub-grafo chiuso di circa 8 GB senza rischiare di avere nodi "orfani".
+            \end{block}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.3cm}
+    \textbf{\faTerminal \hspace{0.2cm} Pipeline di Riduzione su TSV}
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+# 1. Isoliamo i primi 8 milioni di archi
+head -n 8000001 edges.tsv > edges_medium.tsv
+
+# 2. Estraiamo gli ID univoci e ritagliamo i nodi corrispondenti dal file sorgente
+awk -F'\t' 'NR>1 {print $3; print $4}' edges_medium.tsv | sort -u > valid_nodes.txt
+awk -F'\t' 'NR==FNR {v[$1]; next} FNR==1 || ($1 in v)' valid_nodes.txt nodes.tsv > nodes_medium.tsv
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{Architettura e Importazione su Oracle DB}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faDatabase \hspace{0.2cm} Preparazione Spazio}
+                \small
+                Allocazione di un \texttt{BIGFILE TABLESPACE} auto-espandibile per accomodare il traffico.
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faExclamationTriangle \hspace{0.2cm} Scelta Ingegneristica}
+                \small
+                \textbf{Nessuna Foreign Key} in fase di creazione. Validare 8+ milioni di archi in inserimento avrebbe causato I/O insostenibile.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+    
+    \vspace{0.4cm}
+    \textbf{\faTractor \hspace{0.2cm} Travaso Alta Velocità (External Tables)}
+    \begin{lstlisting}[language=SQL, basicstyle=\ttfamily\tiny]
+-- Lettura diretta dai TSV su disco (tramite ORACLE_LOADER)
+-- e inserimento massivo bypassando i log (Direct Path Load)
+INSERT /*+ APPEND */ INTO pharme_edges (relationship_id, type, start_id, end_id) 
+SELECT relationship_id, type, start_id, end_id 
+FROM ext_pharme_edges;
+COMMIT;
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}{Il Limite dei 12GB e la Soluzione ML-Oriented}
+    \begin{alertblock}{\faBan \hspace{0.2cm} Il Crash per i Campi Testuali}
+        \small
+        Il campo \texttt{properties} (CLOB) conteneva JSON testuali massicci, decuplicando lo spazio di archiviazione per via dell'overhead di Oracle e facendo scattare il blocco dei 12GB nonostante la riduzione a 8 milioni di archi.
+    \end{alertblock}
+    
+    \vspace{0.2cm}
+    
+    \begin{exampleblock}{\faBrain \hspace{0.2cm} La Soluzione orientata al Machine Learning}
+        \small
+        \begin{itemize}
+            \item Le \textbf{Graph Neural Networks} apprendono prevalentemente dalla \textbf{Topologia} e dalle \textbf{Labels}, non dal testo libero.
+            \item \textbf{Azione:} Eliminazione dei CLOB testuali in fase di importazione, mantenendo solo ID strutturali, Label semantiche e Target relazionali.
+        \end{itemize}
+    \end{exampleblock}
+    
+    \vspace{0.2cm}
+    \centering
+    \faCheckCircle \hspace{0.1cm} \textbf{Risultato del Caricamento:} \textbf{5.831.471} Nodi e \textbf{22.783.080} Archi integrati.
+\end{frame}
+
+\begin{frame}[fragile]{Creazione del Property Graph Logico}
+    \textbf{\faProjectDiagram \hspace{0.2cm} Da Tabelle Relazionali a Grafo (SQL/PGQ)}
+    \small
+    
+    I vincoli logici e topologici, omessi fisicamente nelle tabelle relazionali per performance, vengono imposti rigorosamente nel costrutto del Grafo Logico su Oracle PGX.
+    
+    \vspace{0.2cm}
+    \begin{lstlisting}[language=SQL, basicstyle=\ttfamily\scriptsize]
+CREATE PROPERTY GRAPH pharme_graph
+  VERTEX TABLES (
+    pharme_nodes KEY (node_id)
+      PROPERTIES (node_id, labels, name, identifier)
+  )
+  EDGE TABLES (
+    pharme_edges KEY (relationship_id)
+      SOURCE KEY (start_id) REFERENCES pharme_nodes (node_id)
+      DESTINATION KEY (end_id) REFERENCES pharme_nodes (node_id)
+      PROPERTIES (relationship_id, type)
+  );
+    \end{lstlisting}
+\end{frame}
+
+\section{Zero-Difference Benchmark e Data Forensics}
+
+\begin{frame}[fragile]{Allineamento Dati (Zero-Difference Benchmark)}
+    \textbf{\faBalanceScale \hspace{0.2cm} Garantire la Validità Scientifica}
+    \small
+    
+    Per un benchmark ML equo, Oracle e Neo4j devono operare sugli \textbf{stessi identici byte}. I dati snelliti di Oracle sono stati esportati in file CSV puri (\texttt{sqlplus SET MARKUP CSV}) per sovrascrivere l'istanza originale di Neo4j.
+    
+    \vspace{0.2cm}
+    \begin{block}{\faBug \hspace{0.2cm} Risoluzione Problemi di Importazione (Neo4j APOC)}
+        \small
+        \begin{itemize}
+            \item \textbf{Pulizia Header:} Header CSV sporco rimosso via bash (\texttt{sed}).
+            \item \textbf{Deadlock Multi-thread:} L'importazione massiva di archi con \texttt{parallel: true} causava eccezioni \textit{ExclusiveLock} sui nodi centrali (hub).
+            \item \textbf{Fix Applicato:} Fallback all'esecuzione thread-safe (\texttt{parallel: false}) sacrificando la velocità per garantire l'integrità transazionale.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Data Forensics: Indagine sulle Discrepanze}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{\faGhost \hspace{0.2cm} Il Nodo Fantasma (+1)}
+                \small
+                \textbf{Problema}: Neo4j riportava 1 nodo in più di Oracle.\\
+                \textbf{Causa}: Il parser APOC ha interpretato l'EOF come riga, generando un nodo generico \texttt{BaseNode} vuoto.\\
+                \textbf{Fix}: 
+                \texttt{\tiny MATCH (n:BaseNode) WHERE size(labels(n)) = 1 DETACH DELETE n;}
+            \end{block}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faUnlink \hspace{0.2cm} Gli Archi Orfani (-8.592)}
+                \small
+                \textbf{Problema}: Neo4j ha scartato 8.592 archi effettivamente presenti nel CSV.\\
+                \textbf{Causa}: Presenza di Carriage Return (\texttt{\textbackslash r}) negli ID esportati, che impedivano il pattern-matching topologico di Neo4j.
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Filosofia RDBMS vs Native Graph: La Prova del Nove}
+    \begin{block}{\faCogs \hspace{0.2cm} Comportamento Fisico vs Logico}
+        \small
+        \begin{itemize}
+            \item \textbf{Oracle DB (Fisico)}: Salva le righe tollerando inconsistenze (\texttt{\textbackslash r}) e "dangling edges", agendo come pura tabella relazionale.
+            \item \textbf{Neo4j (Nativo)}: Pulisce i caratteri e scarta gli archi orfani, non ammettendo violazioni strutturali della rete.
+        \end{itemize}
+    \end{block}
+    
+    \vspace{0.2cm}
+    
+    \begin{exampleblock}{\faCheckDouble \hspace{0.2cm} L'attivazione del Motore Graph (PGX)}
+        \small
+        Interrogando il Grafo Logico (\texttt{pharme\_graph}) tramite SQL/PGQ, Oracle \textbf{filtra il rumore}:
+        \vspace{0.1cm}
+        \centering
+        \texttt{\scriptsize SELECT COUNT(*) FROM GRAPH\_TABLE ( pharme\_graph MATCH ()-[r]->() ... )}
+        \vspace{0.1cm}
+        
+        \textbf{Risultato per entrambi}: \textbf{22.783.080} archi validi. \\
+        \textit{Il motore PGX di Oracle applica lo stesso rigoroso filtro topologico del motore nativo di Neo4j.}
+    \end{exampleblock}
+\end{frame}
+
+\section{Bilancio del Progetto e Roadmap Futura}
+
+\begin{frame}{Considerazioni Finali: Il Data Engineering}
+    \begin{block}{\faCheckSquare \hspace{0.2cm} Obiettivo Infrastrutturale Raggiunto}
+        \small
+        Nonostante i pesanti limiti della versione \textit{Free Tier}, è stato allestito con successo un ambiente di testing \textbf{Zero-Difference} su un dataset biomedico massivo (\textasciitilde 23M relazioni).
+    \end{block}
+    
+    \vspace{0.3cm}
+    \small
+    \textbf{Lezioni Apprese:}
+    \begin{itemize}
+        \item[\faTractor] L'inserimento massivo RDBMS richiede il bypass temporaneo dei vincoli (\textit{No FK, Direct Path Load}).
+        \item[\faBrain] Nel Graph ML, la \textbf{topologia} conta più del testo descrittivo: eliminare JSON pesanti ha salvato il progetto senza compromettere i task predittivi.
+        \item[\faSearch] Il motore logico di Oracle (PGX) converte perfettamente l'anarchia relazionale nel rigore topologico nativo tipico di Neo4j.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Considerazioni Finali: Oracle vs Neo4j}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{alertblock}{\faBalanceScale \hspace{0.2cm} Il Trade-off di Oracle}
+                \small
+                L'approccio di Oracle richiede una \textbf{curva di apprendimento molto più ripida} rispetto a Neo4j. Mantenere l'allineamento tra tabelle relazionali e astrazione logica (PGX) raddoppia la complessità del setup iniziale.
+            \end{alertblock}
+        \end{column}
+        
+        \begin{column}{0.48\textwidth}
+            \begin{exampleblock}{\faRocket \hspace{0.2cm} Il Vantaggio Strategico}
+                \small
+                Il compromesso è giustificato: la versione \textit{Always Free} sblocca algoritmi \textbf{Enterprise-grade} e librerie native di ML (\texttt{OML4Py}) che in ecosistemi concorrenti richiederebbero licenze commerciali costose.
+            \end{exampleblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Prospettive: Benchmark e Algoritmi}
+    \small
+    Le fondamenta ingegneristiche gettate in questa fase permettono di passare all'esecuzione del \textbf{Graph Machine Learning} puro:
+    
+    \vspace{0.3cm}
+    \begin{itemize}
+        \item[\faChartLine] \textbf{Benchmark Computazionale}: Esecuzione di \textit{PageRank} e \textit{Louvain} su 22 milioni di archi per confrontare i tempi di inferenza e il consumo RAM tra il motore PGX in-memory e Neo4j GDS.
+        \item[\faProjectDiagram] \textbf{Graph Neural Networks Avanzate}: Applicazione dei modelli \textit{GraphSAGE} e \textit{Graph Attention Networks (GAT)} tramite l'interfaccia Python \texttt{PyPGX}.
+        \item[\faDna] \textbf{Link Prediction Biomedica}: Costruire un task di test reale per prevedere probabili iterazioni farmaco-malattia non presenti nel dataset.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Lavori Futuri: Task Predittivi con KG Embeddings}
+  \begin{block}{\faTags \hspace{0.2cm} Node Classification tramite Embeddings}
+    \small
+    Utilizzo di tecniche di generazione di Knowledge Graph (KG) Embeddings per mappare i nodi in uno spazio vettoriale a bassa dimensionalità.
+    \begin{itemize}
+      \item \textbf{Caso d'Uso (PharMeBINet)}: Prevedere la categoria di appartenenza di un nuovo composto o inferire la funzione biologica di un gene non annotato, basandosi sulla sua posizione nello spazio latente.
+    \end{itemize}
+  \end{block}
+
+  \vspace{0.1cm}
+  \begin{exampleblock}{\faLink \hspace{0.2cm} Link Prediction basata su Relazioni}
+    \small
+    Generazione di embeddings specifici non solo per i nodi, ma anche per le \textbf{relazioni} (archi), al fine di calcolare la probabilità di esistenza di collegamenti mancanti.
+    \begin{itemize}
+      \item \textbf{Caso d'Uso (PharMeBINet)}: Riposizionamento dei farmaci (\textit{Drug Repurposing}) prevedendo nuovi archi \texttt{TREATS} tra farmaci esistenti e malattie, o scoperta di interazioni avverse inedite.
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Lavori Futuri: Tecniche di Embedding Relazionale}
+  \small
+  Per implementare i task di Link Prediction e Node Classification, si prevede di testare e confrontare i seguenti modelli di \textbf{Knowledge Graph Embedding}:
+
+  \vspace{0.3cm}
+  \begin{itemize}
+    \item[\faArrowRight] \textbf{TransE (Translational Embeddings)}
+    \begin{itemize}
+      \scriptsize \item Interpreta le relazioni come \textit{traslazioni} nello spazio vettoriale ($h+r\approx t$).
+      \scriptsize \item \textbf{Vantaggio}: Intuitivo ed efficiente, ideale per modellare gerarchie (\textit{is-a}) o pattern 1-a-1.
+    \end{itemize}
+
+    \vspace{0.2cm}
+    \item[\faExpand] \textbf{DistMult}
+    \begin{itemize}
+      \scriptsize \item Modello bilineare basato sulla fattorizzazione tensoriale con matrici diagonali.
+      \scriptsize \item \textbf{Vantaggio}: Cattura in modo eccellente le interazioni \textit{simmetriche} (es. interazioni proteina-proteina).
+    \end{itemize}
+
+    \vspace{0.2cm}
+    \item[\faSuperscript] \textbf{ComplEx (Complex Embeddings)}
+    \begin{itemize}
+      \scriptsize \item Estende DistMult operando nel dominio dei \textbf{numeri complessi}.
+      \scriptsize \item \textbf{Vantaggio}: Modella efficacemente le relazioni \textit{asimmetriche} (es. un gene che regola un altro gene, ma non viceversa), dinamica fondamentale in biologia.
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Risorse e Riferimenti}
+    \footnotesize
+    \setlength{\itemsep}{2pt}
+    \setlength{\parskip}{0pt}
+    
+    \textbf{\faBook \hspace{0.2cm} Oracle Database \& Graph}:
+    \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item Property Graph Docs: \texttt{docs.oracle.com/.../property-graph/}
+        \item OML4Py: \texttt{docs.oracle.com/.../oml4py/}
+        \item Graph Studio: \texttt{docs.oracle.com/.../graph-studio...}
+    \end{itemize}
+    
+    \textbf{\faDatabase \hspace{0.2cm} Ecosistema \& Alternative}:
+    \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item PharMeBINet Dataset: \texttt{pharmebi.net}
+        \item Neo4j: \texttt{graphacademy.neo4j.com}
+        \item ArangoDB: \texttt{arangodb.com/docs/}
+    \end{itemize}
+    
+    \textbf{\faPython \hspace{0.2cm} Librerie Machine Learning}:
+    \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item PyTorch Geometric: \texttt{pytorch-geometric.readthedocs.io}
+        \item DGL: \texttt{dgl.ai}
+    \end{itemize}
+\end{frame}
+
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[standout]
+    \Huge Grazie per l'attenzione!
+\end{frame}
+}
+
+\end{document}

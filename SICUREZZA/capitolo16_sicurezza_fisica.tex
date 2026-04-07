@@ -1,0 +1,147 @@
+\chapter{Sicurezza Fisica e delle Infrastrutture}
+
+\section{Panoramica sulla Sicurezza Fisica}
+
+Il ruolo della Sicurezza Fisica per i sistemi informativi è duplice:
+\begin{enumerate}
+    \item Prevenire danni all'infrastruttura fisica che supporta l'information system.
+    \item Prevenire l'uso improprio dell'infrastruttura fisica che porta al danneggiamento o all'uso improprio delle informazioni protette.
+\end{enumerate}
+
+L'infrastruttura da proteggere comprende:
+\begin{itemize}
+    \item \textbf{Hardware del sistema informativo:} Apparecchiature di elaborazione e archiviazione, rete, supporti di archiviazione.
+    \item \textbf{Struttura Fisica:} Edifici e strutture che ospitano i componenti.
+    \item \textbf{Strutture di Supporto:} Energia elettrica, servizi di comunicazione e controlli ambientali (riscaldamento, umidità, ecc.).
+    \item \textbf{Personale:} Individui coinvolti nel controllo, manutenzione e utilizzo dei sistemi.
+\end{itemize}
+
+L'uso improprio può essere accidentale o doloso (es. furto, vandalismo, accesso non autorizzato).
+
+\section{Minacce alla Sicurezza Fisica}
+
+Le minacce alla sicurezza fisica possono essere organizzate in tre categorie principali: Ambientali (comprese le catastrofi naturali), Tecniche e causate dall'Uomo.
+
+\subsection{Catastrofi Naturali e Minacce Ambientali}
+
+Le catastrofi naturali sono una fonte primaria di minacce ambientali, che possono causare danni estesi a data center, strutture e personale. Alcuni esempi includono:
+
+\begin{description}
+    \item[Tornado:] Avvertimento poco specifico per il sito, durata breve ma intensa. Provoca danni strutturali, perdita di apparecchiature esterne e interruzione temporanea di utility (misurato dalla Scala Fujita).
+    \item[Uragano (Tropical Cyclone):] Significativo preavviso (ore o giorni). Causa danni strutturali gravi e interruzione su vasta scala delle infrastrutture pubbliche (necessari generatori e rifornimenti di emergenza).
+    \item[Terremoto:] Nessun avvertimento, durata breve (con aftershock). Può causare danno catastrofico o distruzione totale, ribaltamento di hardware non fissato e danni alle strade e ai servizi.
+    \item[Inondazione:] Diversi giorni di preavviso, periodo esteso. Provoca danni gravi, effetti duraturi e contaminazione da residui.
+\end{description}
+
+\subsubsection{Minacce Ambientali}
+Condizioni nell'ambiente che possono danneggiare o interrompere il servizio dei sistemi:
+
+\begin{itemize}
+    \item \textbf{Temperatura e Umidità Inadeguate:}
+    \begin{itemize}
+        \item \textit{Temperatura Alta:} Danni ai componenti per surriscaldamento (danno permanente a $79^\circ$C per l'attrezzatura, $66^\circ$C per gli hard disk).
+        \item \textit{Temperatura Bassa:} Shock termico all'accensione, che può danneggiare i circuiti.
+        \item \textit{Umidità Alta:} Corrosione, cortocircuiti per condensa, effetto galvanico (fusione dei connettori).
+        \item \textit{Umidità Bassa:} Deformazione dei materiali, accumulo di elettricità statica (scariche anche di poche centinaia di volt possono danneggiare i circuiti).
+        \item \textit{Intervallo Ideale:} Umidità relativa mantenuta tra il 40\% e il 60\%.
+    \end{itemize}
+    \item \textbf{Incendi e Fumo:} La minaccia maggiore è il fuoco. Il danno non deriva solo dalle fiamme, ma anche dal calore (es. l'alluminio fonde a $625^\circ$C), dai fumi tossici, dall'acqua usata per la soppressione e dal fumo abrasivo/conduttivo.
+    \item \textbf{Danni da Acqua:} Cortocircuiti causati da perdite, rotture di tubi, o i sistemi sprinkler stessi. L'acqua da inondazione è la più dannosa a causa del residuo fangoso e contaminante che lascia.
+    \item \textbf{Rischi Chimici, Radiologici e Biologici:} Pericolo primario per il personale. Possono danneggiare l'elettronica (agenti chimici e radiazioni) e possono essere introdotti accidentalmente o intenzionalmente (es. tramite il sistema di ventilazione).
+    \item \textbf{Polvere (Dust):} Abrasiva e leggermente conduttiva; vulnerabilità per i componenti con parti in movimento (dischi, ventole). Può bloccare la ventilazione e ridurre il raffreddamento.
+    \item \textbf{Infestazione:} Organismi viventi (muffe, insetti, roditori) che danneggiano attrezzature e carta, e possono prosperare in condizioni di alta umidità.
+\end{itemize}
+
+\subsection{Minacce Tecniche}
+
+Minacce legate all'alimentazione elettrica e alle emissioni elettromagnetiche.
+
+\begin{description}
+    \item[Alimentazione Elettrica (Electrical Power):] Problemi raggruppabili in:
+    \begin{itemize}
+        \item \textit{Sottotensione (Undervoltage):} Dips temporanei, Brownout (sottotensione prolungata) o Power Outages (blackout). La maggior parte dei computer tollera una riduzione del 20\% prima di uno shutdown. Generalmente non provoca danni, ma interrompe il servizio.
+        \item \textit{Sovratensione (Overvoltage):} Surge (picchi) causati da anomalie, difetti di cablaggio o fulmini. Un picco sufficiente può distruggere i componenti basati sul silicio (processori, memorie).
+        \item \textit{Rumore (Noise):} Segnali spuri che interferiscono con l'alimentazione e possono causare errori logici nei dispositivi elettronici.
+    \end{itemize}
+    \item[Interferenza Elettromagnetica (EMI):] Il rumore elettrico generato da motori, ventole, altre apparecchiature o stazioni radio/antenne a microonde. Può essere trasmesso via cavo o via aria e causare problemi intermittenti. Anche dispositivi a bassa intensità, come i telefoni cellulari, possono interferire.
+\end{description}
+
+\subsection{Minacce Causate dall'Uomo}
+
+Sono le più difficili da affrontare perché meno prevedibili e specificamente progettate per superare le misure di prevenzione.
+
+\begin{itemize}
+    \item \textbf{Accesso Fisico Non Autorizzato:} L'accesso di persone non autorizzate a server, data center o aree ristrette. Può portare ad altre minacce.
+    \item \textbf{Furto:} Furto di attrezzature o supporti, furto di dati (copia) e intercettazioni (Eavesdropping e Wiretapping). Può essere commesso da un outsider o da un insider.
+    \item \textbf{Vandalismo:} Distruzione intenzionale di attrezzature e dati.
+    \item \textbf{Uso Improprio (Misuse):} Uso improprio delle risorse da parte di personale autorizzato o uso delle risorse da parte di persone non autorizzate.
+\end{itemize}
+
+\section{Misure di Prevenzione e Mitigazione della Sicurezza Fisica}
+
+Le misure di prevenzione e mitigazione mirano a prevenire o scoraggiare gli attacchi fisici, in linea con gli standard come ISO 27002 e NIST SP 800-53.
+Un vantaggio generale è l'uso del Cloud Computing, che riduce la necessità di asset di sistemi informativi in loco, diminuendo l'esposizione alle minacce fisiche on-site.
+
+\subsection{Minacce Ambientali}
+
+\subsubsection{Temperatura e Umidità Inadeguate}
+La prevenzione richiede:
+\begin{itemize}
+    \item Apparecchiature di Controllo Ambientale (HVAC) con capacità adeguate.
+    \item Sensori appropriati per rilevare il superamento delle soglie.
+    \item Manutenzione dell'Alimentazione Elettrica (vitale per il funzionamento dell'HVAC).
+\end{itemize}
+
+\subsubsection{Incendi e Fumo}
+La gestione degli incendi combina allarmi, prevenzione e mitigazione:
+\begin{itemize}
+    \item \textbf{Scelta del Sito:} Minimizzare i pericoli di incendio, acqua e fumo provenienti dalle aree adiacenti (pareti tagliafuoco con classificazione di almeno un'ora).
+    \item \textbf{Condotti Aeraulici:} Progettati per non propagare il fuoco.
+    \item \textbf{Buona Gestione (Good Housekeeping):} Non conservare materiali infiammabili o registrazioni non essenziali nell'area IS; installazione ordinata delle apparecchiature.
+    \item \textbf{Sistemi di Spegnimento:} Estintori a disposizione e testati regolarmente. Estintori automatici installati in modo da minimizzare i danni alle apparecchiature.
+    \item \textbf{Rivelatori e Controlli:} Rivelatori di fumo installati sotto i pavimenti rialzati e sopra i soffitti sospesi. Interruttore di spegnimento generale (Power-off switch) ben marcato e accessibile.
+    \item \textbf{Procedure e Ispezioni:} Pubblicare procedure di emergenza, formare il personale, imporre il divieto di fumo nelle sale computer e condurre ispezioni regolari.
+    \item \textbf{Conservazione dei Dati:} Archiviazione di registrazioni importanti in armadi ignifughi e archiviazione fuori sede delle copie di backup.
+\end{itemize}
+
+\subsubsection{Danni da Acqua e Altre Minacce}
+\begin{itemize}
+    \item \textbf{Acqua:} Conoscenza del layout esatto delle tubazioni, posizione delle valvole di chiusura documentata e sensori d'acqua collocati sul pavimento che interrompono automaticamente l'alimentazione in caso di allagamento.
+    \item \textbf{Chimiche, Biologiche, Radiologiche:} Approcci specifici di progettazione, sensori specializzati e procedure di mitigazione.
+    \item \textbf{Polvere e Infestazioni:} Corretta manutenzione dei filtri, procedure regolari di controllo dei parassiti e mantenimento di un ambiente pulito.
+\end{itemize}
+
+\subsection{Minacce Tecniche}
+
+\begin{description}
+    \item[Alimentazione Elettrica:] Per brevi interruzioni/sottotensioni si utilizzano Gruppi di Continuità (UPS) per apparecchiature critiche (forniscono batteria, protezione da sovratensione e filtro antirumore). Per blackout prolungati è necessario il collegamento a una Fonte di Alimentazione di Emergenza, come un generatore.
+    \item[Interferenza Elettromagnetica (EMI):] Gestita attraverso una combinazione di filtri e schermatura (screening), a seconda della fonte e della natura dell'interferenza.
+\end{description}
+
+\subsection{Minacce Causate dall'Uomo}
+
+L'approccio generale a queste minacce è il Controllo dell'Accesso Fisico.
+
+\subsubsection{Restrizione dell'Accesso}
+Si possono usare diverse strategie, spesso combinate, per isolare le risorse:
+\begin{itemize}
+    \item \textbf{Restrizione a livello di Edificio:} Negare l'accesso agli estranei (non risolve il problema degli insider non autorizzati).
+    \item \textbf{Isolamento e Ancoraggio:} Collocare le risorse in armadietti chiusi a chiave e fissare le apparecchiature a oggetti immobili.
+    \item \textbf{Dispositivi di Tracciamento (Tracking Device):} Portali di rilevamento (allertano se una risorsa viene spostata) e monitoraggio continuo della posizione di oggetti portatili.
+\end{itemize}
+
+\subsubsection{Misure di Controllo Perimetrale}
+Le tecniche includono aree controllate o pattugliate, barriere fisiche, porte con serrature o misure di screening, e sistemi di sorveglianza e rilevamento (sensori, telecamere, allarmi). L'introduzione del Wi-Fi estende la sicurezza fisica oltre i confini dell'edificio (es. parcheggi).
+
+\section{Ripristino da Violazioni della Sicurezza Fisica}
+
+L'elemento più essenziale per il ripristino è la \textbf{Ridondanza}.
+
+\subsection{Ripristino dei Dati e dei Servizi}
+\begin{itemize}
+    \item \textbf{Backup Off-Site:} Tutti i dati importanti devono essere disponibili fuori sede, aggiornati quasi in tempo reale (spesso tramite backup crittografati su banda larga).
+    \item \textbf{Hot Site:} Per le situazioni più critiche, un sito pronto a subentrare nelle operazioni istantaneamente, con una copia dei dati operativi quasi in tempo reale.
+\end{itemize}
+
+\subsection{Ripristino dell'Attrezzatura e del Sito}
+Il ripristino dipende dalla natura del danno e dal residuo (acqua, fumo, fuoco). Danni da acqua, fumo e fuoco possono lasciare materiali pericolosi che devono essere rimossi meticolosamente, richiedendo spesso l'intervento di specialisti esterni in disaster recovery.

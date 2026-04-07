@@ -1,0 +1,76 @@
+\chapter{Sicurezza IT e Prevenzione dei Rischi}
+\section{Definizione e Ciclo di Gestione}
+La Gestione della Sicurezza IT è il processo formale atto a sviluppare e mantenere livelli di sicurezza proporzionati per gli \textit{asset} informativi di un'organizzazione. L'obiettivo è preservare le proprietà fondamentali dell'informazione: \textbf{Riservatezza} (\textit{Confidentiality}), \textbf{Integrità} (\textit{Integrity}), \textbf{Disponibilità} (\textit{Availability}) -- il noto paradigma CIA -- unito ad Autenticità, Affidabilità e Responsabilità (\textit{Accountability}).
+
+\subsection{Il Modello Plan-Do-Check-Act (PDCA)}
+Il processo non è statico, bensì iterativo e continuo. Standard come l'ISO 27005 modellano questo processo sul ciclo di Deming, noto come \textbf{PDCA}.
+
+
+
+\begin{itemize}
+    \item \textbf{Plan (Pianificare):} Stabilire policy, definire il perimetro, eseguire il \textit{Risk Assessment} e sviluppare un Piano di Trattamento del Rischio.
+    \item \textbf{Do (Eseguire):} Implementare i controlli tecnici e organizzativi definiti nel piano.
+    \item \textbf{Check (Verificare):} Monitorare continuativamente l'efficacia dei controlli, misurare la \textit{compliance} e gestire gli incidenti.
+    \item \textbf{Act (Agire):} Migliorare il sistema di gestione sulla base degli audit, degli incidenti o dei mutamenti del panorama delle minacce.
+\end{itemize}
+
+\section{Contesto e Policy di Sicurezza}
+L'innesco del processo risiede nell'allineamento della sicurezza IT con gli obiettivi di \textit{business} dell'organizzazione. La governance della sicurezza si declina in tre livelli gerarchici:
+\begin{enumerate}
+    \item \textbf{Obiettivi di Sicurezza:} I risultati attesi in termini di protezione (es. "Garantire il 99.9\% di uptime per il database clienti").
+    \item \textbf{Strategie:} Le metodologie architetturali e operative per raggiungere gli obiettivi.
+    \item \textbf{Policy di Sicurezza:} Il documento programmatico (approvato dal \textit{Senior Management}) che definisce l'ambito, i requisiti legali, le responsabilità, la classificazione delle informazioni e l'approccio alla gestione del rischio.
+\end{enumerate}
+La supervisione dell'intero processo è tipicamente delegata a una figura dirigenziale dedicata, come il \textbf{CISO} (\textit{Chief Information Security Officer}) o l'IT Security Officer.
+
+\section{Il Processo di Risk Assessment}
+La Valutazione del Rischio (\textit{Risk Assessment}) è il motore logico dell'ISMS. Senza di essa, l'allocazione delle risorse difensive risulterebbe casuale: si rischierebbe di sotto-proteggere asset critici o di sprecare budget per minacce inesistenti.
+
+\subsection{Approcci alla Valutazione del Rischio}
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Approccio} & \textbf{Descrizione e Trade-off} \\ \midrule
+\textbf{Baseline} & Applicazione di configurazioni standard e \textit{best practice} (es. CIS Benchmarks) a tutti i sistemi. \textit{Pro:} Economico e veloce. \textit{Contro:} Ignora il profilo di rischio specifico; può risultare insufficiente o inutilmente restrittivo. \\ \addlinespace
+\textbf{Informale} & Valutazione pragmatica non strutturata basata sull'esperienza (\textit{expert judgment}). \textit{Pro:} Agile. \textit{Contro:} Soggettivo, incostante e difficile da giustificare in fase di audit. \\ \addlinespace
+\textbf{Dettagliato} & Analisi formale, quantitativa o qualitativa rigorosa, di ogni asset, vulnerabilità e minaccia. \textit{Pro:} Massima \textit{assurance}. \textit{Contro:} Estremamente oneroso in termini di tempo e costi; rischio di obsolescenza rapida. \\ \addlinespace
+\textbf{Combinato} & (Raccomandato). Applicazione \textit{Baseline} per tutti i sistemi, seguita da un'analisi informale rapida per individuare i sistemi critici, i quali verranno poi sottoposti ad Analisi Dettagliata. Ottimizza il rapporto costi/benefici. \\ \bottomrule
+\end{tabularx}
+\caption{Confronto degli approcci alla Valutazione del Rischio.}
+\label{tab:risk_approaches}
+\end{table}
+
+\section{Analisi Dettagliata del Rischio}
+\subsection{1. Contesto e Identificazione degli Asset}
+Si definisce l'\textbf{Appetito per il Rischio} (\textit{Risk Appetite}) del \textit{management} (il livello di rischio che l'azienda è disposta ad accettare) e i vincoli normativi (es. GDPR, HIPAA). Successivamente, si esegue l'inventario e la classificazione degli \textbf{Asset} (hardware, software, dati, personale), pesandoli in base all'impatto che la loro compromissione avrebbe sul business.
+
+\subsection{2. Identificazione di Minacce e Vulnerabilità}
+\begin{itemize}
+    \item \textbf{Minaccia (\textit{Threat}):} Un agente o evento potenziale (naturale, umano accidentale, umano deliberato) capace di causare danno.
+    \item \textbf{Vulnerabilità (\textit{Vulnerability}):} Una debolezza architetturale, software o procedurale intrinseca all'asset.
+\end{itemize}
+Una minaccia \textit{sfrutta} una vulnerabilità per causare un impatto.
+
+\subsection{3. Analisi e Calcolo del Rischio}
+Il rischio è funzione della probabilità che l'evento si verifichi e dell'entità del danno:
+$$ \text{Rischio} = \text{Probabilità} (\text{Minaccia} \times \text{Vulnerabilità}) \times \text{Impatto} $$
+
+Si procede valutando l'efficacia dei \textbf{Controlli Esistenti}, per poi stimare due vettori qualitativi:
+\begin{enumerate}
+    \item \textbf{Probabilità (\textit{Likelihood}):} Stimata dall'analista (es. da \textit{1 - Raro} a \textit{5 - Quasi Certo}).
+    \item \textbf{Impatto (\textit{Consequence}):} Stimato dai proprietari degli asset (\textit{Asset Owner}) e dal management (es. da \textit{1 - Insignificante} a \textit{6 - Doomsday/Catastrofico}).
+\end{enumerate}
+
+La combinazione di queste due metriche genera una Matrice del Rischio che restituisce il Livello di Rischio finale (Basso, Medio, Alto, Estremo). Tutti i risultati confluiscono in un documento formale chiamato \textbf{Registro dei Rischi} (\textit{Risk Register}).
+
+\section{Valutazione e Trattamento del Rischio}
+Una volta quantificato, il rischio viene confrontato con l'\textit{Appetito per il Rischio}. Se il rischio residuo eccede la soglia di tolleranza, il \textit{management} deve attuare un piano di trattamento scegliendo tra cinque opzioni strategiche:
+
+\begin{enumerate}
+    \item \textbf{Riduzione della Probabilità (\textit{Mitigation}):} Implementazione di controlli preventivi (es. firewall, \textit{patching}) per rendere l'attacco più difficile.
+    \item \textbf{Riduzione dell'Impatto:} Implementazione di controlli correttivi o di resilienza (es. backup archiviati \textit{offline}, piani di \textit{Disaster Recovery}).
+    \item \textbf{Trasferimento del Rischio (\textit{Transfer}):} Spostamento dell'onere finanziario su terzi (es. stipula di polizze assicurative \textit{cyber} o \textit{outsourcing} a provider Cloud qualificati).
+    \item \textbf{Evitamento del Rischio (\textit{Avoidance}):} Dismissione del sistema, del processo di business o della tecnologia che genera il rischio, qualora i costi di mitigazione superino i benefici.
+    \item \textbf{Accettazione del Rischio (\textit{Acceptance}):} Riconoscimento formale del rischio da parte del \textit{Senior Management} senza ulteriori azioni di mitigazione (tipicamente applicato quando il rischio è già al di sotto dell'appetito aziendale o quando il costo dei controlli supera il valore dell'asset protetto).
+\end{enumerate}

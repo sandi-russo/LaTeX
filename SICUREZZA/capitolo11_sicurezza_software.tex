@@ -1,0 +1,85 @@
+\chapter{Sicurezza del Software}
+
+\section{Problemi di Sicurezza del Software}
+La stragrande maggioranza delle vulnerabilità di sicurezza informatica deriva da pratiche di programmazione inadeguate. Enti di ricerca e liste autorevoli evidenziano come la maggior parte degli attacchi sfrutti un sottoinsieme limitato e ricorrente di errori architetturali tra cui: \textbf{Injection} (es. SQL Injection, OS Command Injection), \textbf{Cross-Site Scripting (XSS)}, \textbf{Buffer Overflow}, \textbf{Gestione insicura delle risorse} e della memoria, \textbf{Difese logiche inadeguate} (es. autenticazione mancante, credenziali \textit{hard-coded}, crittografia debole).
+
+\section{Sicurezza vs. Qualità del Software}
+\begin{itemize}
+    \item \textbf{Qualità e Affidabilità (\textit{Software Reliability}):} Si occupa della prevenzione e gestione dei fallimenti accidentali, tipicamente causati da input imprevisti o \textit{bug} stocastici. L'obiettivo è massimizzare la stabilità del sistema durante il suo utilizzo nominale.
+    \item \textbf{Sicurezza (\textit{Software Security}):} Si concentra sui fallimenti indotti deliberatamente da un attaccante (attore ostile), il quale seleziona input anomali e specifici al fine di innescare e sfruttare vulnerabilità nel codice. Tali input sono spesso statisticamente improbabili in un contesto di utilizzo standard.
+\end{itemize}
+
+\section{Programmazione Difensiva}
+Per mitigare le minacce alla sicurezza, l'ingegneria del software adotta il paradigma della \textbf{programmazione difensiva}. Esso consiste nel progettare e implementare il software affinché mantenga la propria integrità e operatività anche sotto attacco. 
+
+Il sistema deve essere in grado di rilevare stati anomali e, nel peggiore dei casi, attuare una \textit{terminazione controllata} (fail gracefully), evitando di esporre dati sensibili o concedere privilegi non autorizzati. Il postulato fondamentale di questo approccio è: \textit{non dare mai nulla per scontato}. Ogni assunzione deve essere verificata a tempo di esecuzione e ogni possibile stato di errore deve essere gestito esplicitamente.
+
+\section{Gestione Sicura dell'Input}
+La corretta gestione dell'input rappresenta la prima linea di difesa. Per "input" si intende qualsiasi flusso di dati proveniente dall'esterno del perimetro di fiducia del programma (tastiera, rete, file system, variabili d'ambiente). Le due criticità principali relative all'input sono la sua \textbf{dimensione} e la sua \textbf{interpretazione}.
+
+\subsection{Dimensione dell'Input e Buffer Overflow}
+Se un'applicazione non verifica rigorosamente che la dimensione dei dati in ingresso sia compatibile con la capacità del buffer di memoria preposto a contenerli, si verifica un \textbf{Buffer Overflow}.
+
+
+
+Questa vulnerabilità permette a un attaccante di sovrascrivere aree di memoria adiacenti, alterando il flusso di esecuzione del programma e arrivando, nei casi più gravi, all'esecuzione di codice arbitrario (\textit{Arbitrary Code Execution}). La mitigazione primaria consiste nell'utilizzo esclusivo di funzioni di manipolazione della memoria e delle stringhe che richiedano esplicitamente la dimensione massima del buffer (es. \texttt{strncpy} in luogo di \texttt{strcpy} in C).
+
+\subsection{Interpretazione dell'Input e Attacchi di Injection}
+Un attacco di \textit{Injection} si verifica quando input non sanitizzato viene interpretato dal sistema come istruzione o comando, alterando la logica di esecuzione.
+\begin{itemize}
+    \item \textbf{Command Injection:} L'input dell'utente viene concatenato a una \textit{system call}. Inserendo metacaratteri della shell (es. \texttt{;} o \texttt{|}), l'attaccante può eseguire comandi arbitrari sul sistema operativo ospite.
+    \item \textbf{SQL Injection (SQLi):} L'input viene impiegato per la costruzione dinamica di una query al database. Sfruttando metacaratteri SQL (es. \texttt{'} o \texttt{--}), è possibile manipolare la sintassi della query per aggirare l'autenticazione, esfiltrare dati o corrompere il database.
+    
+    
+    
+    \item \textbf{Code Injection:} L'input fornito viene valutato ed eseguito direttamente come codice sorgente dall'interprete (es. vulnerabilità di \textit{Remote File Inclusion} in PHP).
+\end{itemize}
+
+\subsection{Tecniche di Validazione dell'Input}
+Per neutralizzare tali minacce, è imperativo sottoporre ogni input a rigorosi processi di validazione:
+\begin{itemize}
+    \item \textbf{Whitelisting (Raccomandato):} Consiste nell'accettare esclusivamente input che corrisponda a un formato, tipo o pattern (\textit{Regular Expression}) esplicitamente definito come sicuro. Tutto il traffico non conforme viene scartato per impostazione predefinita.
+    \item \textbf{Blacklisting (Sconsigliato):} Tentativo di bloccare stringhe o pattern noti per essere malevoli. È un approccio intrinsecamente debole, poiché l'attaccante troverà costantemente nuove codifiche per eludere il filtro.
+    \item \textbf{Canonicalization:} Prima di qualsiasi validazione, l'input deve essere convertito nella sua forma canonica (la rappresentazione standard e minimale). Questo impedisce che tecniche di evasione basate su codifiche alternative (es. \textit{URL encoding}, codifiche UTF-8 non standard) superino i controlli di sicurezza.
+\end{itemize}
+
+\section{Scrittura di Codice Sicuro e Gestione della Memoria}
+Oltre alla validazione perimetrale dell'input, la sicurezza intrinseca dipende dall'implementazione logica e dalla gestione delle risorse in memoria.
+
+\subsection{Corretta Implementazione dell'Algoritmo}
+Un difetto nella logica algoritmica può esporre il sistema a criticità severe, indipendentemente dalla pulizia dell'input. Esempi storici includono:
+\begin{itemize}
+    \item \textbf{Debolezza crittografica (Il caso Netscape):} L'utilizzo di un generatore di numeri pseudocasuali (PRNG) con \textit{seeding} prevedibile compromise la sicurezza delle prime sessioni SSL.
+    \item \textbf{TCP Session Hijacking:} L'impiego di \textit{Initial Sequence Numbers} (ISN) prevedibili nello stack TCP/IP consentiva ad attaccanti di iniettare pacchetti in sessioni legittime.
+    \item \textbf{Backdoor e Debug Residuo:} Il \textit{Morris Worm} sfruttò la mancata rimozione di un comando di \texttt{DEBUG} nel demone \texttt{sendmail} nei sistemi in produzione.
+\end{itemize}
+
+\subsection{Tipizzazione, Memory Leak e Race Condition}
+\begin{itemize}
+    \item \textbf{Tipizzazione Forte (\textit{Strong Typing}):} Linguaggi come Java o Rust impongono vincoli rigorosi sui tipi di dato, mitigando intere classi di vulnerabilità tipiche dei linguaggi a tipizzazione debole (come C/C++), dove conversioni implicite e aritmetica dei puntatori espongono al rischio di corruzione della memoria.
+    \item \textbf{Memory Leak:} La mancata deallocazione dinamica della memoria sull'\textit{heap} causa l'esaurimento progressivo delle risorse, condizione sfruttabile per attacchi di \textit{Denial-of-Service} (DoS).
+    \item \textbf{Race Condition:} Si manifesta quando processi operanti in concorrenza accedono a risorse condivise senza un'adeguata sincronizzazione (es. assenza di \textit{mutex} o operazioni atomiche). Questo può condurre alla corruzione dello stato interno o a \textit{deadlock}.
+\end{itemize}
+
+\section{Interazione con il Sistema Operativo e Privilegi}
+L'esecuzione di un programma è mediata dal Sistema Operativo, il quale introduce ulteriori vettori di attacco.
+
+\subsection{Il Principio del Minimo Privilegio (\textit{Least Privilege})}
+Un processo deve essere eseguito possedendo unicamente i privilegi strettamente necessari all'assolvimento della propria funzione, e per il minor tempo possibile. Per implementare questo principio si ricorre a:
+\begin{itemize}
+    \item \textbf{Privilege Dropping:} Demoni che necessitano di privilegi di \textit{root} solo per il binding iniziale (es. su porte $< 1024$) devono de-escalare i propri permessi subito dopo l'avvio.
+    \item \textbf{Sandboxing e Chroot:} Esecuzione di processi non fidati in ambienti virtualmente isolati dal file system principale e dalle chiamate di sistema critiche.
+\end{itemize}
+
+\section{Gestione Sicura dell'Output e Cross-Site Scripting (XSS)}
+Nel contesto web, il \textbf{Cross-Site Scripting (XSS)} si verifica quando un'applicazione riflette o memorizza input malevolo fornito da un utente (tipicamente \textit{payload} in JavaScript) e lo ripropone al browser di altre vittime. Poiché il browser si fida dell'origine della pagina, eseguirà lo script, consentendo all'attaccante di esfiltrare \textit{cookie} di sessione o manipolare il DOM (\textit{Document Object Model}).
+
+\textbf{Difese per l'Output:}
+\begin{itemize}
+    \item \textbf{Sanitizzazione e Output Encoding:} Trasformare i caratteri speciali in entità inoffensive (es. \texttt{<} in \texttt{\&lt;}) prima della renderizzazione.
+    \item \textbf{Dichiarazione del Character Encoding:} Specificare esplicitamente la codifica (es. UTF-8) nell'header HTTP per impedire interpretazioni anomale da parte del parser del browser.
+\end{itemize}
+
+\section{Analisi delle Vulnerabilità e Sicurezza delle Dipendenze}
+Lo sviluppo software moderno si affida pesantemente a librerie e moduli open-source di terze parti. Una vulnerabilità in una singola libreria può compromettere l'intero sistema (Supply Chain Attack).
+Per mitigare questo rischio si utilizzano strumenti di \textbf{Software Composition Analysis (SCA)}. Nel panorama Python, ad esempio, esistono strumenti come \textbf{\texttt{pip-audit}}. Tali tool analizzano l'albero delle dipendenze del progetto confrontandolo con i database ufficiali delle vulnerabilità (come il CVE - \textit{Common Vulnerabilities and Exposures}) segnalando in tempo reale pacchetti obsoleti o compromessi, obbligando così lo sviluppatore a mantenere un ecosistema di librerie aggiornato e sicuro.

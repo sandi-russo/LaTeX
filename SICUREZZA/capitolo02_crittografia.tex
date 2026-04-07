@@ -1,3 +1,401 @@
+\chapter{Crittografia e Funzioni Hash}
+
+\section{Cifratura Simmetrica}
+La \textbf{cifratura simmetrica}, nota anche come \textbf{cifratura convenzionale} o \textbf{a chiave singola}, è stata l'unica tipologia di crittografia utilizzata fino all'introduzione della crittografia a chiave pubblica alla fine degli anni '70.
+
+\subsection{I Cinque Componenti di uno Schema Simmetrico}
+Un sistema di cifratura simmetrica si basa su cinque elementi fondamentali che interagiscono per proteggere l'informazione:
+
+\begin{description}
+    \item[Testo in Chiaro (Plaintext):] Il messaggio o i dati originali che vengono forniti come input all'algoritmo.
+    \item[Algoritmo di Cifratura:] L'algoritmo che esegue le sostituzioni e le trasformazioni sul testo in chiaro per renderlo incomprensibile.
+    \item[Chiave Segreta (Secret Key):] Un valore segreto, fornito anch'esso come input all'algoritmo. Le trasformazioni esatte eseguite dipendono da questa chiave.
+    \item[Testo Cifrato (Ciphertext):] Il messaggio "mescolato" prodotto come output. Il suo valore dipende sia dal testo in chiaro sia dalla chiave segreta.
+    \item[Algoritmo di Decifratura:] È essenzialmente l'algoritmo di cifratura eseguito in senso inverso. Prende in input il testo cifrato e la stessa chiave segreta per riprodurre il testo in chiaro originale.
+\end{description}
+
+\subsection{Requisiti per un Utilizzo Sicuro}
+Per garantire che il sistema sia effettivamente impenetrabile, sono necessari due requisiti fondamentali:
+\begin{enumerate}
+    \item \textbf{Un algoritmo di cifratura robusto:} L'algoritmo deve essere tale che un avversario, anche conoscendo l'algoritmo e avendo accesso a testi cifrati (e persino a coppie plaintext-ciphertext), non possa decifrare i messaggi o risalire alla chiave.
+    \item \textbf{Gestione sicura della chiave:} Mittente e destinatario devono ottenere la chiave in modo sicuro e mantenerla segreta. Se la chiave è compromessa, tutte le comunicazioni sono a rischio.
+\end{enumerate}
+
+\subsection{Metodi di Attacco alla Cifratura Simmetrica}
+\begin{itemize}
+    \item \textbf{Criptoanalisi (Cryptanalysis):} Sfrutta la natura dell'algoritmo e le caratteristiche del testo per dedurre il messaggio o la chiave. Il successo nel dedurre la chiave è considerato catastrofico per l'intero sistema.
+    \item \textbf{Attacco a Forza Bruta (Brute-force Attack):} Consiste nel provare sistematicamente ogni possibile chiave. Richiede un metodo per riconoscere il testo in chiaro corretto una volta decifrato, operazione non banale se il testo è compresso o non è in linguaggio naturale.
+\end{itemize}
+
+
+
+\section{Funzioni Hash e Digest}
+Una \textbf{funzione hash} è un algoritmo matematico che prende un input di dimensione arbitraria e restituisce una stringa di bit di lunghezza fissa, chiamata \textbf{digest} o valore di hash.
+
+\subsection{Differenza Fondamentale: Hash vs Crittografia}
+La distinzione cruciale tra i due concetti risiede principalmente nella \textbf{reversibilità} e nello scopo finale:
+
+\begin{itemize}
+    \item \textbf{Crittografia:} È un processo a due vie, quindi \textbf{reversibile}. Il suo scopo è la \textbf{confidenzialità}. Un messaggio cifrato è progettato per essere decifrato e riportato al suo stato originale da chi possiede la chiave corretta.
+    \item \textbf{Hashing:} È un processo a una via, quindi \textbf{irreversibile}. È computazionalmente impossibile ricostruire l'input originale a partire dal suo digest. Il suo scopo primario è garantire l'\textbf{integrità} dei dati. Se si calcola l'hash di un file prima e dopo una trasmissione e i due digest corrispondono, si ha la certezza che il file non è stato alterato.
+\end{itemize}
+
+\vspace{18pt}
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.5cm, 
+        >=stealth, 
+        font=\sffamily\small,
+        scale=0.8, every node/.style={transform shape},
+        % Stile icone file
+        doc_icon/.style={
+            draw,
+            minimum width=1cm,
+            minimum height=1.3cm,
+            align=center,
+            label={[align=center, font=\footnotesize, yshift=-2pt]below:#1} 
+        },
+        algo_box/.style={
+            draw, 
+            minimum width=4cm,  % Larghezza identica
+            minimum height=4cm, % Altezza identica
+            text width=3.5cm,   % Aumentato per adattarsi ai 4cm del quadrato
+            line width=0.8pt,
+            fill=white,
+            align=center,
+            append after command={
+                (\tikzlastnode.north west) -- ++(0.2,0.2) -- ([xshift=0.2cm, yshift=0.2cm]\tikzlastnode.north east) -- (\tikzlastnode.north east)
+                ([xshift=0.2cm, yshift=0.2cm]\tikzlastnode.north east) -- ([xshift=0.2cm, yshift=0.2cm]\tikzlastnode.south east) -- (\tikzlastnode.south east)
+            }
+        }
+    ]
+
+    % 1. INPUT ---
+    \node[doc_icon={Plaintext\\input}] (input) at (0,0) {\large \faFile*[regular]};
+
+    % 2. ENCRYPTION (Prima freccia determinata da right=3cm) ---
+    \node[algo_box, right=3cm of input] (enc) {
+        \Large \faLock \\ \vspace{3mm}
+        \small \textbf{Encryption\\algorithm}\\ \vspace{8mm} \scriptsize (e.g., DES)
+    };
+    
+    % Chiave sopra Encryption
+    \node[above=0.8cm of enc, align=center, font=\footnotesize] (key1) {
+        Secret key shared by\\sender and recipient\\
+        \vspace{6pt}
+        \large \faKey \ \normalsize $K$
+    };
+    \draw[->, thick] (key1.south) -- (enc.north);
+
+    % 3. DECRYPTION (Spazio centrale) ---
+    \node[algo_box, right=4.5cm of enc] (dec) {
+        \Large \faUnlock \\ \vspace{3mm}
+        \small \textbf{Decryption\\algorithm}\\ \vspace{2mm} \scriptsize (reverse of encryption algorithm)
+    };
+
+    % Chiave sopra Decryption
+    \node[above=0.8cm of dec, align=center, font=\footnotesize] (key2) {
+        Secret key shared by\\sender and recipient\\
+        \vspace{6pt}
+        \large \faKey \ \normalsize $K$
+    };
+    \draw[->, thick] (key2.south) -- (dec.north);
+
+    % 4. OUTPUT (Ultima freccia determinata da right=3cm - UGUALE ALLA PRIMA) ---
+    \node[doc_icon={Plaintext\\output}, right=3cm of dec] (output) {\large \faFile*[regular]};
+
+    % FRECCE E TESTI ---
+    % Freccia 1 (Lunghezza 3cm)
+    \draw[->, thick] (input.east) -- (enc.west) node[midway, above] {$X$};
+
+    % Freccia 2 (Centrale)
+    \draw[->, thick] (enc.east) -- (dec.west) 
+        node[midway, align=center, above, font=\footnotesize, yshift=3pt] {Transmitted ciphertext}
+        node[midway, below, font=\small, yshift=-3pt] {$Y = E[K, X]$};
+
+    % Freccia 3 (Lunghezza 3cm)
+    \draw[->, thick] (dec.east) -- (output.west) 
+        node[midway, above, font=\small, yshift=2pt] {$X = D[K, Y]$};
+
+    \end{tikzpicture}
+\end{figure}
+
+\newpage
+
+\section{Analisi degli Algoritmi: DES, Triple DES e AES}
+La cifratura simmetrica moderna si è evoluta attraverso tre standard principali adottati dal NIST.
+
+\subsection{DES (Data Encryption Standard)}
+Adottato nel 1977, è stato per decenni il pilastro della sicurezza federale USA.
+\begin{itemize}
+    \item \textbf{Funzionamento:} È un \textbf{cifrario a blocchi} che opera su unità di \textbf{64 bit}. Utilizza la \textbf{Rete di Feistel}, applicando sostituzioni e permutazioni per 16 round.
+    \item \textbf{Chiave:} 56 bit effettivi (8 bit usati per la parità).
+    \item \textbf{Sicurezza attuale:} La dimensione ridotta della chiave lo rende oggi vulnerabile ad attacchi a forza bruta eseguiti con hardware moderno.
+\end{itemize}
+
+\subsection{Triple DES (3DES)}
+Evoluzione necessaria per contrastare l'aumento della potenza di calcolo.
+\begin{itemize}
+    \item \textbf{Meccanismo:} Applica l'algoritmo DES tre volte in sequenza (\textbf{EDE - Encrypt-Decrypt-Encrypt}) con due o tre chiavi distinte.
+    \item \textbf{Vantaggi e Svantaggi:} Porta la chiave a 168 bit rendendo la forza bruta impraticabile, ma è molto \textbf{lento} e pesante computazionalmente.
+\end{itemize}
+
+\subsection{AES (Advanced Encryption Standard)}
+Selezionato nel 2001, è l'attuale standard globale.
+\begin{itemize}
+    \item \textbf{Struttura:} Non usa Feistel ma una \textbf{rete a sostituzione e permutazione (SPN)}. Opera su blocchi di \textbf{128 bit}.
+    \item \textbf{Chiavi:} Supporta lunghezze di \textbf{128, 192 e 256 bit}.
+    \item \textbf{Efficienza:} Estremamente sicuro e performante sia in hardware che in software.
+\end{itemize}
+
+
+
+
+
+\section{Modalità Operative e Cifrari}
+
+\subsection{Il Problema della Modalità ECB (Electronic Codebook)}
+Nella cifratura di grandi quantità di dati, la modalità ECB è l'approccio più semplice: ogni blocco è cifrato indipendentemente. Tuttavia, questa semplicità causa una grave debolezza: blocchi di plaintext identici producono blocchi di ciphertext identici, permettendo di \textbf{sfruttare le regolarità} (es. i contorni di un'immagine rimangono visibili). Per ovviare a ciò si usano modi operativi che concatenano i blocchi.
+
+\subsection{Cifrari a Blocchi vs Cifrari a Flusso}
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{6cm}|p{6cm}|}
+\hline
+\textbf{Caratteristica} & \textbf{Cifrario a Blocchi} & \textbf{Cifrario a Flusso} \\ \hline
+\textbf{Elaborazione} & Un blocco alla volta (es. 128 bit). & Continuo (tipicamente un byte alla volta). \\ \hline
+\textbf{Meccanismo} & Trasforma blocchi interi. & XOR tra plaintext e \textit{keystream} pseudocasuale. \\ \hline
+\textbf{Velocità} & Standard. & Quasi sempre più veloci. \\ \hline
+\textbf{Esempi} & AES, DES. & RC4 (storico), ChaCha20. \\ \hline
+\end{tabular}
+\end{table}
+
+
+
+\section{Autenticazione dei Messaggi}
+Mentre la crittografia protegge dagli attacchi passivi, l'\textbf{autenticazione} protegge dagli \textbf{attacchi attivi} (falsificazione). Un messaggio è autentico se è genuino, proviene dalla fonte dichiarata e non è stato alterato.
+
+\subsection{Il Limite della Sola Cifratura}
+Cifrare con chiave simmetrica non garantisce automaticamente l'integrità. Un attaccante potrebbe riordinare i blocchi cifrati (attacco alla modalità ECB). Il destinatario decifrerebbe i blocchi ma otterrebbe un messaggio dal significato alterato senza accorgersene.
+
+\subsection{Autenticazione Tramite Tag (MAC)}
+Si separa l'autenticazione dalla cifratura aggiungendo un \textbf{Message Authentication Code (MAC)}:
+\begin{itemize}
+    \item Il mittente calcola il tag usando il messaggio e una chiave segreta.
+    \item Il destinatario ricalcola il tag e lo confronta.
+    \item Garantisce autenticità senza necessità di confidenzialità (messaggio in chiaro).
+\end{itemize}
+
+
+\begin{tikzpicture}[
+    node distance=1cm, 
+    >=stealth, 
+    font=\sffamily\small,
+    scale=0.7, every node/.style={transform shape},
+    % Stili (aggiunto align=center per centrare il testo)
+    msg_box/.style={draw, thick, fill=white, minimum width=1.2cm, minimum height=6.5cm, align=center},
+    mac_algo/.style={draw, thick, rounded corners=10pt, fill=gray!20, minimum width=2.2cm, minimum height=1cm, align=center},
+    cross_box/.style={draw, thick, pattern=crosshatch, minimum width=1.2cm, minimum height=0.7cm, align=center},
+    brace_style/.style={decorate, decoration={brace, amplitude=10pt}, thick}
+]
+
+    % --- MITTENTE ---
+    \node[msg_box, label=above:Message] (m1) at (0,0) {\rotatebox{90}{Message}};
+    \node[mac_algo, below=1.2cm of m1] (algo1) {MAC\\algorithm};
+    \draw[->, thick] (m1.south) -- (algo1.north);
+    \draw[<-, thick] (algo1.south) -- ++(0,-0.6) node[below] {$K$};
+
+    \node[cross_box, right=0.8cm of algo1, label=below:MAC] (mac1) {\colorbox{white}{\scriptsize MAC}};
+    \draw[->, thick] (algo1.east) -- (mac1.west);
+
+    % --- MESSAGGIO TRASMESSO (SENDER SIDE) ---
+    \node[msg_box, right=3.5cm of m1] (m_send) {\rotatebox{90}{Message}};
+    \node[cross_box, below=0pt of m_send] (mac_send) {\colorbox{white}{\scriptsize MAC}};
+    
+    \draw[->, thick] (m1.east) -- (m_send.west);
+    \draw[->, thick] (mac1.east) -| ($(mac_send.west)+(-0.4,0)$) -- (mac_send.west);
+
+    % Graffa a destra del mittente
+    \draw [brace_style]
+        ($(m_send.north east)+(0.1,0)$) -- ($(mac_send.south east)+(0.1,0)$)
+        coordinate[midway, right=10pt] (start_transmit);
+
+    % --- LATO DESTINATARIO (RECEIVER SIDE) ---
+    \node[msg_box, right=4.5cm of m_send] (m_recv) {\rotatebox{90}{Message}};
+    \node[cross_box, below=0pt of m_recv] (mac_recv) {\colorbox{white}{\scriptsize MAC}};
+
+    % 1. GRAFFA INTERA A SINISTRA (MIRROR)
+    \draw [brace_style, decoration={brace, amplitude=10pt, mirror}]
+        ($(m_recv.north west)+(-0.1,0)$) -- ($(mac_recv.south west)+(-0.1,0)$)
+        coordinate[midway, left=10pt] (end_transmit);
+
+    % FRECCIA DI TRASMISSIONE
+    \draw[->, thick] (start_transmit) -- 
+        node[midway, above, yshift=3pt] {Transmit} 
+        (end_transmit);
+
+    % 2. GRAFFA SPEZZATA A DESTRA (MESSAGGIO)
+    \draw [brace_style]
+        ($(m_recv.north east)+(0.1,0)$) -- ($(m_recv.south east)+(0.1,0)$)
+        node[midway, right=4pt] (punta_msg) {};
+
+    % Algoritmo del destinatario
+    \node[mac_algo, right=2.5cm of m_recv] (algo2) {MAC\\algorithm};
+    \draw[->, thick] (punta_msg) -- (algo2.west); 
+    \draw[<-, thick] (algo2.north) -- ++(0,0.6) node[above] {$K$};
+
+    % 3. GRAFFA SPEZZATA A DESTRA (MAC)
+    \draw [brace_style]
+        ($(mac_recv.north east)+(0.1,0)$) -- ($(mac_recv.south east)+(0.1,0)$)
+        node[midway, right=4pt] (punta_mac) {};
+
+    % Risultato algoritmo e Confronto
+    \node[cross_box, below=0.8cm of algo2] (mac_check) {\colorbox{white}{\scriptsize MAC}};
+    \draw[->, thick] (algo2.south) -- (mac_check.north);
+
+    \node[below=1.2cm of mac_check] (compare) {Compare};
+    \draw[->, thick] (mac_check.south) -- (compare.north);
+    
+    % Freccia dal MAC ricevuto al Compare
+    \draw[->, thick] (punta_mac) -- (compare.west);
+
+\end{tikzpicture}
+
+
+
+
+\section{Requisiti delle Funzioni Hash One-Way}
+Per essere crittograficamente sicura, una funzione hash $H$ deve soddisfare:
+\begin{enumerate}
+    \item \textbf{Input di Dimensione Variabile:} Applicabile a dati di qualsiasi dimensione.
+    \item \textbf{Output di Lunghezza Fissa:} Digest sempre della stessa lunghezza.
+    \item \textbf{Facilità di Calcolo:} Calcolo veloce di $H(x)$.
+    \item \textbf{Resistenza alla Preimmagine:} Dato $h$, impossibile trovare $x$ tale che $H(x) = h$.
+    \item \textbf{Resistenza alla Seconda Preimmagine:} Dato $x$, impossibile trovare $y \neq x$ con lo stesso hash.
+    \item \textbf{Resistenza alle Collisioni:} Impossibile trovare \textit{qualsiasi} coppia $(x, y)$ con $H(x) = H(y)$.
+\end{enumerate}
+
+\section{Crittografia a Chiave Pubblica (Asimmetrica)}
+
+La \textbf{crittografia a chiave pubblica}, proposta pubblicamente per la prima volta da Diffie e Hellman nel 1976, rappresenta un'avanzata rivoluzionaria nel campo della crittografia. A differenza degli algoritmi simmetrici che operano su bit, quelli a chiave pubblica si basano su \textbf{funzioni matematiche complesse}.
+
+La caratteristica fondamentale è la sua natura \textbf{asimmetrica}: utilizza una \textbf{coppia di chiavi} separate (una pubblica e una privata), a differenza della cifratura simmetrica che ne usa solo una. L'uso di due chiavi ha profonde conseguenze in termini di confidenzialità, distribuzione delle chiavi e autenticazione.
+
+\subsection{Miti Comuni sulla Crittografia a Chiave Pubblica}
+Esistono alcune idee \textbf{errate} comuni riguardo a questa tecnologia che è bene chiarire:
+
+\begin{enumerate}
+    \item \textbf{"È più sicura della crittografia simmetrica":} Falso. La sicurezza di qualsiasi schema crittografico dipende dalla \textbf{lunghezza della chiave} e dal \textbf{lavoro computazionale} richiesto per romperla. In linea di principio, nessuno dei due approcci è intrinsecamente superiore all'altro in termini di resistenza alla criptoanalisi.
+    \item \textbf{"Ha reso obsoleta la crittografia simmetrica":} Falso. A causa dell'elevato \textbf{carico computazionale} (overhead) degli algoritmi a chiave pubblica, questi sono significativamente più lenti. Non c'è alcuna previsione che la cifratura simmetrica venga abbandonata; anzi, i due sistemi vengono spesso usati insieme per combinare efficienza e sicurezza.
+    \item \textbf{"La distribuzione delle chiavi è banale":} Falso. Anche la distribuzione delle chiavi pubbliche richiede protocolli specifici, spesso con un agente centrale (come una Certificate Authority), e le procedure non sono né più semplici né più efficienti di quelle usate per la crittografia simmetrica.
+\end{enumerate}
+
+\subsection{I Sei Componenti di uno Schema a Chiave Pubblica}
+Uno schema di crittografia a chiave pubblica si articola in sei elementi fondamentali:
+
+\begin{itemize}
+    \item \textbf{Testo in Chiaro (Plaintext):} Il messaggio leggibile fornito come input.
+    \item \textbf{Algoritmo di Cifratura:} L'algoritmo che esegue le trasformazioni sul testo in chiaro.
+    \item \textbf{Chiave Pubblica e Privata:} Una coppia di chiavi correlate matematicamente. Se una viene usata per cifrare, l'altra deve essere usata per decifrare. La \textbf{chiave pubblica} è resa nota a tutti, mentre la \textbf{chiave privata} è conosciuta solo dal proprietario.
+    \item \textbf{Testo Cifrato (Ciphertext):} Il messaggio cifrato prodotto come output, il cui valore dipende dal plaintext e dalla chiave usata.
+    \item \textbf{Algoritmo di Decifratura:} L'algoritmo che, ricevendo il testo cifrato e la chiave corrispondente, produce il testo in chiaro originale.
+\end{itemize}
+
+\subsection{Il Processo di Comunicazione Sicura}
+Il vantaggio principale di questo approccio è che \textbf{le chiavi private non devono mai essere distribuite}. Il processo si articola in quattro passaggi:
+
+\begin{enumerate}
+    \item \textbf{Generazione:} Ogni utente genera la propria coppia di chiavi.
+    \item \textbf{Pubblicazione:} Ogni utente inserisce la propria chiave pubblica in un registro accessibile a tutti (directory pubblica), mantenendo la chiave privata assolutamente segreta.
+    \item \textbf{Cifratura:} Se Bob vuole inviare un messaggio ad Alice, cerca la \textbf{chiave pubblica di Alice} e la usa per cifrare il messaggio.
+    \item \textbf{Decifratura:} Quando Alice riceve il messaggio, usa la sua \textbf{chiave privata} per decifrarlo. Solo lei può farlo poiché solo lei possiede la chiave privata corrispondente.
+\end{enumerate}
+
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=0.8\textwidth]{Pasted_image_20250919170925.png}
+%     \caption{Schema del processo di comunicazione asimmetrica.}
+% \end{figure}
+
+\subsection{Requisiti per la Crittografia a Chiave Pubblica}
+
+\begin{enumerate}
+    \item \textbf{Facilità di Generazione:} Deve essere computazionalmente semplice generare la coppia di chiavi ($PU_b, PR_b$).
+    \item \textbf{Facilità di Cifratura:} Deve essere semplice per un mittente, conoscendo $PU_b$ e il messaggio $M$, generare il testo cifrato $C = E(PU_b, M)$.
+    \item \textbf{Facilità di Decifratura:} Deve essere semplice per il destinatario decifrare $C$ usando la propria chiave privata $PR_b$: $M = D(PR_b, C)$.
+    \item \textbf{Sicurezza della Chiave Privata:} Deve essere \textbf{computazionalmente impossibile} risalire a $PR_b$ pur conoscendo la chiave pubblica $PU_b$.
+    \item \textbf{Sicurezza del Messaggio:} Deve essere \textbf{computazionalmente impossibile} per un avversario recuperare il messaggio originale $M$ conoscendo solo $PU_b$ e il testo cifrato $C$.
+\end{enumerate}
+
+\subsection{Panoramica degli Algoritmi Asimmetrici}
+\begin{itemize}
+    \item \textbf{RSA (Rivest-Shamir-Adleman):} Sviluppato nel 1977, è l'algoritmo più diffuso. Opera su numeri interi e la sua sicurezza risiede nella difficoltà di fattorizzare numeri molto grandi. Si usa per \textbf{cifratura} e \textbf{firme digitali}.
+    \item \textbf{Diffie-Hellman Key Agreement:} Il primo pubblicato. Serve esclusivamente a stabilire in modo sicuro una \textbf{chiave segreta condivisa} su un canale insicuro, per poi usarla in crittografia simmetrica. Non cifra messaggi direttamente.
+    \item \textbf{DSS (Digital Signature Standard):} Basato sull'algoritmo DSA, è progettato \textbf{esclusivamente per la firma digitale}, senza la cifratura di dati.
+    \item \textbf{ECC (Elliptic Curve Cryptography):} Concorrente moderno di RSA. Offre sicurezza equivalente con \textbf{chiavi molto più piccole}, riducendo il carico computazionale (ottimo per dispositivi mobili e IoT).
+\end{itemize}
+
+
+\section{Firme Digitali}
+
+La firma digitale è una trasformazione crittografica che fornisce:
+\begin{itemize}
+    \item \textbf{Autenticità dell'Origine:} Verifica l'identità del firmatario.
+    \item \textbf{Integrità dei Dati:} Assicura che i dati non siano stati alterati dopo la firma.
+    \item \textbf{Non Ripudio:} Impedisce al firmatario di negare la paternità dell'atto.
+\end{itemize}
+
+\subsection{Il Processo di Firma e Verifica}
+Supponendo che Bob firmi un messaggio per Alice:
+
+\subsubsection{Fase 1: Firma del messaggio (Bob)}
+\begin{enumerate}
+    \item \textbf{Creazione del Digest:} Bob calcola l'hash (\textit{digest}) del messaggio $M$ usando una funzione sicura (es. SHA-512).
+    \item \textbf{Cifratura del Digest:} Bob cifra il digest con la propria \textbf{chiave privata}. Il risultato è la \textbf{firma digitale} $S$.
+    \item \textbf{Invio:} Bob invia il messaggio in chiaro $M$ e la firma $S$.
+\end{enumerate}
+
+\subsubsection{Fase 2: Verifica della firma (Alice)}
+\begin{enumerate}
+    \item \textbf{Calcolo Locale:} Alice ricalcola l'hash del messaggio $M$ ricevuto.
+    \item \textbf{Decifratura della Firma:} Alice usa la \textbf{chiave pubblica di Bob} per decifrare $S$ e ottenere il digest originale.
+    \item \textbf{Confronto:} Se i due digest coincidono, la firma è valida: il messaggio è autentico e integro.
+\end{enumerate}
+
+\textbf{Nota bene:} La firma digitale \textbf{non fornisce confidenzialità}, poiché il messaggio viaggia in chiaro.
+
+\section{Certificati a Chiave Pubblica}
+Per risolvere il problema della possibile falsificazione delle chiavi pubbliche (attaccante che si finge qualcun altro), si ricorre ai \textbf{certificati}.
+
+\subsection{Struttura e Ruolo della CA}
+Un certificato lega un'identità a una chiave pubblica. È composto dalla chiave pubblica dell'utente, l'ID utente (nome, email) e il periodo di validità, il tutto \textbf{firmato digitalmente} da una \textbf{Certificate Authority (CA)} fidata.
+
+\subsection{Processo di Creazione e Verifica}
+\begin{enumerate}
+    \item \textbf{Richiesta:} L'utente presenta un certificato non firmato alla CA per la verifica dell'identità.
+    \item \textbf{Emissione:} La CA calcola l'hash del certificato e lo cifra con la \textbf{propria chiave privata}, creando la firma del certificato.
+    \item \textbf{Verifica:} Chiunque riceva il certificato usa la \textbf{chiave pubblica della CA} per decifrare la firma e verificare che l'hash corrisponda. Se il controllo passa, si ha la certezza che la chiave pubblica contenuta appartenga realmente all'utente dichiarato.
+\end{enumerate}
+
+Lo standard universale per questi documenti è \textbf{X.509}, utilizzato in TLS, SSH e IPsec.
+
+
+\section{Numeri Casuali e Dati Memorizzati}
+
+\subsection{L'Uso dei Numeri Casuali}
+Fondamentali per la generazione di chiavi RSA, chiavi di sessione e protocolli di handshaking. I requisiti sono:
+\begin{itemize}
+    \item \textbf{Casualità (Randomness):} Distribuzione uniforme e indipendenza statistica.
+    \item \textbf{Imprevedibilità:} Impossibilità di prevedere valori futuri conoscendo i precedenti. In crittografia si usano i \textbf{CSPRNG} (Generatori Pseudocasuali Crittograficamente Sicuri).
+\end{itemize}
+
+\subsection{Cifratura dei Dati Memorizzati (Data at Rest)}
+La protezione dei dati su disco è spesso trascurata rispetto ai dati in transito. I rischi includono l'aggiramento dei controlli del sistema operativo e il recupero di dati "cancellati" ma ancora fisicamente presenti sui settori del disco.
+
+Le strategie di protezione includono: software commerciali per singoli file o cartelle, appliance hardware di back-end tra server e storage, cifratura in background per l'intero disco (\textbf{BitLocker}, \textbf{FileVault}).
+
 \chapter{Crittografia}
 
 \section{Crittografia Simmetrica}

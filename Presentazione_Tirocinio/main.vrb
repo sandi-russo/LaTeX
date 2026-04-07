@@ -1,0 +1,23 @@
+\frametitle{Connessione al Database}
+\small
+    \textbf{\faKey \hspace{0.2cm} Credenziali}:
+
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+# Graph Studio (https://localhost:7007/ui)
+Username: GRAPHUSER
+Password: Password234
+
+# SQL Developer
+Username: SYSTEM
+Password: Password234
+Hostname: localhost
+Port: 1521
+Service Name: FREEPDB1
+\end{lstlisting}
+
+    \vspace{0.2cm}
+
+    \textbf{\faPython \hspace{0.2cm} Librerie Python}:
+    \begin{lstlisting}[language=bash, basicstyle=\ttfamily\tiny]
+pip install oracledb oml4py pypgx
+\end{lstlisting}

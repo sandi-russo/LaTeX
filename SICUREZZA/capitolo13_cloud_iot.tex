@@ -1,0 +1,117 @@
+\chapter{Cloud Computing e Internet of Things (IoT)}
+
+\section{Cloud Computing: Definizioni e Architettura}
+Il paradigma IT moderno evidenzia una marcata transizione verso la migrazione delle operazioni infrastrutturali, computazionali e di archiviazione verso piattaforme interconnesse note come \textit{Cloud Computing}. Tale adozione su larga scala introduce sfide architetturali e problematiche di sicurezza inedite, in particolare per quanto concerne la \textit{Data Security} e l'isolamento dei \textit{tenant}.
+
+\subsection{Definizione e Caratteristiche Essenziali}
+Secondo il \textbf{NIST SP 800-145}, il Cloud computing è "un modello che abilita l'accesso di rete pervasivo, conveniente e \textit{on-demand} a un pool condiviso di risorse di calcolo configurabili che possono essere rapidamente fornite e rilasciate con un minimo sforzo di gestione". 
+Il modello poggia su cinque caratteristiche essenziali:
+\begin{enumerate}
+    \item \textbf{Accesso alla Rete Esteso (\textit{Broad network access}):} Risorse fruibili tramite meccanismi standard da piattaforme client eterogenee.
+    \item \textbf{Elasticità Rapida (\textit{Rapid elasticity}):} Scalabilità dinamica (\textit{scale-up} e \textit{scale-down}) delle risorse in base al carico.
+    \item \textbf{Servizio Misurato (\textit{Measured service}):} Monitoraggio, controllo e fatturazione trasparente dell'utilizzo delle risorse (modello \textit{pay-per-use}).
+    \item \textbf{Self-Service On-Demand:} Provisioning automatico delle capacità computazionali senza interazione umana diretta con il fornitore.
+    \item \textbf{Pooling delle Risorse (\textit{Resource pooling}):} Modello \textit{multi-tenant} in cui risorse fisiche e virtuali sono allocate e riallocate dinamicamente in base alla domanda.
+\end{enumerate}
+
+\subsection{Modelli di Servizio Cloud}
+Il NIST definisce tre modelli di servizio principali, che determinano la granularità del controllo e la ripartizione delle responsabilità tra Cliente (\textit{Cloud Service Consumer} - CSC) e Fornitore (\textit{Cloud Service Provider} - CSP).
+
+
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}lXXXX@{}}
+\toprule
+\textbf{Stack IT} & \textbf{On-Premises} & \textbf{IaaS} & \textbf{PaaS} & \textbf{SaaS} \\ \midrule
+\textbf{Applicazioni} & Cliente & Cliente & Cliente & CSP \\
+\textbf{Dati} & Cliente & Cliente & Cliente & CSP \\
+\textbf{Runtime} & Cliente & Cliente & CSP & CSP \\
+\textbf{Middleware} & Cliente & Cliente & CSP & CSP \\
+\textbf{Sistema Operativo} & Cliente & Cliente & CSP & CSP \\
+\textbf{Virtualizzazione} & Cliente & CSP & CSP & CSP \\
+\textbf{Server / Storage / Rete} & Cliente & CSP & CSP & CSP \\ \bottomrule
+\end{tabularx}
+\caption{Matrice delle responsabilità nei diversi modelli di servizio Cloud.}
+\label{tab:cloud_service_models}
+\end{table}
+
+\begin{itemize}
+    \item \textbf{Software as a Service (SaaS):} Il cliente fruisce di un'applicazione completa erogata dal CSP (es. Microsoft 365, Salesforce). Il cliente demanda l'intera gestione dell'infrastruttura e dell'applicativo.
+    \item \textbf{Platform as a Service (PaaS):} Il CSP fornisce l'infrastruttura, il SO e l'ambiente di runtime. Il cliente ha il controllo esclusivo sullo sviluppo e sul deployment delle proprie applicazioni (es. Heroku, AWS Elastic Beanstalk).
+    \item \textbf{Infrastructure as a Service (IaaS):} Il CSP fornisce unicamente le risorse computazionali virtualizzate base (CPU, RAM, Storage, Rete). Il cliente ha il controllo completo dallo strato del Sistema Operativo in su (es. Amazon EC2, Google Compute Engine).
+\end{itemize}
+
+\subsection{Modelli di Deployment}
+L'infrastruttura Cloud può essere implementata secondo quattro topologie principali:
+
+\begin{table}[htbp]
+\centering
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+\textbf{Modello} & \textbf{Descrizione} & \textbf{Vantaggi e Svantaggi} \\ \midrule
+\textbf{Cloud Pubblico} & Risorse hardware/software di proprietà di terzi e offerte via Internet a molteplici tenant. & \textit{Pro:} Bassi costi operativi, alta scalabilità. \textit{Contro:} Minor controllo e confini normativi complessi. \\ \addlinespace
+\textbf{Cloud Privato} & Infrastruttura dedicata a uso esclusivo di una singola organizzazione (on-premise o ospitata). & \textit{Pro:} Massima sicurezza e governance sui dati. \textit{Contro:} Alti costi di capitale (CAPEX) e gestione. \\ \addlinespace
+\textbf{Cloud Comunitario} & Condivisione dell'infrastruttura tra organizzazioni indipendenti con requisiti/policy affini (es. settore PA o sanitario). & \textit{Pro:} Costi condivisi, compliance di settore. \textit{Contro:} Scalabilità limitata rispetto al pubblico. \\ \addlinespace
+\textbf{Cloud Ibrido} & Architettura composita che orchestra due o più infrastrutture. & \textit{Pro:} Flessibilità operativa e ottimizzazione dei costi. \textit{Contro:} Elevata complessità di integrazione e gestione. \\ \bottomrule
+\end{tabularx}
+\caption{Confronto tra i modelli di deployment Cloud.}
+\label{tab:cloud_deployment}
+\end{table}
+
+
+
+L'Architettura di Riferimento (NIST SP 500-292) introduce, oltre a CSP e CSC, figure intermediarie come il \textbf{Cloud Broker} (che aggrega, arbitra o intermedia servizi per conto del cliente) e il \textbf{Cloud Auditor} (parte terza che valuta compliance, sicurezza e SLA).
+
+\section{Sicurezza nel Cloud Computing}
+\subsection{Multi-Tenancy e Isolamento}
+L'allocazione delle risorse tramite il modello multi-tenant espone i clienti al rischio di \textit{cross-tenant attacks} o \textit{side-channel attacks} sulla cache condivisa dell'hardware.
+
+\subsection{Sicurezza dei Dati (\textit{Data at Rest} e \textit{Data in Transit})}
+La perdita di controllo fisico sui server richiede un affidamento critico alla crittografia. La \textit{Best Practice} impone che i dati vengano crittografati dal cliente \textit{prima} di essere caricati nel Cloud (crittografia \textit{client-side}), mantenendo la gestione delle chiavi (\textit{Key Management}) separata dal CSP.
+In ambienti database, si distinguono due architetture:
+\begin{itemize}
+    \item \textbf{Modello Multi-Istanza:} Un DBMS isolato in una VM dedicata per singolo tenant (massimo isolamento logico e controllo RBAC).
+    \item \textbf{Modello Multi-Tenant:} Singola istanza DBMS condivisa. I record sono segregati tramite un "identificatore di tenant". Minor overhead ma maggiore rischio di fuga di dati (\textit{data leakage}).
+\end{itemize}
+
+\subsection{Security as a Service (SecaaS)}
+La \textit{Cloud Security Alliance} (CSA) ha categorizzato la fornitura di servizi di sicurezza in outsourcing (SecaaS). Tra le categorie principali vi sono: l'\textbf{IAM} (\textit{Identity and Access Management}), la \textbf{DLP} (\textit{Data Loss Prevention}) e i servizi di monitoraggio integrato (\textbf{SIEM}).
+
+\subsection{Il Modulo di Sicurezza OpenStack Keystone}
+Nei deployment IaaS open-source basati su \textit{OpenStack}, l'autenticazione, la gestione delle \textit{policy} e il registro dei servizi sono demandati al componente \textbf{Keystone}. Esso emette \textit{token} di sessione e funge da \textit{Identity Provider} centralizzato, garantendo il Controllo degli Accessi Basato sui Ruoli (RBAC) in un ambiente multi-tenant.
+
+\section{Internet of Things (IoT) e Livelli di Rete}
+L'Internet of Things (IoT) rappresenta l'interconnessione globale di dispositivi \textit{deeply embedded}, sensori e attuatori, in grado di comunicare autonomamente. Costituisce la quarta generazione dell'Internet, seguendo l'IT tradizionale, le Reti Operative (OT) e il \textit{Mobile/Personal Computing}.
+
+Un dispositivo IoT (\textit{Smart Object}) è composto tipicamente da: \textbf{Sensori} (trasduttori da grandezze fisiche a segnali digitali), \textbf{Attuatori} (trasduttori per l'interazione con l'ambiente), un \textbf{Microcontrollore} (MCU) per l'elaborazione locale, e un \textbf{Ricetrasmettitore} per la comunicazione wireless. Spesso la tecnologia \textbf{RFID} funge da abilitatore per l'identificazione passiva.
+
+
+
+\subsection{Architettura di Rete IoT}
+La complessità topologica dei sistemi IoT richiede un'architettura suddivisa in quattro livelli:
+\begin{enumerate}
+    \item \textbf{Edge:} La rete terminale dei dispositivi e dei gateway. Operano con latenze dell'ordine dei millisecondi su protocolli eterogenei (es. ZigBee, Bluetooth).
+    \item \textbf{Fog (Edge Computing):} Strato intermedio di pre-elaborazione. Il Fog Computing decentralizza il Cloud, portando capacità di elaborazione, stoccaggio e distillazione del dato (\textit{data reduction}) fisicamente vicino ai sensori, garantendo latenze bassissime.
+    \item \textbf{Core:} La dorsale IP/MPLS che interconnette nodi geograficamente dispersi con elevata ridondanza e capacità.
+    \item \textbf{Cloud:} Data Center massivi per l'analisi predittiva e l'archiviazione a lungo termine di moli di dati strutturati e non strutturati (Big Data).
+\end{enumerate}
+
+\section{Sicurezza nell'Ambiente IoT}
+\subsection{Requisiti e Framework Operativi}
+Il \textbf{Cisco IoT Security Framework} organizza la sicurezza in:
+\begin{itemize}
+    \item \textbf{RBAC:} Controllo accessi basato sui ruoli, scalabile per milioni di endpoint.
+    \item \textbf{Anti-Tampering:} Rilevamento di manomissioni fisiche per sensori geograficamente esposti.
+    \item \textbf{Data \& IP Protection:} Cifratura persistente del dato sia a riposo che in transito lungo tutto lo stack di rete (dal livello di link fino al livello applicativo).
+\end{itemize}
+
+\subsection{Sicurezza Open-Source: Il modulo MiniSec}
+In contesti estremamente vincolati come le \textit{Wireless Sensor Networks} (WSN) governate da \textbf{TinyOS}, vengono impiegati protocolli ottimizzati come \textbf{MiniSec}.
+MiniSec assicura riservatezza, autenticazione del mittente e protezione dai \textit{Replay Attack} pur minimizzando il consumo energetico. Utilizza:
+\begin{itemize}
+    \item Il cifrario a blocchi \textbf{Skipjack} (progettato da NSA per architetture con basso \textit{memory footprint}).
+    \item La modalità di cifratura autenticata \textbf{OCB (\textit{Offset Codebook})}, che genera \textit{ciphertext} e tag di autenticazione in un singolo passaggio.
+\end{itemize}
+MiniSec opera in due modalità: \textbf{MiniSec-U} (Unicast) impiega contatori sincronizzati, mentre \textbf{MiniSec-B} (Broadcast) mitiga i \textit{Replay Attack} dividendo il tempo in "epoche" e sfruttando la struttura dati probabilistica dei \textit{Bloom Filter} all'interno della stessa epoca.

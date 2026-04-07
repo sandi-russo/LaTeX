@@ -1,0 +1,160 @@
+\chapter{Crittografia a Chiave Pubblica e Autenticazione del Messaggio}
+
+\section{Funzioni di Hash Sicure}
+
+La funzione di hash unidirezionale, o funzione di hash sicura, è un elemento crittografico fondamentale non solo per l'autenticazione dei messaggi, ma anche per le firme digitali. Essa consente di ottenere un'impronta digitale (digest) di lunghezza fissa a partire da un input di lunghezza arbitraria, garantendo efficienza computazionale e compattezza del risultato. Le funzioni di hash moderne sono progettate per soddisfare proprietà di sicurezza ben precise, come la resistenza alla preimmagine, alla seconda preimmagine e alle collisioni. Tali proprietà rendono computazionalmente impraticabile risalire al messaggio originale o trovare due messaggi distinti che producano lo stesso valore di hash. Per questo motivo, esse rappresentano un componente essenziale nei protocolli di sicurezza e nei sistemi di autenticazione.
+
+\subsection{Funzioni di Hash Semplici}
+Tutte le funzioni di hash operano secondo principi generali comuni. L'input (messaggio, file, ecc.) viene visto come una sequenza di blocchi di $n$ bit. L'input viene elaborato un blocco alla volta in modo iterativo per produrre un valore di hash di $n$ bit.
+
+Una delle funzioni di hash più semplici è l'operazione di XOR (exclusive-OR) bit a bit di ogni blocco. Può essere espressa come:
+
+$$C_i = b_{i1} \oplus b_{i2} \oplus \dots \oplus b_{im}$$
+
+dove:
+\begin{itemize}
+    \item $C_i$ è l'$i$-esimo bit del codice hash, con $1 \le i \le n$.
+    \item $m$ è il numero di blocchi da $n$ bit nell'input.
+    \item $b_{ij}$ è l'$i$-esimo bit nel $j$-esimo blocco.
+    \item $\oplus$ è l'operazione di XOR.
+\end{itemize}
+
+Questa operazione (controllo di ridondanza longitudinale) calcola una semplice parità per ogni posizione di bit. È ragionevolmente efficace per dati casuali, ma inefficace con dati formattati in modo prevedibile.
+
+Una semplice miglioria è la procedura RXOR, che consiste nell'eseguire uno spostamento circolare (rotazione) di 1 bit sul valore di hash dopo l'elaborazione di ogni blocco. Sebbene fornisca una buona misura di integrità, è \textbf{inutile per la sicurezza}: è banale produrre un nuovo messaggio che generi lo stesso codice hash aggiungendo un blocco finale calcolato ad hoc. Anche se usata con la cifratura in modalità CBC, un attaccante potrebbe riordinare i blocchi senza alterare l'hash finale.
+
+
+
+
+
+
+\subsection{La Funzione di Hash Sicura SHA}
+Negli ultimi anni, la famiglia di funzioni di hash più utilizzata è stata la Secure Hash Algorithm (SHA).
+\begin{description}
+    \item[SHA-1:] Pubblicata nel 1995, produce un hash di 160 bit. Oggi è deprecata a causa di vulnerabilità note.
+    \item[SHA-2:] Pubblicata nel 2002, è una famiglia con diverse lunghezze di output (SHA-224, SHA-256, SHA-384, SHA-512). Sono attualmente considerate sicure.
+    \item[SHA-3:] Pubblicata nel 2015 dal NIST, ha una struttura interna completamente diversa da SHA-2, offrendo un'alternativa sicura nel caso venissero scoperte nuove vulnerabilità.
+\end{description}
+
+\subsection{Elaborazione di SHA-512}
+L'algoritmo SHA-512 prende in input un messaggio di lunghezza inferiore a $2^{128}$ bit e produce un digest di 512 bit, elaborando blocchi da 1024 bit.
+
+
+
+Il processo si articola in 5 fasi:
+\begin{enumerate}
+    \item \textbf{Aggiunta di bit di padding:} Il messaggio viene riempito affinché la sua lunghezza sia congruente a 896 modulo 1024 (un bit '1' seguito dai necessari '0').
+    \item \textbf{Aggiunta della lunghezza:} Un blocco di 128 bit, indicante la lunghezza originale, viene accodato. Il messaggio è ora un multiplo esatto di 1024 bit.
+    \item \textbf{Inizializzazione del buffer di hash:} Un buffer di 512 bit (otto registri a 64 bit: $a, b, c, d, e, f, g, h$) viene inizializzato con costanti derivate dalle radici quadrate dei primi 8 numeri primi.
+    \item \textbf{Elaborazione in blocchi:} Il cuore è una funzione di compressione a 80 round. Per ogni blocco, la funzione prende il buffer del passo precedente ($H_{i-1}$) e produce il nuovo ($H_i$). Ogni round usa una parola a 64 bit $W_t$ e una costante $K_t$. L'output dell'80-esimo round viene sommato (modulo $2^{64}$) al buffer di input $H_{i-1}$.
+    \item \textbf{Output:} Dopo l'elaborazione di tutti i blocchi, l'output dell'ultimo stadio è il message digest finale di 512 bit.
+\end{enumerate}
+L'effetto valanga è garantito dall'estrema complessità delle operazioni: ogni bit dell'output dipende strettamente da ogni bit dell'input.
+
+\section{HMAC}
+
+Per usare una funzione di hash per l'autenticazione dei messaggi serve una chiave segreta. L'approccio standardizzato è l'HMAC (Hash-based Message Authentication Code). Si preferiscono i MAC basati su hash perché le funzioni di hash sono più veloci dei cifrari e il loro codice è ampiamente disponibile.
+
+\subsection{Obiettivi di Progettazione}
+\begin{itemize}
+    \item Utilizzare funzioni di hash esistenti senza modifiche.
+    \item Permettere una facile sostituibilità della funzione di hash.
+    \item Preservare le prestazioni originali.
+    \item Gestire le chiavi in modo semplice.
+    \item Avere un'analisi crittografica solida e ben compresa.
+\end{itemize}
+
+\subsection{Algoritmo HMAC}
+HMAC combina una chiave segreta con il messaggio tramite due passaggi della funzione di hash:
+
+$$\text{HMAC}(K, M) = H[(K^+ \oplus \text{opad}) \mathbin{\|} H[(K^+ \oplus \text{ipad}) \mathbin{\|} M]]$$
+
+dove:
+\begin{itemize}
+    \item $H$ è la funzione di hash (es. SHA-256).
+    \item $M$ è il messaggio.
+    \item $K$ è la chiave segreta.
+    \item $K^+$ è la chiave $K$ riempita con zeri fino alla dimensione del blocco della funzione $H$.
+    \item \text{ipad} e \text{opad} sono costanti esadecimali predefinite.
+    \item $\|$ rappresenta la concatenazione.
+\end{itemize}
+
+\subsection{Sicurezza di HMAC}
+La sicurezza di HMAC è formalmente dimostrata ed è strettamente legata alla robustezza della funzione di hash $H$. Compromettere HMAC richiede, in pratica, trovare collisioni o prevedere l’output della funzione di compressione senza conoscere la chiave segreta $K$, operazione computazionalmente impraticabile. In assenza della chiave, anche un attacco del compleanno offline non risulta efficace.
+
+\section{Cifratura Autenticata}
+
+La cifratura autenticata garantisce contemporaneamente confidenzialità e integrità/autenticità dei dati. Un esempio efficiente di tale tecnica è la modalità \textbf{Offset Codebook (OCB)}.
+
+\subsection{Funzionamento di OCB}
+OCB trasforma un cifrario a blocchi (come AES) in uno schema AE. Il testo cifrato $C[i]$ del blocco di messaggio $M[i]$ è calcolato come:
+
+$$C[i] = E_K(M[i] \oplus Z[i]) \oplus Z[i]$$
+
+dove $E_K$ è la cifratura con chiave $K$, e $Z[i]$ è un offset unico generato da un \textit{nonce}. L'uso degli offset garantisce che blocchi plaintext identici generino ciphertext diversi. OCB produce anche un tag di autenticazione cifrando un checksum di tutti i blocchi plaintext.
+
+\section{L'Algoritmo di Cifratura a Chiave Pubblica RSA}
+
+Sviluppato nel 1977 da Rivest, Shamir e Adleman, l'RSA è il cifrario a chiave pubblica più diffuso. È un cifrario a blocchi dove plaintext e ciphertext sono interi compresi tra $0$ e $n-1$.
+
+\subsection{Descrizione dell'Algoritmo}
+Le operazioni di cifratura ($C$) e decifratura ($M$) sono:
+
+$$C = M^e \pmod{n}$$
+$$M = C^d \pmod{n} = (M^e)^d \pmod{n} = M^{ed} \pmod{n}$$
+
+Le chiavi sono definite come:
+\begin{itemize}
+    \item \textbf{Chiave Pubblica:} $PU = \{e, n\}$
+    \item \textbf{Chiave Privata:} $PR = \{d, n\}$
+\end{itemize}
+
+La decifratura funziona se $e$ e $d$ sono inversi moltiplicativi modulo $\phi(n)$, dove $\phi(n)$ è la funzione toziente di Eulero. Per due numeri primi $p$ e $q$, $\phi(n) = (p-1)(q-1)$. La relazione matematica è:
+
+$$ed \equiv 1 \pmod{\phi(n)}$$
+
+\subsection{Generazione delle Chiavi}
+\begin{enumerate}
+    \item Scegliere due numeri primi distinti, $p$ e $q$.
+    \item Calcolare $n = p \times q$.
+    \item Calcolare $\phi(n) = (p-1)(q-1)$.
+    \item Scegliere $e$ tale che $1 < e < \phi(n)$ e $\gcd(\phi(n), e) = 1$.
+    \item Calcolare $d$ tale che $d \equiv e^{-1} \pmod{\phi(n)}$.
+\end{enumerate}
+
+\subsection{Esempio di Funzionamento}
+Se $p=17$ e $q=11$:
+\begin{itemize}
+    \item $n = 187$ e $\phi(n) = 160$.
+    \item Scelto $e=7$ (coprimo con 160), si calcola $d=23$ (poiché $23 \times 7 = 161 \equiv 1 \pmod{160}$).
+\end{itemize}
+Per cifrare $M=88$: $C = 88^7 \pmod{187} = 11$.
+Per decifrare $C=11$: $M = 11^{23} \pmod{187} = 88$.
+
+\subsection{La Sicurezza di RSA}
+Gli attacchi contro RSA si dividono in:
+\begin{itemize}
+    \item \textbf{Forza Bruta:} Provare tutte le chiavi private. Mitigato usando chiavi molto grandi.
+    \item \textbf{Attacchi Matematici (Fattorizzazione):} Basati sulla difficoltà di fattorizzare $n$ in $p$ e $q$, o di calcolare direttamente $\phi(n)$ o $d$. Attualmente si raccomandano chiavi tra i 1024 e i 2048 bit.
+    \item \textbf{Timing Attacks:} Dedurre la chiave misurando il tempo di esponenziazione modulare. Contromisure includono tempi di calcolo costanti, ritardi casuali o il \textit{blinding} (mascherare il ciphertext prima dell'esponenziazione).
+    \item \textbf{Chosen Ciphertext Attacks:} Sfruttano proprietà specifiche dell'algoritmo.
+\end{itemize}
+
+\section{Diffie-Hellman e Altri Algoritmi Asimmetrici}
+
+
+
+Il protocollo Diffie-Hellman permette di scambiare in modo sicuro una chiave segreta per la crittografia simmetrica. Si basa sulla difficoltà di calcolare i \textbf{logaritmi discreti} (trovare l'esponente $i$ tale che $b \equiv a^i \pmod{p}$).
+
+\subsection{L'Algoritmo Diffie-Hellman}
+Siano $q$ un numero primo e $\alpha$ una sua radice primitiva (pubblici):
+\begin{enumerate}
+    \item L'utente A sceglie un segreto $X_A < q$ e calcola $Y_A = \alpha^{X_A} \pmod{q}$.
+    \item L'utente B sceglie un segreto $X_B < q$ e calcola $Y_B = \alpha^{X_B} \pmod{q}$.
+    \item A e B si scambiano pubblicamente $Y_A$ e $Y_B$.
+    \item A calcola la chiave condivisa: $K = (Y_B)^{X_A} \pmod{q}$.
+    \item B calcola la chiave condivisa: $K = (Y_A)^{X_B} \pmod{q}$.
+\end{enumerate}
+
+Entrambi ottengono lo stesso $K$ poiché:
+$$(Y_B)^{X_A} = (\alpha^{X_B})^{X_A} = \alpha^{X_B X_A} = (\alpha^{X_A})^{X_B} = (Y_A)^{X_B} \pmod{q}$$

@@ -3,7 +3,7 @@
     "prefix": "!tex",
     "body": [
       "\\documentclass{article}",
-      "\\usepackage{graphicx} % Required for inserting images",
+      "\\usepackage{graphicx}",
       "\\usepackage[utf8]{inputenc}",
       "\\usepackage[T1]{fontenc}",
       "\\usepackage[italian]{babel}",

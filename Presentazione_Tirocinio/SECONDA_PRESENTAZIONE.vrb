@@ -1,0 +1,15 @@
+\frametitle{Allineamento Dati (Zero-Difference Benchmark)}
+\textbf{\faBalanceScale \hspace{0.2cm} Garantire la Validità Scientifica}
+    \small
+
+    Per un benchmark ML equo, Oracle e Neo4j devono operare sugli \textbf{stessi identici byte}. I dati snelliti di Oracle sono stati esportati in file CSV puri (\texttt{sqlplus SET MARKUP CSV}) per sovrascrivere l'istanza originale di Neo4j.
+
+    \vspace{0.2cm}
+    \begin{block}{\faBug \hspace{0.2cm} Risoluzione Problemi di Importazione (Neo4j APOC)}
+        \small
+        \begin{itemize}
+            \item \textbf{Pulizia Header:} Header CSV sporco rimosso via bash (\texttt{sed}).
+            \item \textbf{Deadlock Multi-thread:} L'importazione massiva di archi con \texttt{parallel: true} causava eccezioni \textit{ExclusiveLock} sui nodi centrali (hub).
+            \item \textbf{Fix Applicato:} Fallback all'esecuzione thread-safe (\texttt{parallel: false}) sacrificando la velocità per garantire l'integrità transazionale.
+        \end{itemize}
+    \end{block}

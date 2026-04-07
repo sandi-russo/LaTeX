@@ -1,0 +1,121 @@
+\chapter{Sicurezza su Internet: Protocolli e Standard}
+
+\section{Secure E-mail e S/MIME}
+
+S/MIME (Secure/Multipurpose Internet Mail Extension) è un'estensione di sicurezza allo standard di formattazione e-mail MIME. È stato progettato per fornire servizi crittografici ai messaggi di posta elettronica, tra cui autenticazione, integrità e riservatezza. Si basa sull’uso della crittografia a chiave pubblica e su certificati digitali X.509 per la gestione delle chiavi e l'identificazione dei mittenti.
+
+\subsection{MIME}
+MIME è un'estensione dello standard RFC 822 (che definiva il formato dei messaggi di testo su Internet in semplice ASCII). MIME introduce nuovi campi di intestazione per descrivere il corpo del messaggio, inclusi il formato e la codifica, definendo una serie di formati di contenuto per supportare e-mail multimediali (es. testo, immagini, audio, video). In particolare, permette di suddividere il messaggio in più parti (multipart), ciascuna con un proprio tipo di contenuto, rendendo possibile l'invio di allegati e dati non testuali in modo standardizzato e interoperabile tra diversi client di posta.
+
+\subsection{S/MIME e Funzionalità}
+La funzionalità S/MIME è integrata nella maggior parte dei software di posta elettronica moderni. Aggiunge nuovi tipi di contenuto MIME per fornire la capacità di firmare e/o cifrare i messaggi, supportando quattro nuove funzioni:
+
+\begin{description}
+    \item[Dati Busta (Enveloped data):] Consiste in un contenuto cifrato di qualsiasi tipo e nelle chiavi di cifratura del contenuto, a loro volta cifrate per uno o più destinatari. In questo modo solo i destinatari previsti, in possesso della chiave privata corretta, possono accedere al contenuto del messaggio.
+    \item[Dati Firmati (Signed data):] Una firma digitale creata calcolando il message digest del contenuto e cifrandolo con la chiave privata del mittente. Il contenuto e la firma vengono codificati in base64. Un messaggio di questo tipo può essere visualizzato solo da un destinatario con capacità S/MIME e garantisce autenticità e integrità.
+    \item[Dati Firmati in Chiaro (Clear-signed data):] Simile ai dati firmati, ma solo la firma digitale viene codificata in base64. Permette ai destinatari senza capacità S/MIME di leggere il contenuto del messaggio (pur non potendo verificare la firma), favorendo compatibilità con client meno avanzati.
+    \item[Dati Firmati e Busta (Signed and enveloped data):] Entità annidate: dati cifrati possono essere firmati, e dati firmati possono essere cifrati. Questa combinazione consente di ottenere simultaneamente riservatezza, autenticità e integrità in un unico messaggio strutturato.
+\end{description}
+
+\subsection{Funzionamento Generale}
+\textbf{Firma (Dati Firmati/Firmati in Chiaro):}
+\begin{enumerate}
+    \item Viene calcolato un message hash del contenuto (tipicamente SHA-256).
+    \item L'hash viene cifrato con la chiave privata del mittente (es. RSA o DSA) per creare la firma digitale.
+    \item La firma viene allegata al messaggio e codificata in base64 (che mappa i dati binari in caratteri ASCII stampabili) per proteggerla da alterazioni in transito.
+\end{enumerate}
+
+\textbf{Cifratura (Dati Busta):}
+\begin{enumerate}
+    \item S/MIME genera una chiave di sessione segreta pseudocasuale per il messaggio.
+    \item Il messaggio viene cifrato con la chiave di sessione usando un algoritmo simmetrico (es. AES).
+    \item La chiave di sessione viene cifrata con la chiave pubblica del destinatario (usando RSA) e trasmessa insieme al messaggio cifrato.
+    \item Il destinatario userà la propria chiave privata per decifrare la chiave di sessione e, di conseguenza, il messaggio.
+\end{enumerate}
+Per gestire le chiavi pubbliche, S/MIME si affida a certificati a chiave pubblica conformi allo standard X.509v3.
+
+\section{DomainKeys Identified Mail (DKIM)}
+
+DKIM è una specifica per la firma crittografica dei messaggi e-mail che permette a un dominio mittente di assumersi la responsabilità di un messaggio. I destinatari verificano la firma interrogando il DNS del dominio mittente.
+
+\subsection{Architettura della Posta su Internet}
+\begin{itemize}
+    \item \textbf{MUA (Message User Agent):} Il client di posta dell'utente (es. Outlook).
+    \item \textbf{MHS (Message Handling Service):} Composto da:
+    \begin{itemize}
+        \item \textit{MSA (Mail Submission Agent):} Accetta il messaggio dal MUA.
+        \item \textit{MTA (Message Transfer Agent):} Inoltra il messaggio nella rete.
+        \item \textit{MDA (Mail Delivery Agent):} Consegna il messaggio al Message Store.
+    \end{itemize}
+    \item \textbf{MS (Message Store):} Archivio messaggi in attesa di recupero (via POP/IMAP).
+    \item \textbf{ADMD (Administrative Management Domain):} Provider di posta (ISP, azienda).
+    \item \textbf{DNS:} Servizio che mappa i nomi host in indirizzi IP.
+\end{itemize}
+
+\subsection{Strategia di DKIM}
+DKIM è trasparente per l'utente finale:
+\begin{enumerate}
+    \item Il messaggio viene firmato con la chiave privata del dominio amministrativo (ADMD), coprendo contenuto e intestazioni. Non usa la chiave dell'utente.
+    \item L'MDA del destinatario recupera la chiave pubblica del dominio mittente tramite DNS.
+    \item Se la verifica ha successo, conferma che il messaggio proviene dal dominio dichiarato e non è alterato.
+\end{enumerate}
+A differenza di S/MIME (basato sull'utente), DKIM è uno strumento a livello di server fondamentale per combattere phishing e spoofing.
+
+\section{Secure Sockets Layer (SSL) e Transport Layer Security (TLS)}
+
+TLS, successore di SSL, fornisce un servizio di sicurezza end-to-end affidabile basandosi sul protocollo TCP.
+
+\subsection{Architettura TLS}
+TLS è composto da due livelli:
+\begin{enumerate}
+    \item \textbf{Record Protocol:} Fornisce confidenzialità e integrità ai protocolli superiori.
+    \item \textbf{Protocolli di Livello Superiore:} \textit{Handshake Protocol} (negoziazione parametri), \textit{Change Cipher Spec Protocol} (attivazione parametri) e \textit{Alert Protocol}.
+\end{enumerate}
+
+\textbf{Concetti chiave:}
+\begin{itemize}
+    \item \textit{Connessione TLS:} Relazione transitoria peer-to-peer per il trasporto.
+    \item \textit{Sessione TLS:} Associazione tra client e server creata dall'Handshake. Definisce i parametri crittografici condivisibili tra più connessioni, evitando costose rinegoziazioni.
+\end{itemize}
+
+
+
+\subsection{Protocolli TLS}
+\begin{description}
+    \item[Record Protocol:] Frammenta i dati, li comprime (opzionale), calcola un MAC (per l'integrità), li cifra (per la confidenzialità) e aggiunge un'intestazione.
+    \item[Change Cipher Spec Protocol:] Singolo messaggio per segnalare il passaggio all'uso della suite di cifratura negoziata.
+    \item[Alert Protocol:] Invia avvisi (errori fatali o notifiche).
+    \item[Handshake Protocol:] Autentica le parti, negozia algoritmi (cifratura e MAC) e stabilisce le chiavi. Si divide in 4 fasi (scambio Hello, invio certificati/chiavi dal server, invio certificati/chiavi dal client, e messaggi Finished).
+    \item[Heartbeat Protocol:] Monitora la disponibilità della controparte e previene la chiusura della connessione da parte dei firewall.
+\end{description}
+
+\subsection{Attacchi a SSL/TLS: Heartbleed}
+Nel 2014 fu scoperta \textit{Heartbleed}, una vulnerabilità critica in OpenSSL legata all'Heartbeat Protocol. Non era un difetto del protocollo TLS, ma un grave bug di programmazione: una richiesta malformata induceva il server a restituire porzioni della propria memoria contenenti chiavi private e password.
+
+\section{HTTPS}
+
+HTTPS (HTTP over SSL/TLS) combina HTTP e TLS per comunicazioni sicure tra browser e server web (porta 443). HTTPS cifra:
+\begin{itemize}
+    \item L'URL del documento richiesto.
+    \item Il contenuto del documento e dei moduli compilati.
+    \item I cookie e le intestazioni HTTP.
+\end{itemize}
+La chiusura di HTTPS richiede che TLS scambi correttamente gli avvisi \textit{close\_notify}.
+
+\section{Sicurezza di IPv4 e IPv6 (IPsec)}
+
+IPsec è una suite che fornisce sicurezza a livello di rete (livello IP), garantendo autenticazione e cifratura trasparenti per tutto il traffico (VPN, accessi remoti, extranet). Se implementato su firewall/router, protegge tutto il traffico perimetrale.
+
+
+
+\subsection{Associazioni di Sicurezza (SA)}
+Una \textbf{SA (Security Association)} è una relazione unidirezionale tra mittente e destinatario che definisce i servizi di sicurezza da applicare. È identificata da: Indice dei Parametri di Sicurezza (SPI), IP di destinazione e identificatore protocollo (ESP).
+
+\subsection{Encapsulating Security Payload (ESP)}
+ESP è il protocollo IPsec che fornisce confidenzialità, integrità e autenticazione (sostituendo l'obsoleto AH). 
+
+ESP supporta due modalità:
+\begin{description}
+    \item[Modalità Transport:] Protegge solo il payload del pacchetto IP (es. segmento TCP), ma non l'intestazione IP. Usata per comunicazioni end-to-end tra host.
+    \item[Modalità Tunnel:] Protegge l'intero pacchetto IP originale, incapsulandolo in un nuovo pacchetto IP con una nuova intestazione esterna. Usata per le VPN (da gateway a gateway), nascondendo il traffico interno ai router intermedi.
+\end{description}
