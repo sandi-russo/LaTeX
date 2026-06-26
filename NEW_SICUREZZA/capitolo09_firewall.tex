@@ -1,0 +1,138 @@
+\chapter{Firewall}
+
+\section{Introduzione}
+
+\begin{defbox}[Firewall]
+I firewall sono dispositivi o software di sicurezza basati sull'idea che il traffico di rete, specialmente quello proveniente da ambienti meno sicuri (come Internet), debba essere autenticato e ispezionato prima di passare a un ambiente più sicuro.
+\end{defbox}
+
+\section{Requisiti Minimi e Politiche d'Accesso}
+\begin{enumerate}
+    \item \textbf{Canalizzazione obbligatoria:} Tutto il traffico (sia in entrata che in uscita) deve passare attraverso il firewall, che agisce come unico punto di accesso (choke point).
+    \item \textbf{Filtro autorizzativo:} Solo il traffico autorizzato, conforme alle \textit{policy} di sicurezza definite dall'organizzazione, deve essere lasciato passare.
+    \item \textbf{Immunità:} Il firewall stesso deve risiedere su un sistema affidabile e sicuro, immune ai tentativi di penetrazione.
+\end{enumerate}
+
+Le \textbf{politiche d'accesso} si basano su caratteristiche di filtraggio quali: indirizzi IP, protocolli (TCP/UDP), porte di rete, direzione del traffico, o addirittura comportamenti legati al tempo (orari consentiti) e frequenza (rilevamento di scansioni).
+
+\section{Filtri del Firewall}
+
+Un firewall può operare usando due approcci opposti alle policy predefinite:
+\begin{description}
+    \item[Default discard (Deny All)] Tutto ciò che non è espressamente permesso è bloccato. È la scelta più conservativa, raccomandata e preferita in ambito aziendale.
+    \item[Default forward (Allow All)] Tutto ciò che non è espressamente proibito è permesso. È un approccio più aperto ma decisamente meno sicuro.
+\end{description}
+
+\subsection{Firewall a Filtraggio di Pacchetto (Stateless)}
+
+Applica regole a ciascun pacchetto IP in ingresso e in uscita isolatamente. Decide se inoltrarlo (\textit{forward}) o scartarlo (\textit{drop}/\textit{reject}) leggendo:
+\begin{itemize}
+    \item Indirizzi IP di origine e destinazione.
+    \item Numeri di porta di livello trasporto (TCP/UDP).
+    \item Campo protocollo nell'header IP (es. ICMP, TCP, UDP).
+    \item Interfaccia di rete di arrivo o uscita.
+\end{itemize}
+
+\begin{warnbox}[Attacchi ai Packet Filter]
+I firewall stateless presentano diverse vulnerabilità strutturali:
+\begin{itemize}
+    \item \textbf{IP Spoofing:} L'attaccante falsifica l'IP sorgente fingendo di essere un host interno. \textit{Contromisura:} Scartare pacchetti che arrivano dall'interfaccia esterna ma recano un IP interno (Anti-spoofing).
+    \item \textbf{Source Routing:} L'attaccante specifica il percorso forzato del pacchetto. \textit{Contromisura:} Disabilitare e scartare pacchetti con opzione IP Source Routing.
+    \item \textbf{Tiny Fragment Attack:} L'attaccante frammenta l'header TCP in pezzi microscopici, sperando che il firewall legga solo il primo frammento incompleto e lasci passare il resto. \textit{Contromisura:} Imporre una lunghezza minima per il primo frammento.
+\end{itemize}
+\end{warnbox}
+
+\subsection{Firewall a Filtraggio di Pacchetto con Stato (Stateful)}
+
+A differenza del filtro stateless, il firewall \textit{stateful} tiene traccia del \textbf{contesto} delle connessioni TCP/UDP.
+Crea una tabella di stato dinamica in cui memorizza le connessioni in uscita legittime (es. un client interno che apre una connessione sulla porta 80). Quando arrivano i pacchetti di risposta sulla porta ad alto numero generata casualmente dal client (es. porta 51234), il firewall controlla la tabella: se il pacchetto appartiene a una connessione aperta, passa; altrimenti viene bloccato. Questo evita di dover tenere permanentemente aperte tutte le porte alte in ingresso, migliorando drasticamente la sicurezza.
+
+\section{Tipi di Firewall Avanzati}
+
+\subsection{Gateway a Livello Applicativo (Proxy)}
+Un proxy applicativo funge da intermediario totale. L'utente si connette al proxy, si autentica, e il proxy apre una seconda e distinta connessione verso il server reale.
+\begin{itemize}
+    \item \textbf{Vantaggi:} Altissima sicurezza (comprende i comandi del livello 7 OSI, es. \texttt{GET} di HTTP o \texttt{PUT} di FTP), logging eccellente.
+    \item \textbf{Svantaggi:} Forte \textit{overhead} prestazionale, poiché interrompe la connessione TCP ed elabora i dati per intero in \textit{user-space}.
+\end{itemize}
+
+\subsection{Proxy a Livello di Circuito}
+Gestisce connessioni senza analizzare il payload applicativo. L'intermediario accetta la connessione dal client TCP, ne apre un'altra verso il server, e semplicemente copia i segmenti TCP da una connessione all'altra. Ideale se l'amministratore si fida degli utenti interni (es. proxy SOCKS in uscita).
+
+\section{Classificazione per Locazione}
+
+\begin{description}
+    \item[Bastion Host] Un sistema hardware/software pesantemente fortificato, esposto alla rete ostile. Esegue solo i servizi strettamente necessari (spesso solo funzioni di firewall o proxy) ed è pesantemente \textit{hardened}.
+    \item[Host-based Firewall] Software installato su un singolo server (es. \textit{iptables} su Linux, Windows Defender Firewall). Protegge il singolo sistema a prescindere dall'infrastruttura di rete.
+    \item[Personal Firewall] Software per PC o workstation domestiche (es. Little Snitch, Norton). Avvisano l'utente sulle connessioni e bloccano traffico non autorizzato a livello applicativo.
+\end{description}
+
+\begin{exbox}[pfSense]
+\textit{pfSense} è una popolare distribuzione basata su FreeBSD dedicata all'implementazione di router e firewall avanzati. Date le sue capacità (VPN, proxy, stateful filtering) e robustezza, è spesso impiegato come Bastion Host nelle architetture di rete aziendali.
+\end{exbox}
+
+\section{Architetture di Sicurezza di Rete (Topologie)}
+
+L'amministratore decide quanti firewall usare e dove posizionarli. La soluzione più comune per proteggere i servizi esposti è la DMZ.
+
+\subsection{La Rete DMZ (Demilitarized Zone)}
+La DMZ è un segmento isolato che contiene i servizi pubblici dell'azienda (Web Server, Mail, DNS). È separata sia da Internet che dalla LAN aziendale.
+
+\begin{center}
+\begin{tikzpicture}[node distance=1.5cm, thick, scale=0.85, transform shape]
+\node (internet) [draw, ellipse, fill=blue!10, minimum width=2cm, minimum height=1cm] {Internet};
+\node (fw_ext) [draw, rectangle, fill=red!20, right=2cm of internet, text width=2cm, align=center] {FW\\Esterno};
+\node (dmz) [draw, rectangle, rounded corners, fill=green!10, right=2cm of fw_ext, minimum height=2.5cm, align=center] {DMZ\\(Web, Mail)};
+\node (fw_int) [draw, rectangle, fill=red!20, right=2cm of dmz, text width=2cm, align=center] {FW\\Interno};
+\node (lan) [draw, rectangle, rounded corners, fill=blue!10, right=2cm of fw_int, minimum height=2.5cm, align=center] {LAN\\Aziendale};
+
+\draw[<->, >=Stealth] (internet) -- (fw_ext);
+\draw[<->, >=Stealth] (fw_ext) -- (dmz);
+\draw[<->, >=Stealth] (dmz) -- (fw_int);
+\draw[<->, >=Stealth] (fw_int) -- (lan);
+\end{tikzpicture}
+\end{center}
+
+\begin{itemize}
+    \item \textbf{Firewall Esterno:} Controlla l'accesso alla DMZ limitandolo ai servizi essenziali.
+    \item \textbf{Firewall Interno:} Molto più restrittivo. Impedisce ad un attaccante che abbia compromesso un server nella DMZ di fare movimenti laterali ed entrare nella LAN interna. Al contempo protegge la DMZ da minacce provenienti dalla LAN.
+\end{itemize}
+
+\subsection{Topologie Comuni}
+\begin{description}
+    \item[Router di screening] Un semplice router (stateless) tra LAN e Internet. Usato per SOHO (Small Office / Home Office).
+    \item[Bastion singolo in-line] Un solo firewall tra interno ed esterno.
+    \item[Bastion singolo a T] Un unico firewall con tre interfacce di rete (tre schede di rete): una per Internet, una per la LAN, una per la DMZ.
+    \item[Doppio bastion in-line] (Vedi schema sopra). La DMZ si trova tra due firewall hardware separati. Molto sicuro e usato da grandi aziende.
+    \item[Firewall distribuiti] Una combinazione di firewall autonomi hardware di perimetro coordinati con firewall host-based installati su ogni endpoint, tutti gestiti da un server centrale.
+\end{description}
+
+\subsection{VPN e Firewall}
+Le VPN (Virtual Private Network) crittografano il traffico (es. protocollo IPSec) permettendo a sedi remote di comunicare in sicurezza su Internet.
+\begin{notebox}[VPN e Ispezione]
+Se un gateway IPSec è posto \textbf{dietro} il firewall, il traffico attraversa il firewall criptato. Il firewall non potrà ispezionarne il contenuto a livello 7, vanificando alcune difese. Per questo motivo, nei dispositivi moderni (es. Next-Generation Firewall) i tunnel VPN vengono spesso terminati direttamente \textbf{sul} firewall, che decripta il traffico, lo ispeziona e poi lo inoltra alla rete interna.
+\end{notebox}
+
+\section{Intrusion Prevention System (IPS)}
+
+L'Intrusion Prevention System (IPS) è l'evoluzione reattiva dell'IDS. Non si limita a rilevare e avvisare, ma \textbf{agisce attivamente} (blocca pacchetti, chiude connessioni TCP, altera chiamate di sistema) per prevenire l'intrusione. L'IPS è spesso installato \textit{in-line} (in linea col traffico) come un firewall di nuova generazione.
+
+\subsection{Host-Based IPS (HIPS)}
+Lavora sul singolo host. Identifica comportamenti malevoli tramite anomalie o firme.
+Può bloccare:
+\begin{itemize}
+    \item Alterazioni non autorizzate di file di sistema e del registro (rootkit).
+    \item Tentativi di escalation dei privilegi.
+    \item Attacchi di Buffer Overflow e \textit{directory traversal}.
+\end{itemize}
+Un HIPS moderno sfrutta tecnologie di \textbf{Sandbox}: isola codice sospetto o script all'interno di un ambiente sicuro per osservarne il comportamento prima di permetterne l'esecuzione sul sistema reale.
+
+\subsection{Network-Based IPS (NIPS)}
+È una versione \textit{in-line} del NIDS. Deve essere capace di analizzare il traffico a velocità di rete elevatissime.
+Requisito fondamentale è la ricostruzione del payload: il NIPS riassembla i frammenti TCP per leggere l'intero flusso applicativo e confrontarlo con le firme. Se il flusso è malevolo, interrompe la connessione (es. inviando TCP RST o semplicemente scartando (\textit{dropping}) tutti i pacchetti futuri di quel flusso).
+
+Usa pattern matching (byte specifici), stateful matching (ricerca firme nel flusso di stato), e anomalie statistiche o protocollari (deviazioni dagli standard RFC).
+
+\subsection{Sistema Immunitario Digitale}
+Un paradigma moderno e globale. Prevede una vasta rete di sensori IPS distribuiti che inviano dati e file sospetti a un centro di analisi globale in cloud.
+Se in un'azienda viene rilevato un comportamento mai visto (zero-day), il sistema immunitario lo analizza in cloud (tramite sandbox AI), estrae una firma e invia in tempo reale l'aggiornamento a tutti i firewall/IPS del mondo connessi a quel servizio. Questo offre una risposta collettiva e proattiva (es. Threat Intelligence di Cisco Talos o FortiGuard).

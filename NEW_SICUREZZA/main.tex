@@ -1,0 +1,139 @@
+\documentclass[a4paper,11pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{lmodern}
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{booktabs, array, tabularx, colortbl}
+\usepackage{float}
+\usepackage{caption}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings, listingsutf8}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{positioning, calc, arrows.meta, shapes.geometric, shapes.misc, decorations.pathreplacing, decorations.markings, fit, backgrounds, patterns, matrix, chains, trees}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween, groupplots}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{MidnightBlue}\bfseries,
+  commentstyle=\color{OliveGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray!40},
+  backgroundcolor=\color{gray!5},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  language=bash
+}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\leftmark}
+\fancyhead[R]{\small Sicurezza dei Sistemi}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=MidnightBlue, urlcolor=RoyalBlue}
+
+% Section styling
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{MidnightBlue}}
+  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{RoyalBlue}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{NavyBlue}}
+  {\thesubsection}{1em}{}
+
+% Custom boxes
+\newtcolorbox{defbox}[1][]{
+  colback=blue!5, colframe=MidnightBlue,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{exbox}[1][]{
+  colback=green!5, colframe=OliveGreen,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{notebox}[1][]{
+  colback=yellow!5, colframe=Goldenrod,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{warnbox}[1][]{
+  colback=red!5, colframe=BrickRed,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{thmbox}[1][]{
+  colback=purple!5, colframe=Purple,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{codebox}[1][]{
+  colback=gray!5, colframe=gray!60,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+% Paragraph
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% Enumerate style
+\usepackage{enumitem}
+\setlist[itemize]{topsep=4pt, itemsep=2pt}
+\setlist[enumerate]{topsep=4pt, itemsep=2pt}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+{\Huge\bfseries\color{MidnightBlue} Sicurezza dei Sistemi\par}
+\vspace{1.5cm}
+{\Large\color{NavyBlue} Appunti del Corso\par}
+\vspace{1cm}
+{\large Universit\`a degli Studi\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\include{capitolo01_fondamenti}
+\include{capitolo02_crittografia}
+\include{capitolo03_autenticazione}
+\include{capitolo04_controllo_accessi}
+\include{capitolo05_sql_injection}
+\include{capitolo06_malware}
+\include{capitolo07_dos}
+\include{capitolo08_ids}
+\include{capitolo09_firewall}
+\include{capitolo10_buffer_overflow}
+\include{capitolo11_sicurezza_software}
+\include{capitolo12_wireless_mobile}
+\include{capitolo13_cloud_iot}
+\include{capitolo14_gestione_sicurezza}
+\include{capitolo15_controllo_sicurezza}
+\include{capitolo16_sicurezza_fisica}
+\include{capitolo20_algoritmi}
+\include{capitolo21_chiave_pubblica}
+\include{capitolo22_sicurezza_internet}
+\include{capitolo23_autenticazione}
+
+\end{document}

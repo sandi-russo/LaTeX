@@ -1,0 +1,94 @@
+\chapter{Algoritmi di Crittografia}
+\section{Principi Fondamentali e Strutture}
+
+\begin{defbox}[Principio di Kerckhoffs]
+La sicurezza di un crittosistema deve dipendere esclusivamente dalla segretezza della \textbf{chiave}. Il sistema deve rimanere sicuro anche se l'attaccante conosce l'algoritmo.
+\end{defbox}
+
+Molti cifrari simmetrici classici (come il DES) si basano sulla \textbf{Rete di Feistel}. Il blocco di dati viene diviso in due metà (sinistra e destra). A ogni round, la metà destra viene processata da una funzione non lineare $F$ e il risultato viene unito in XOR con la metà sinistra. 
+
+\begin{notebox}[Vantaggio della Rete di Feistel]
+Garantisce la perfetta reversibilità del processo senza dover implementare due algoritmi distinti per cifratura e decifratura: in fase di decifratura, si applicano semplicemente le sottochiavi in ordine inverso.
+\end{notebox}
+
+Un'altra proprietà per un algoritmo (sia DES che AES) è l'\textbf{Effetto Valanga (Avalanche Effect)}: la variazione di un singolo bit nel testo in chiaro o nella chiave deve innescare un cambiamento in circa la metà dei bit del ciphertext finale, rendendo inefficace la crittoanalisi.
+
+\section{Interno dell'AES (Advanced Encryption Standard)}
+L'AES utilizza una \textbf{rete a sostituzione e permutazione (SPN)} che elabora l'intero blocco di 128 bit in parallelo. Ogni round dell'AES applica quattro trasformazioni distinte:
+\begin{description}
+    \item[Substitute Bytes (SubBytes):] Sostituzione byte per byte non lineare tramite una S-box, progettata per resistere ad attacchi crittanalitici.
+    \item[Shift Rows (ShiftRows):] Permutazione ciclica sulle righe della matrice di stato per garantire un'ottima \textit{diffusione}.
+    \item[Mix Columns (MixColumns):] Trasformazione lineare sulle colonne, assicurando che l'output dipenda da tutti i bit di input.
+    \item[Add Round Key (AddRoundKey):] Operazione di XOR bit a bit tra la matrice di stato e la sottochiave di round.
+\end{description}
+
+\section{Modalità Operative dei Cifrari a Blocchi}
+Per elaborare file interi (più lunghi del singolo blocco), si utilizzano modalità operative specifiche. Oltre alla già citata ECB (vulnerabile perché blocchi uguali producono ciphertext uguali), si impiegano:
+
+\begin{itemize}
+    \item \textbf{Cipher Block Chaining (CBC):} L'input dell'algoritmo è lo XOR tra il plaintext corrente e il blocco ciphertext precedente. Nasconde i pattern ripetuti. Utilizza un Vettore di Inizializzazione (\textbf{IV}) per il primissimo blocco.
+    \item \textbf{Cipher Feedback (CFB):} Trasforma di fatto un cifrario a blocchi in un cifrario a flusso.
+    \item \textbf{Counter (CTR):} Utilizza un contatore incrementale cifrato e unito in XOR al plaintext. Offre l'enorme vantaggio del \textbf{parallelismo} e dell'accesso casuale ai blocchi.
+\end{itemize}
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=1cm and 2cm,
+    box/.style={rectangle, draw=blue!80!black, fill=blue!10, thick, minimum width=2.5cm, minimum height=1.2cm, align=center, rounded corners},
+    xor/.style={circle, draw=black, thick, minimum size=0.6cm, inner sep=0pt},
+    arrow/.style={-{Stealth}, thick}
+]
+
+% First block CBC
+\node (p1) {\textbf{Plaintext $P_1$}};
+\node[xor, below=of p1] (x1) {$\oplus$};
+\node[box, below=of x1] (e1) {Cifratura\\(Chiave $K$)};
+\node[below=of e1] (c1) {\textbf{Ciphertext $C_1$}};
+\node[left=of x1, xshift=-0.5cm] (iv) {Vettore Inizializzazione (IV)};
+
+\draw[arrow] (p1) -- (x1);
+\draw[arrow] (iv) -- (x1);
+\draw[arrow] (x1) -- (e1);
+\draw[arrow] (e1) -- (c1);
+
+% Second block CBC
+\node[right=of p1, xshift=3cm] (p2) {\textbf{Plaintext $P_2$}};
+\node[xor, below=of p2] (x2) {$\oplus$};
+\node[box, below=of x2] (e2) {Cifratura\\(Chiave $K$)};
+\node[below=of e2] (c2) {\textbf{Ciphertext $C_2$}};
+
+\draw[arrow] (p2) -- (x2);
+\draw[arrow] (x2) -- (e2);
+\draw[arrow] (e2) -- (c2);
+
+% Link between blocks
+\draw[arrow] (e1.south) -- ++(0,-0.3) -| (x2.west);
+
+\end{tikzpicture}
+\captionof{figure}{Schema concettuale della modalità Cipher Block Chaining (CBC)}
+\end{center}
+
+\section{Distribuzione delle Chiavi (KDC)}
+Per la crittografia simmetrica su reti scalabili (dove scambiarsi fisicamente le chiavi è impossibile), si utilizza un'architettura basata su un \textbf{Key Distribution Center (KDC)}.
+Ogni host condivide in modo sicuro e permanente una singola \textbf{Master Key} esclusivamente con il KDC. 
+
+Quando l'Host A vuole comunicare con l'Host B, il KDC genera una chiave temporanea \textbf{Session Key}, e la invia sia ad A (cifrata con la master key di A) sia a B (cifrata con la master key di B). I due host possono quindi comunicare usando questa chiave di sessione temporanea.
+
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2.2cm and 3cm,
+    box/.style={rectangle, draw=black, thick, minimum width=2.5cm, minimum height=1cm, align=center, rounded corners},
+    arrow/.style={-{Stealth}, thick, blue!80!black}
+]
+\node[box, fill=green!10] (A) {\textbf{Host A}\\(Master Key A)};
+\node[box, fill=red!10, above right=of A, xshift=-1.5cm] (KDC) {\textbf{KDC}\\Generatore Chiavi};
+\node[box, fill=orange!10, below right=of KDC, xshift=-1.5cm] (B) {\textbf{Host B}\\(Master Key B)};
+
+% Freccia 1 con percorso più a sinistra
+\draw[arrow] (A.150) -- node[above left, font=\scriptsize, align=center] {1. Richiesta\\Session Key} (KDC.200);
+\draw[arrow] (KDC) edge[bend left=35] node[left, font=\scriptsize, xshift=-0.3cm] {2. $E_{KA}(Session Key)$} (A);
+\draw[arrow] (KDC) edge[bend right=25] node[right, font=\scriptsize] {2'. $E_{KB}(Session Key)$} (B);
+\draw[<->, dashed, thick, draw=red] (A) -- node[below, font=\scriptsize, align=center] {3. Comunicazione Cifrata\\con Session Key condivisa} (B);
+\end{tikzpicture}
+\end{center}

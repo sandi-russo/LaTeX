@@ -1,0 +1,14 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces Confronto dei tre algoritmi analizzati.}}{9}{table.caption.9}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces Grado medio e massimo dei principali tipi di nodo in PharMeBiNet V3.}}{18}{table.caption.14}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Configurazione del cluster Neo4j Enterprise.}}{18}{table.caption.15}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Iperparametri condivisi tra i tre modelli.}}{23}{table.caption.16}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces Tempi di estrazione dati da Neo4j verso PyTorch Geometric al variare della configurazione del cluster.}}{26}{table.caption.17}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Risultati della link prediction Chemical$\to $Disease su 5 run indipendenti, 200 epoche.}}{28}{table.caption.19}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Risultati dettagliati per singola run.}}{29}{table.caption.20}%
+\addvspace {10\p@ }

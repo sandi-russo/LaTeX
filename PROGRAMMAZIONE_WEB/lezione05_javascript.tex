@@ -1,0 +1,546 @@
+\chapter{JavaScript}
+
+\section{Storia di JavaScript}
+
+\subsection{Nascita di JavaScript (1995)}
+
+JavaScript è stato creato da Brendan Eich in soli 10 giorni presso Netscape. Originariamente chiamato \textit{LiveScript}, è stato poi rinominato \textit{JavaScript}.
+
+\subsection{Standardizzazione}
+
+\begin{itemize}
+    \item Adozione di JavaScript da parte di Microsoft sotto il nome \textit{JScript} per Internet Explorer.
+    \item Nascita di \textbf{ECMAScript} (1997) come standard ufficiale per garantire la coerenza tra le diverse implementazioni di JavaScript.
+\end{itemize}
+
+\subsection{Nascita di AJAX (circa 2005)}
+
+Rivoluzione nel modo in cui le pagine web interagiscono con i server. Ha portato a un'esperienza utente molto più fluida e dinamica sul web.
+
+\subsection{Framework e librerie}
+
+\begin{itemize}
+    \item \textbf{jQuery} (2006) ha semplificato la manipolazione del DOM e la gestione degli eventi.
+    \item Altri framework come \textbf{AngularJS} (2009), \textbf{React} (2013) e \textbf{Vue.js} (2014) hanno contribuito a strutturare e semplificare lo sviluppo di applicazioni web complesse.
+\end{itemize}
+
+\subsection{Node.js (2009)}
+
+Creato da Ryan Dahl, ha permesso a JavaScript di essere eseguito lato server, estendendo le sue capacità al di fuori del browser.
+
+\subsection{ECMAScript 6 (ES6) e oltre (2015)}
+
+Introduzione di nuove caratteristiche come classi, promesse, moduli e altre funzionalità per modernizzare il linguaggio. I rilasci successivi (ES7, ES8, ecc.) hanno continuato ad aggiungere nuove funzionalità.
+
+\subsection{WebAssembly (2017)}
+
+Non è direttamente JavaScript, ma interagisce strettamente con esso. Permette l'esecuzione di codice a basso livello nei browser, ampliando le capacità delle applicazioni web.
+
+\section{Caratteristiche del linguaggio}
+
+\subsection{Interpretato}
+
+A differenza dei linguaggi compilati, il codice JavaScript non viene convertito in linguaggio macchina prima dell'esecuzione. Viene letto ed eseguito linea per linea da un interprete.
+
+\subsection{Ad alto livello}
+
+JavaScript astrae molti dettagli della macchina sottostante, permettendo agli sviluppatori di concentrarsi sulla logica dell'applicazione piuttosto che sui dettagli hardware.
+
+\subsection{Debolmente tipizzato}
+
+In JavaScript, le variabili non sono vincolate a un tipo di dato specifico. Una variabile può contenere diversi tipi di dati durante la sua esistenza.
+
+\section{Identificatori}
+
+Gli identificatori sono nomi dati a variabili, funzioni, oggetti e altre strutture in JavaScript.
+
+\textbf{Iniziano con}:
+\begin{itemize}
+    \item Una lettera
+    \item Un underscore (\texttt{\_})
+    \item Un dollaro (\texttt{\$})
+\end{itemize}
+
+\textbf{Possono contenere}:
+\begin{itemize}
+    \item Lettere (maiuscole o minuscole)
+    \item Cifre (0-9), ma non come primo carattere
+    \item Underscore (\texttt{\_})
+    \item Dollari (\texttt{\$})
+\end{itemize}
+
+\textbf{Case-Sensitive}: \texttt{myVariable} e \texttt{MyVariable} sono considerati diversi.
+
+\textbf{Parole riservate}: non possono essere usate come identificatori (es.\ \texttt{function}, \texttt{var}, \texttt{let}, ecc.).
+
+\section{Tipi di variabili}
+
+\subsection{Tipi primitivi}
+
+\begin{itemize}
+    \item \textbf{Number}: rappresenta sia numeri interi che numeri con la virgola.\\
+        Esempio: \texttt{let age = 25;}
+    \item \textbf{String}: sequenza di caratteri.\\
+        Esempio: \texttt{let name = "Alice";}
+    \item \textbf{Boolean}: rappresenta valori veri o falsi.\\
+        Esempio: \texttt{let isActive = true;}
+    \item \textbf{Undefined}: tipo assegnato a una variabile che non è stata inizializzata.\\
+        Esempio: \texttt{let value;}
+    \item \textbf{Null}: rappresenta un valore nullo o ``non esistente''.\\
+        Esempio: \texttt{let emptyValue = null;}
+    \item \textbf{BigInt}: rappresenta numeri interi di grandi dimensioni.
+    \item \textbf{Symbol} (ES6): rappresenta valori unici e immutabili.\\
+        Esempio: \texttt{let uniqueID = Symbol("id");}
+\end{itemize}
+
+\subsection{Tipo Date}
+
+\textbf{Date} rappresenta una data e un'ora.
+
+\begin{lstlisting}[language=JavaScript]
+let now = new Date(); // Data e ora corrente
+let specificDate = new Date('December 17, 1995 03:24:00');
+let dateFromTimestamp = new Date(868645279000);
+\end{lstlisting}
+
+\subsection{Tipi complessi}
+
+\begin{itemize}
+    \item \textbf{Object}: rappresenta una collezione di proprietà, ciascuna delle quali può contenere valori di qualsiasi tipo.\\
+        Esempio: \texttt{let person = \{firstName: "John", lastName: "Doe"\};}
+    \item \textbf{Array}: una lista ordinata di valori.\\
+        Esempio: \texttt{let fruits = ["apple", "banana", "cherry"];}
+    \item \textbf{Function}: blocco di codice progettato per eseguire un compito specifico.
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+function greet() {
+    console.log("Hello, World!");
+}
+\end{lstlisting}
+
+\section{Dichiarazione di variabili}
+
+\begin{itemize}
+    \item \texttt{var}: tradizionalmente usato per dichiarare variabili. La sua portata è legata alla funzione più vicina o, se dichiarata al di fuori di una funzione, è globale.
+    \item \texttt{let} (introdotto con ES6): permette di dichiarare variabili con portata di blocco, risolvendo molti problemi legati all'uso di \texttt{var}.
+    \item \texttt{const} (introdotto con ES6): simile a \texttt{let} nella portata di blocco, ma utilizzato per dichiarare variabili il cui valore non dovrebbe essere riassegnato.
+    \item \textbf{Senza Parola Chiave} (sconsigliato): se una variabile viene dichiarata senza una parola chiave (e non si trova in ``strict mode''), diventa automaticamente una variabile globale.
+\end{itemize}
+
+\section{Strict Mode}
+
+\texttt{"use strict"} impone una versione più rigorosa del linguaggio JavaScript, aiutando gli sviluppatori a evitare errori comuni e comportamenti problematici.
+
+\textbf{Esempi di errori in strict mode}:
+
+\begin{lstlisting}[language=JavaScript]
+"use strict";
+
+// Dichiarazione senza parola chiave
+x = 3.14; // Errore in strict mode
+
+// Assegnazione a variabili non scrivibili
+undefined = 1; // Errore in strict mode
+
+// Dichiarazioni duplicate
+let x = 10;
+let x = 20; // Errore in strict mode
+\end{lstlisting}
+
+\section{Variabili locali e globali}
+
+\begin{itemize}
+    \item \textbf{Variabili Globali}: variabili dichiarate fuori da qualsiasi funzione. Hanno una portata globale, il che significa che sono accessibili da qualsiasi parte del codice.
+    \item \textbf{Variabili Locali}: variabili dichiarate all'interno di una funzione. Hanno una portata locale alla funzione.
+\end{itemize}
+
+\textbf{Durata}: le variabili globali esistono per tutta la durata dell'esecuzione del programma, mentre le variabili locali esistono solo per la durata della chiamata alla funzione in cui sono dichiarate.
+
+\textbf{Buone Pratiche}: limitare l'uso di variabili globali. Utilizzare sempre parole chiave come \texttt{let}, \texttt{const} o \texttt{var} per dichiarare variabili.
+
+\section{Operatori}
+
+\begin{itemize}
+    \item \textbf{Operatori aritmetici}: \texttt{+}, \texttt{-}, \texttt{*}, \texttt{/}, \texttt{\%}
+    \item \textbf{Operatori di confronto}: \texttt{==}, \texttt{===}, \texttt{!=}, \texttt{!==}, \texttt{<}, \texttt{>}, \texttt{<=}, \texttt{>=}
+    \item \textbf{Operatori logici}: \texttt{\&\&}, \texttt{||}, \texttt{!}
+    \item \textbf{Operatori di assegnazione}: \texttt{=}, \texttt{+=}, \texttt{-=}, ecc.
+\end{itemize}
+
+\section{Strutture di controllo}
+
+\subsection{Istruzioni condizionali}
+
+\begin{lstlisting}[language=JavaScript]
+if (condition1) {
+    // blocco 1
+} else if (condition2) {
+    // blocco 2
+} else {
+    // blocco 3
+}
+
+switch(expression) {
+    case value1:
+        // blocco 1
+        break;
+    case value2:
+        // blocco 2
+        break;
+    default:
+        // blocco di default
+}
+\end{lstlisting}
+
+\subsection{Cicli}
+
+\begin{lstlisting}[language=JavaScript]
+for (initialization; condition; update) {
+    // esegui questo blocco di codice
+}
+
+while (condition) {
+    // esegui questo blocco di codice
+}
+
+do {
+    // esegui questo blocco di codice
+} while (condition);
+\end{lstlisting}
+
+\subsection{Controllo del flusso}
+
+\begin{itemize}
+    \item \texttt{break}: uscita da un ciclo.
+    \item \texttt{continue}: salta all'iterazione successiva del ciclo.
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+for (let i = 0; i < 10; i++) {
+    if (i === 5) break;
+}
+
+for (let i = 0; i < 10; i++) {
+    if (i % 2 === 0) continue;
+    console.log(i);
+}
+\end{lstlisting}
+
+\section{Funzioni}
+
+Le funzioni sono blocchi di codice riutilizzabili progettati per eseguire un compito specifico.
+
+\subsection{Definizione di una funzione}
+
+\begin{lstlisting}[language=JavaScript]
+function nomeDellaFunzione(parametro1, parametro2) {
+    // corpo della funzione
+    return valoreDiRitorno;
+}
+\end{lstlisting}
+
+\subsection{Chiamata di una funzione}
+
+\begin{lstlisting}[language=JavaScript]
+nomeDellaFunzione(argomento1, argomento2);
+\end{lstlisting}
+
+\subsection{Funzioni anonime}
+
+\begin{lstlisting}[language=JavaScript]
+let variabile = function(parametro) {
+    // corpo della funzione
+};
+\end{lstlisting}
+
+\subsection{Arrow Functions (ES6)}
+
+\begin{lstlisting}[language=JavaScript]
+let variabile = (parametro) => {
+    // corpo della funzione
+};
+
+let variabile = parametro => valoreDiRitorno;
+\end{lstlisting}
+
+\section{Funzioni predefinite}
+
+Le funzioni predefinite sono funzioni incorporate nel linguaggio JavaScript che possono essere utilizzate senza doverle definire.
+
+\begin{itemize}
+    \item \texttt{eval()}: valuta una stringa come codice JavaScript.\\
+        Esempio: \texttt{eval("x + y + 1");}
+    \item \texttt{parseInt()} e \texttt{parseFloat()}: convertono una stringa in un intero o un numero con la virgola.\\
+        Esempio: \texttt{parseInt("123")}, \texttt{parseFloat("123.45")}
+    \item \texttt{encodeURI()} e \texttt{decodeURI()}: codificano o decodificano un URI completo.
+    \item \texttt{encodeURIComponent()} e \texttt{decodeURIComponent()}: codificano o decodificano una componente di un URI.
+    \item \texttt{isNaN()}: controlla se un valore è NaN (Not a Number).\\
+        Esempio: \texttt{isNaN(123) -> false}, \texttt{isNaN("Hello") -> true}
+    \item \texttt{isFinite()}: controlla se un valore è un numero finito.\\
+        Esempio: \texttt{isFinite(123) -> true}, \texttt{isFinite(-Infinity) -> false}
+\end{itemize}
+
+Molte altre funzioni predefinite sono disponibili in oggetti globali come \texttt{Math}, \texttt{Date} e \texttt{String}. Ad esempio, \texttt{Math.random()}, \texttt{Date.now()}, \texttt{String.fromCharCode()}, ecc.
+
+\section{JavaScript per il Web}
+
+\subsection{Incorporare JavaScript}
+
+\textbf{Inline}: direttamente all'interno di un elemento HTML tramite attributi come \texttt{onclick}, \texttt{onload}, ecc.
+
+\begin{lstlisting}[language=HTML5]
+<button onclick="alert('Ciao!')">Clicca qui</button>
+\end{lstlisting}
+
+\textbf{Script Interno}: all'interno di un blocco \texttt{<script>} nel corpo della pagina HTML.
+
+\begin{lstlisting}[language=HTML5]
+<script>
+    function saluta() {
+        alert('Ciao, mondo!');
+    }
+</script>
+\end{lstlisting}
+
+\textbf{Script Esterno}: collegando un file esterno \texttt{.js} tramite l'attributo \texttt{src} del tag \texttt{<script>}.
+
+\begin{lstlisting}[language=HTML5]
+<script src="mioScript.js"></script>
+\end{lstlisting}
+
+\subsection{Posizionamento}
+
+\begin{itemize}
+    \item \textbf{Nell'\texttt{<head>}}: lo script verrà caricato prima del contenuto della pagina. Può essere utilizzato con l'attributo \texttt{defer} per eseguire lo script dopo il caricamento della pagina.
+    \item \textbf{Prima della chiusura \texttt{</body>}}: assicura che lo script venga eseguito dopo il caricamento del contenuto della pagina, evitando potenziali problemi di dipendenza dal DOM.
+\end{itemize}
+
+\section{DOM (Document Object Model)}
+
+Il DOM è una rappresentazione strutturata, in forma di albero, di una pagina web. Consente ai programmi di manipolare la struttura, lo stile e il contenuto del sito web.
+
+\subsection{Elementi del DOM}
+
+\begin{itemize}
+    \item \textbf{Document}: rappresenta l'intera pagina.
+    \item \textbf{Element}: qualsiasi tag HTML, come \texttt{<p>}, \texttt{<div>}, \texttt{<a>}, ecc.
+    \item \textbf{Text}: il contenuto testuale di un elemento.
+    \item \textbf{Attribute}: le proprietà degli elementi, come \texttt{href}, \texttt{id}, \texttt{class}, ecc.
+\end{itemize}
+
+\textbf{Oggetto window}: rappresenta la finestra del browser contenente un documento.
+
+\textbf{Oggetto navigator}: fornisce informazioni sul browser e sul sistema operativo.
+
+\subsection{Manipolazione del DOM con JavaScript}
+
+\textbf{Selezione}:
+\begin{lstlisting}[language=JavaScript]
+document.getElementById('id');
+document.querySelector('.classe');
+document.querySelectorAll('tag');
+\end{lstlisting}
+
+\textbf{Modifica}:
+\begin{lstlisting}[language=JavaScript]
+let elemento = document.getElementById('mioId');
+elemento.textContent = 'Nuovo testo';
+elemento.style.color = 'red';
+\end{lstlisting}
+
+\textbf{Creazione e Rimozione}:
+\begin{lstlisting}[language=JavaScript]
+let nuovoElemento = document.createElement('p');
+nuovoElemento.textContent = 'Sono un nuovo paragrafo';
+document.body.appendChild(nuovoElemento);
+document.body.removeChild(nuovoElemento);
+\end{lstlisting}
+
+\section{Eventi}
+
+Un approccio \textit{event-driven} prevede che il flusso del programma sia determinato da eventi come input dell'utente, clic, movimenti del mouse o messaggi da altri programmi.
+
+\textbf{Gestione degli eventi}: il processo di cattura e risposta a eventi che si verificano durante l'interazione dell'utente con una pagina web.
+
+\begin{lstlisting}[language=JavaScript]
+elemento.addEventListener('click', miaFunzione);
+\end{lstlisting}
+
+\subsection{Tipi di eventi comuni}
+
+\begin{itemize}
+    \item \texttt{click}: quando un elemento viene cliccato.
+    \item \texttt{mouseover}: quando il mouse passa sopra un elemento.
+    \item \texttt{keydown}: quando un tasto viene premuto.
+    \item \texttt{load}: quando un documento o risorsa è completamente caricato.
+\end{itemize}
+
+\section{Event Propagation}
+
+\begin{itemize}
+    \item \textbf{Event Bubbling}: l'evento inizia dall'elemento che ha innescato l'evento e ``bolle'' verso l'alto nell'albero DOM.
+    \item \textbf{Event Capturing}: opposto del bubbling, l'evento inizia dall'elemento più esterno e prosegue verso l'elemento che ha innescato l'evento.
+\end{itemize}
+
+\textbf{Prevenire la propagazione}:
+\begin{lstlisting}[language=JavaScript]
+miaFunzione(event) {
+    event.stopPropagation();
+}
+\end{lstlisting}
+
+\textbf{Informazioni sull'evento}: l'oggetto evento passato come argomento alla funzione di callback contiene informazioni sull'evento, come la posizione del mouse, il tasto premuto, l'elemento target, ecc.
+
+\begin{lstlisting}[language=JavaScript]
+function mostraPosizione(event) {
+    alert("X: " + event.clientX + ", Y: " + event.clientY);
+}
+\end{lstlisting}
+
+\section{Funzioni di callback}
+
+Una funzione di \textbf{callback} è una funzione passata come argomento ad un'altra funzione, che verrà eseguita dopo che l'operazione esterna è stata completata. Sono spesso utilizzate in operazioni asincrone come richieste AJAX, interazioni con il DOM o temporizzazioni.
+
+\begin{lstlisting}[language=JavaScript, caption=Esempio 1 di callback]
+function saluta(nome, callback) {
+    console.log('Ciao, ' + nome);
+    callback();
+}
+
+saluta('Mario', function() {
+    console.log('Saluto completato!');
+});
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript, caption=Esempio 2 con setTimeout]
+function attendiEsegui(tempo, callback) {
+    setTimeout(callback, tempo);
+}
+
+attendiEsegui(2000, function() {
+    console.log('Eseguito dopo 2 secondi!');
+});
+\end{lstlisting}
+
+\textbf{Callback Hell}: annidare molte funzioni di callback può rendere il codice difficile da leggere e manutenere. Soluzioni come Promises e Async/Await sono state introdotte per affrontare questo problema.
+
+\section{Promise}
+
+Una \textbf{Promise} è un oggetto che rappresenta il completamento o il fallimento di un'operazione asincrona e il suo risultato eventualmente risultante.
+
+\subsection{Stati della Promise}
+
+\begin{itemize}
+    \item \textbf{Pending}: lo stato iniziale, né soddisfatto né rifiutato.
+    \item \textbf{Fulfilled} (Risolta): l'operazione è stata completata con successo.
+    \item \textbf{Rejected} (Rifiutata): l'operazione è fallita.
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+let miaPromise = new Promise((resolve, reject) => {
+    if (/* condizione di successo */) {
+        resolve('Successo!');
+    } else {
+        reject('Errore!');
+    }
+});
+\end{lstlisting}
+
+\subsection{Uso della Promise}
+
+\begin{lstlisting}[language=JavaScript]
+// .then() per gestire il caso di successo
+miaPromise.then((risultato) => {
+    console.log(risultato); // Stampa: "Successo!"
+});
+
+// .catch() per gestire il caso di errore
+miaPromise.catch((errore) => {
+    console.log(errore); // Stampa: "Errore!"
+});
+
+// .finally() per eseguire codice indipendentemente dal risultato
+miaPromise.finally(() => {
+    console.log('Promise completata!');
+});
+\end{lstlisting}
+
+\subsection{Catena di Promise}
+
+Le Promise possono essere concatenate per eseguire operazioni asincrone in sequenza:
+
+\begin{lstlisting}[language=JavaScript]
+funzioneAsincrona1()
+    .then(risultato1 => funzioneAsincrona2(risultato1))
+    .then(risultato2 => funzioneAsincrona3(risultato2))
+    .catch(errore => console.error(errore));
+\end{lstlisting}
+
+\section{async/await}
+
+\texttt{async/await} è una sintassi speciale che rende più semplice lavorare con le Promise, rendendo il codice asincrono simile al codice sincrono in termini di leggibilità.
+
+\subsection{Funzioni Async}
+
+Dichiarando una funzione come \texttt{async}, essa restituisce automaticamente una Promise.
+
+\begin{lstlisting}[language=JavaScript]
+async function miaFunzione() {
+    return "Ciao!";
+}
+miaFunzione().then(alert); // Stampa: "Ciao!"
+\end{lstlisting}
+
+\subsection{Await}
+
+L'operatore \texttt{await} può essere utilizzato solo all'interno di una funzione \texttt{async} e fa sì che l'esecuzione della funzione venga sospesa fino a quando la Promise non è risolta.
+
+\begin{lstlisting}[language=JavaScript]
+async function mostraRisultato() {
+    let risultato = await miaFunzione();
+    console.log(risultato); // Stampa: "Ciao!"
+}
+\end{lstlisting}
+
+\section{Gestione delle eccezioni}
+
+\texttt{try/catch} fornisce un meccanismo per catturare errori di runtime in modo che possano essere gestiti senza interrompere l'esecuzione del programma.
+
+\begin{itemize}
+    \item \textbf{try}: racchiude il codice che potrebbe generare un errore.
+    \item \textbf{catch}: blocco di codice che viene eseguito se si verifica un errore nel blocco \texttt{try}.
+\end{itemize}
+
+\begin{lstlisting}[language=JavaScript]
+try {
+    // Codice potenzialmente problematico
+} catch (errore) {
+    // Gestione dell'errore
+    console.error(errore.message);
+}
+\end{lstlisting}
+
+\subsection{finally}
+
+Esegue il codice indipendentemente dal fatto che si verifichino errori o meno.
+
+\begin{lstlisting}[language=JavaScript]
+try {
+    // Codice potenzialmente problematico
+} catch (errore) {
+    // Gestione dell'errore
+} finally {
+    // Codice eseguito sempre
+}
+\end{lstlisting}
+
+\subsection{Lanciare eccezioni}
+
+È possibile generare un'eccezione personalizzata utilizzando la parola chiave \texttt{throw}.
+
+\begin{lstlisting}[language=JavaScript]
+if (condizioneErrata) {
+    throw new Error("Questo e' un errore personalizzato!");
+}
+\end{lstlisting}

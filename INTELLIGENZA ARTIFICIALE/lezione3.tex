@@ -1,0 +1,349 @@
+\chapter{Introduzione al Machine Learning}
+\begin{flushright}\small\textit{Lezione 3 -- 09/03/2026 -- G\'eron, Cap.\ 1}\end{flushright}
+
+\section{Cos'è il Machine Learning?}
+
+\begin{defbox}[Definizione informale (Arthur Samuel, 1959)]
+Il \emph{Machine Learning} è ``il campo di studio che dà ai computer la capacità di imparare \textbf{senza essere esplicitamente programmati}''.
+\end{defbox}
+
+\begin{defbox}[Definizione formale (Tom Mitchell, 1997)]
+Un programma impara dall'esperienza $E$ rispetto a un task $T$, misurando le proprie performance tramite un indice $P$, se le sue prestazioni nel task $T$, misurate con $P$, \emph{migliorano} con l'esperienza $E$.
+\end{defbox}
+
+Il Machine Learning è al tempo stesso \emph{scienza} (matematica, statistica, ottimizzazione) e \emph{arte} (sensibilità sui dati, scelta delle feature, intuizione del modello giusto). Consiste nel programmare i computer in modo che \textbf{apprendano dai dati}, senza essere programmati esplicitamente per ogni singola eccezione.
+
+\begin{exbox}[Applicazioni quotidiane del ML]
+Filtri antispam, OCR, traduzione automatica (Google Translate, DeepL), ricerca per immagini, assistenti vocali (Siri, Alexa), sistemi di raccomandazione (Netflix, Amazon, Spotify), rilevazione frodi con carte di credito, diagnosi medica da immagini, autocompletamento del testo, navigazione GPS adattiva. L'obiettivo dei social network è creare sistemi che etichettano e profilano gli utenti per scopi di marketing -- un classificatore ML decide quali contenuti mostrare a ciascun utente.
+\end{exbox}
+
+\section{Come funziona l'apprendimento}
+
+Pensiamo a una \textbf{classificazione binaria}: distinguere fotografie di gatti da fotografie di non-gatti. Questo tipo di apprendimento imita l'età infantile: i bambini capiscono cos'è un oggetto tramite l'esperienza, non tramite definizioni formali.
+
+Il programma \emph{non può} basarsi su regole fisse: ``se ha 4 zampe è un gatto'' confonderebbe il cane; ``se ha la coda'' confonderebbe pappagalli e pesci. Ha bisogno di:
+
+\begin{enumerate}
+    \item \textbf{Esperienza} ($E$): dati \emph{etichettati} (immagini con label ``gatto'' / ``non gatto'').
+    \item \textbf{Task} ($T$): classificare nuove immagini correttamente.
+    \item \textbf{Misura di performance} ($P$): es.\ accuratezza -- percentuale di immagini classificate correttamente.
+\end{enumerate}
+
+\textbf{Formula fondamentale}:
+\[
+\boxed{\text{Modello} = \text{Algoritmo} + \text{Dati dell'esperienza}}
+\]
+
+\section{Approccio classico vs.\ Machine Learning}
+
+L'esempio storico è il \textbf{filtro antispam}. Inizialmente usava condizioni \texttt{if-else}.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{} l p{6cm} p{6cm} @{}}
+\toprule
+& \textbf{Approccio classico} & \textbf{Machine Learning} \\
+\midrule
+Metodo & Regole \texttt{if-else} scritte a mano & Addestramento su dati etichettati \\
+Aggiornamento & Riscrivere le regole manualmente & Riaddestrare il modello su nuovi dati \\
+Adattamento & Nessuno, statico & Automatico al cambiare dei dati \\
+Punto di forza & Semplice per problemi piccoli e stabili & Flessibile, scopre pattern nascosti \\
+Tipico esempio & Calcolo IVA & Rilevazione spam, OCR, traduzione \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+\begin{center}
+\begin{minipage}[t]{0.31\textwidth}
+\centering
+\small\textit{Approccio classico}\\[6pt]
+\scalebox{0.85}{%
+\begin{tikzpicture}[
+    font=\scriptsize, >=Stealth,
+    box/.style={draw=blue!60, fill=blue!5, thick, rounded corners=3pt,
+                minimum width=1.7cm, minimum height=0.65cm, align=center},
+    dia/.style={draw=blue!60, fill=blue!5, thick, shape=diamond,
+                aspect=1.5, align=center, inner sep=3pt}
+]
+  \node[box] (s) at (0,0)     {Studia il\\ problema};
+  \node[box] (r) at (2.0,0)   {Scrivi le\\ regole};
+  \node[dia] (v) at (4.0,0)   {Valuta};
+  \node[box] (l) at (4.0,1.5) {Lancia!};
+  \node[box] (e) at (2.0,-1.5){Analizza\\ gli errori};
+
+  \draw[->,thick] (s) -- (r);
+  \draw[->,thick] (r) -- (v);
+  \draw[->,thick] (v.north) -- (l.south)
+      node[midway,right,font=\tiny]{\textcolor{OliveGreen}{\checkmark}};
+\draw[->,thick] (v.south) |- (e.east)
+      node[pos=0, right, font=\tiny] {\textcolor{BrickRed}{$\times$}};
+      
+  \draw[->,thick] (e.west) -- (s.south |- e.west) -- (s.south);
+\end{tikzpicture}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.31\textwidth}
+\centering
+\small\textit{Approccio ML}\\[6pt]
+\scalebox{0.85}{%
+\begin{tikzpicture}[
+    font=\scriptsize, >=Stealth,
+    box/.style={draw=blue!60, fill=blue!5, thick, rounded corners=3pt,
+                minimum width=1.7cm, minimum height=0.65cm, align=center},
+    data/.style={draw=blue!60, fill=blue!20, thick, rounded corners=3pt,
+                minimum width=1.2cm, minimum height=0.65cm, align=center},
+    dia/.style={draw=blue!60, fill=blue!5, thick, shape=diamond,
+                aspect=1.5, align=center, inner sep=3pt}
+]
+  \node[box]  (s) at (0,0)     {Studia il\\ problema};
+  \node[box]  (a) at (2.0,0)   {Addestra il\\ modello};
+  \node[data] (d) at (2.0,1.5) {\textit{Data}};
+  \node[dia]  (v) at (4,0)   {Valuta};
+  \node[box]  (l) at (4.0,1.5) {Lancia!};
+  \node[box]  (e) at (2.0,-1.5){Analizza\\ gli errori};
+
+  \draw[->,thick] (s) -- (a);
+  \draw[->,thick] (d) -- (a);
+  \draw[->,thick] (a) -- (v);
+  \draw[->,thick] (v.north) -- (l.south)
+      node[midway,right,font=\tiny]{\textcolor{OliveGreen}{\checkmark}};
+\draw[->,thick] (v.south) |- (e.east)
+      node[pos=0, right, font=\tiny] {\textcolor{BrickRed}{$\times$}};
+
+    \draw[->,thick] (e.west) -- (s.south |- e.west) -- (s.south);
+\end{tikzpicture}}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.31\textwidth}
+\centering
+\small\textit{ML con adattamento automatico}\\[6pt]
+\scalebox{0.85}{%
+\begin{tikzpicture}[
+    font=\scriptsize, >=Stealth,
+    box/.style={draw=blue!60, fill=blue!5, thick, rounded corners=3pt,
+                minimum width=1.7cm, minimum height=0.65cm, align=center},
+    data/.style={draw=blue!60, fill=blue!20, thick, rounded corners=3pt,
+                minimum width=1.1cm, minimum height=0.65cm, align=center},
+    dia/.style={draw=blue!60, fill=blue!5, thick, shape=diamond,
+                aspect=1.5, align=center, inner sep=3pt}
+]
+  \node[data] (d) at (0,0)     {\textit{Data}};
+  \node[box]  (a) at (2.0,0)   {Addestra il\\ modello};
+  \node[dia]  (v) at (4.2,0)   {Valuta};
+  \node[box]  (l) at (4.2,-2.5){Lancia!};
+  \node[box]  (u) at (2.0,-2.5){Aggiorna\\ i dati};
+
+  \draw[->,thick, dashed] (d) -- (a);
+  \draw[->,thick] (a) -- (v);
+  \draw[->,thick] (v.south) -- (l.north)
+      node[midway,right,font=\tiny]{\textcolor{OliveGreen}{\checkmark}};
+  \draw[->,thick] (l) -- (u);
+  \draw[->,thick] (u.north) -- (a.south);
+  \draw[->,thick,dashed] (u.west) -- (d.south |- u.west) -- (d.south);
+  \node[draw=OliveGreen!50, fill=OliveGreen!5, rounded corners=2pt,
+        font=\tiny, align=center, inner sep=2pt, text=OliveGreen!80!black]
+      at (3.0,-1.2) {può essere\\ automatizzato};
+\end{tikzpicture}}
+\end{minipage}
+\end{center}
+
+
+Se lo spammer cambia tattica e scrive ``For U'' invece di ``4U'', il filtro classico deve essere aggiornato a mano. Un filtro ML nota automaticamente che ``For U'' è diventato frequente nelle email segnalate come spam e inizia a bloccarle -- senza intervento umano.
+
+Il ML \textbf{eccelle} quando:
+\begin{itemize}
+    \item Le regole sono troppe o cambiano frequentemente (lo spam evolve continuamente).
+    \item Il problema è troppo complesso per regole esplicite (riconoscimento del parlato in lingue diverse, in ambienti rumorosi, con accenti variabili).
+    \item Si vogliono scoprire pattern nascosti in grandi dataset (\emph{data mining}).
+    \item L'ambiente cambia e il modello deve adattarsi (\emph{online learning}).
+\end{itemize}
+
+\section{Training set e Test set}
+\begin{itemize}
+    \item \textbf{Training set} ($\sim$80\%): l'insieme di dati usato per \emph{addestrare} il modello e accumulare esperienza.
+    \item \textbf{Test set} ($\sim$20\%): l'insieme di dati usato per \emph{valutare} le prestazioni su dati mai visti, prima del rilascio in produzione.
+\end{itemize}
+
+\begin{warnbox}[Regola d'oro -- Data Snooping Bias]
+Il test set \emph{non deve mai essere usato durante lo sviluppo}. Se si consulta il test set per prendere decisioni sul modello, si commette \textbf{data snooping bias}: le prestazioni misurate saranno ottimistiche e non rappresentative delle prestazioni reali su nuovi dati.
+\end{warnbox}
+
+\section{La Matrice di Confusione}
+Per valutare un classificatore binario si usa la \textbf{matrice di confusione}, che mappa i quattro possibili esiti:
+
+\begin{center}
+\begin{tikzpicture}[font=\small, >=Stealth]
+
+    % Quadranti distanziati
+    \node[rectangle, draw=gray, fill=green!10, very thick, rounded corners,
+          minimum width=4cm, minimum height=2cm, align=center] (TP)
+          at (-2.2,0.8) {\textbf{TP}\\[2pt] Vero Positivo};
+
+    \node[rectangle, draw=gray, fill=red!10, very thick, rounded corners,
+          minimum width=4cm, minimum height=2cm, align=center] (FP)
+          at (2.2,0.8) {\textbf{FP}\\[2pt] Falso Positivo};
+
+    \node[rectangle, draw=gray, fill=red!10, very thick, rounded corners,
+          minimum width=4cm, minimum height=2cm, align=center] (FN)
+          at (-2.2,-1.6) {\textbf{FN}\\[2pt] Falso Negativo};
+
+    \node[rectangle, draw=gray, fill=green!10, very thick, rounded corners,
+          minimum width=4cm, minimum height=2cm, align=center] (TN)
+          at (2.2,-1.6) {\textbf{TN}\\[2pt] Vero Negativo};
+
+    % Etichette "Positivo" e "Negativo" in orizzontale (sopra)
+    \node[font=\bfseries] at (-1.8, 2) {Positivo (1)};
+    \node[font=\bfseries] at (2.2, 2) {Negativo (0)};
+    
+    % Etichetta "Valori Reali" in orizzontale sopra tutto
+    \node[font=\bfseries] at (0.2, 2.5) {Valori Reali};
+
+    % Etichette "Positivo" e "Negativo" in verticale (a sinistra)
+    \node[font=\bfseries, align=center, rotate=90] at (-4.5, 0.8) {Pos. (1)};
+    \node[font=\bfseries, align=center, rotate=90] at (-4.5, -1.6) {Neg. (0)};
+    
+    % Etichetta "Valori Predetti" in verticale a sinistra
+    \node[rotate=90, font=\bfseries] at (-5.2, -0.4) {Valori Predetti};
+
+\end{tikzpicture}
+\end{center}
+
+Il classificatore ideale restituisce solo \textbf{TP} e \textbf{TN}; la presenza di FP e FN indica gli errori commessi.
+
+
+\begin{exbox}[Interpretazione pratica]
+Nel classificatore ``gatto / non gatto'':
+\begin{itemize}
+    \item \textbf{TP}: il modello dice ``gatto'' ed è un gatto.
+    \item \textbf{TN}: il modello dice ``non gatto'' ed è un non gatto.
+    \item \textbf{FP}: il modello dice ``gatto'' ma è un cane (\emph{falso allarme}).
+    \item \textbf{FN}: il modello dice ``non gatto'' ma è un gatto (\emph{mancato rilevamento}).
+\end{itemize}
+In un sistema di diagnosi medica, un \textbf{FN} (tumore non rilevato) è molto più pericoloso di un \textbf{FP} (paziente sano rimandato per ulteriori esami). La scelta della soglia di classificazione bilancia questi due tipi di errore.
+\end{exbox}
+
+Il classificatore ideale restituisce solo \textbf{TP} e \textbf{TN}. Le metriche derivate sono:
+\[
+\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}
+\qquad
+\text{Precision} = \frac{TP}{TP + FP}
+\qquad
+\text{Recall} = \frac{TP}{TP + FN}
+\]
+
+\section{Struttura di un Dataset}
+
+Un dataset è una matrice strutturata in:
+\begin{itemize}
+    \item \textbf{Istanze} (righe): i singoli casi osservati (es.\ un'email, un'immagine, un paziente).
+    \item \textbf{Feature} (colonne): gli attributi o caratteristiche di ogni istanza (es.\ frequenza di parole, pixel, valori clinici).
+    \item \textbf{Target} (label): la colonna con l'obiettivo da prevedere (es.\ spam/non-spam, specie del fiore, prezzo dell'immobile).
+\end{itemize}
+
+\begin{exbox}[Dataset Iris -- esempio classico]
+150 fiori (istanze), 4 feature (\emph{sepal length}, \emph{sepal width}, \emph{petal length}, \emph{petal width}), 1 target (specie: \emph{setosa}, \emph{versicolor}, \emph{virginica}). Dimensioni: $150 \times 5$.
+\end{exbox}
+
+\begin{notebox}[Il problema della dimensionalità]
+Con dataset da 10 o 100 feature, è impossibile per l'occhio umano visualizzare i dati. Si usano algoritmi di \textbf{riduzione della dimensionalità} come \textbf{t-SNE} (t-distributed Stochastic Neighbor Embedding), che comprimono le feature in 2--3 dimensioni mantenendo le relazioni di vicinanza, permettendo di individuare visivamente cluster o anomalie. Altre alternative: \textbf{PCA (Principal Component Analysis)} (lineare, più veloce), \textbf{UMAP (Uniform Manifold Approximation and Projection)} (non lineare, più scalabile).
+\end{notebox}
+
+\section{Famiglie di Machine Learning}
+
+\subsection{Classificazione per supervisione}
+
+\begin{enumerate}
+    \item \textbf{Apprendimento Supervisionato}: i dati di training includono le etichette (label). L'algoritmo impara a mappare input $\to$ output.
+
+    \begin{itemize}
+        \item \textbf{Classificazione}: predice categorie discrete.
+        \begin{itemize}
+            \item \emph{Binaria}: spam/non-spam, gatto/non-gatto, maligno/benigno.
+            \item \emph{Multiclasse}: riconoscimento cifre scritte a mano (MNIST: 10 classi), classificazione specie di iris (3 classi).
+        \end{itemize}
+        \item \textbf{Regressione}: predice valori continui, come il costo di un'abitazione in base alla posizione geografica.
+        \begin{itemize}
+            \item \emph{Interpolazione}: stima di un valore interno al range dei dati (es.\ dati 1980--2025, stimo il 1983).
+            \item \emph{Estrapolazione}: stima di un valore esterno al range dei dati (es.\ dati fino al 2025, prevedo il 2026 -- più rischiosa).
+        \end{itemize}
+    \end{itemize}
+
+    \item \textbf{Apprendimento Non Supervisionato}: i dati \emph{non} hanno etichette. Il sistema deve scoprire strutture da solo.
+    \begin{itemize}
+        \item \textbf{Clustering}: raggruppa istanze simili -- k-means, DBSCAN (es.\ segmentazione clienti in un e-commerce in base agli acquisti).
+        \item \textbf{Riduzione dimensionale}: PCA, t-SNE, UMAP.
+        \item \textbf{Anomaly detection}: Isolation Forest, Autoencoder (es.\ rilevazione frodi su carte di credito).
+        \item \textbf{Association rule learning}: Apriori -- es.\ chi compra salsa barbecue e patatine tende anche ad acquistare bistecca $\to$ posizionamento dei prodotti nel supermercato.
+    \end{itemize}
+
+    \item \textbf{Semi-supervisionato}: pochi dati etichettati + molti non etichettati. Es.\ Google Photos riconosce automaticamente che la persona A appare nelle foto 1, 5, 11 (clustering), poi basta aggiungere \emph{un'unica} etichetta per nome e il sistema nomina tutti i volti.
+
+    \item \textbf{Self-supervised}: le etichette vengono generate automaticamente dai dati stessi. Es.\ mascherare una porzione di un'immagine e addestrare il modello a ricostruirla -- le immagini mascherate sono gli input, le originali sono i target. Questa tecnica è alla base dei moderni LLM (previsione del token successivo).
+
+    \item \textbf{Reinforcement Learning}: un \textbf{agente} interagisce con un ambiente, riceve \textbf{premi} (per azioni corrette) o \textbf{penalità} (per errori), e impara una \textbf{policy} -- la strategia che massimizza il premio cumulativo nel tempo.
+    \begin{exbox}[Esempi di Reinforcement Learning]
+        AlphaGo (DeepMind) ha battuto il campione mondiale di Go analizzando milioni di partite e poi giocando contro se stesso. Durante la partita contro il campione, l'apprendimento era disattivato: AlphaGo applicava la policy appresa.
+    \end{exbox}
+
+    \item \textbf{Ensemble Learning}: più modelli lavorano in combinazione -- il risultato finale è più robusto di qualsiasi modello singolo.
+    \begin{itemize}
+        \item \textbf{Bagging}: addestra modelli paralleli su sottoinsiemi casuali del training set e aggrega le previsioni (es.\ Random Forest).
+        \item \textbf{Boosting}: addestra modelli in sequenza, dove ognuno cerca di correggere gli errori del precedente (es.\ XGBoost, AdaBoost).
+        \item \textbf{Stacking}: un meta-modello combina le previsioni dei modelli base.
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Batch vs.\ Online Learning}
+
+\begin{itemize}
+    \item \textbf{Batch learning}: il modello viene addestrato su \emph{tutti} i dati disponibili in una volta sola, poi viene rilasciato in produzione \emph{senza ulteriore apprendimento}. La performance decade nel tempo (\emph{model rot} o \emph{data drift}) perché il mondo evolve mentre il modello rimane fisso. Soluzione: re-training periodico. Svantaggio: costoso in tempo e risorse per grandi dataset.
+
+    \begin{exbox}[Model rot]
+        Un classificatore di immagini gatto/cane addestrato nel 2018 non ``muterà'' le sue prestazioni per via della biologia dei gatti. Ma se le fotocamere cambiano formato, risoluzione, o le persone iniziano a vestire i propri animali, le prestazioni peggiorano -- un esempio di data drift lento.
+    \end{exbox}
+
+    \item \textbf{Online learning}: il modello viene aggiornato in modo \emph{incrementale} man mano che arrivano nuovi dati, individualmente o a piccoli gruppi (\emph{mini-batch}). Utile per:
+    \begin{itemize}
+        \item Sistemi che devono adattarsi rapidamente (mercati finanziari).
+        \item Dataset enormi che non entrano in memoria (\emph{out-of-core learning}).
+        \item Risorse limitate (smartphone, rover su Marte).
+    \end{itemize}
+    Il parametro chiave è il \textbf{learning rate}: alto $\to$ adattamento rapido ma dimentica i vecchi pattern; basso $\to$ più stabile ma più lento ad adeguarsi.
+
+    \begin{warnbox}[Rischio dell'online learning]
+        Se arrivano dati di cattiva qualità (sensore difettoso, attacco avversariale al sistema), le prestazioni possono degradarsi rapidamente. È fondamentale monitorare le performance e avere la possibilità di sospendere l'apprendimento e ripristinare uno stato precedente.
+    \end{warnbox}
+\end{itemize}
+
+\subsection{Instance-Based vs.\ Model-Based Learning}
+
+\begin{itemize}
+    \item \textbf{Instance-based}: il sistema ``memorizza'' gli esempi di training e confronta i nuovi casi con quelli memorizzati tramite una misura di similarità. Esempio classico: \textbf{k-Nearest Neighbors} (kNN) -- classifica un nuovo punto in base alla classe di maggioranza tra i $k$ esempi più vicini nello spazio delle feature.
+
+    \item \textbf{Model-based}: costruisce un modello esplicito che cattura i pattern nei dati, poi lo usa per fare previsioni. Esempio: regressione lineare -- si impara una relazione parametrica tra input e output che può generalizzare a nuovi dati mai visti.
+\end{itemize}
+
+\section{La Regressione Lineare}
+
+La \textbf{regressione lineare} non è un algoritmo di classificazione, ma di \emph{apprendimento supervisionato per valori continui} (apprendimento lineare). Supponiamo di avere dati con un trend di crescita, ad esempio la soddisfazione di vita in funzione del PIL pro capite per diversi paesi. I dati non si disporranno mai perfettamente su una linea retta, ma è necessario misurare la tendenza tenendo conto degli errori.
+
+\begin{equation}
+\boxed{\text{soddisfazione} = \theta_0 + \theta_1 \cdot \text{PIL}_{\text{pro capite}}}
+\end{equation}
+
+Questa formula è l'equazione della retta $y = q + mx$, dove:
+\begin{itemize}
+    \item $\text{PIL}_{\text{pro capite}}$ è la nostra variabile indipendente $x$;
+    \item $\theta_1$ rappresenta la pendenza ($m$);
+    \item $\theta_0$ rappresenta l'intercetta, ossia l'ordinata all'origine ($q$).
+\end{itemize}
+
+\paragraph*{Come si sceglie la retta migliore?}
+L'indice di qualità si basa sulla retta che si avvicina di più in assoluto ai dati sperimentali (\textit{best fit}). Si vuole che la somma delle distanze (residui) tra la retta e i dati reali sia la più piccola possibile. Per ottenere ciò si minimizza la \textbf{funzione di costo MSE} (Mean Squared Error -- errore quadratico medio), che misura la distanza media al quadrato tra le previsioni del modello e i valori reali:
+
+\[
+\text{MSE}(\boldsymbol{\theta}) = \frac{1}{m} \sum_{i=1}^{m} \bigl({y}_{i} - \hat{y_{i}}\bigr)^2
+\]
+
+La minimizzazione si ottiene calcolando la derivata parziale rispetto a ciascun parametro e ponendola uguale a zero.

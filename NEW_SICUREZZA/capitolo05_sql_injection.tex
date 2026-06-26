@@ -1,0 +1,142 @@
+\chapter{SQL Injection e Sicurezza dei Database}
+
+\section{SQL Injection}
+
+\begin{defbox}[Cos'è una SQL Injection?]
+Le \textbf{SQL Injection (SQLi)} sono una gravissima classe di vulnerabilità informatiche in cui un attaccante inserisce o manipola parti di codice SQL (iniettando comandi) all'interno degli input di un'applicazione web. L'obiettivo è ingannare il database di back-end facendogli eseguire istruzioni non previste dal programmatore, al fine di estrarre, alterare o distruggere informazioni preziose.
+\end{defbox}
+
+\subsection{Come Funzionano le SQLi e Fonti di Attacco}
+L'attacco si concretizza quando un'applicazione web prende i dati forniti dall'utente e li concatena direttamente (senza alcuna validazione o sanificazione) all'interno di una stringa che compone una query SQL. 
+
+È possibile classificare gli attacchi in base al \textbf{fronte o vettore di attacco}:
+\begin{itemize}
+    \item \textbf{Input utente standard:} L'attaccante inietta i comandi SQL nei normali campi dei moduli web (es. form di login, barre di ricerca, campi URL GET).
+    \item \textbf{Cookie e Header HTTP:} I cookie sono spesso usati dalle applicazioni per recuperare informazioni sullo stato o sui permessi dell'utente. Se il server effettua query basate sul contenuto dei cookie senza validarle, l'attaccante può alterarli localmente per dirottare la query.
+    \item \textbf{Input fisico (Out-of-band sources):} I comandi SQL possono essere iniettati al di fuori del contesto web classico, ad esempio stampando payload SQL su codici a barre o moduli cartacei, che, una volta digitalizzati tramite scanner e OCR e inviati al DBMS, causano l'iniezione.
+\end{itemize}
+
+
+\section{Tipi di SQL Injection}
+
+Gli attacchi SQLi possono essere raggruppati in tre macro-categorie in base al \textbf{canale} utilizzato per estrarre i dati.
+
+\subsection{1. Attacchi In Banda (In-Band SQLi)}
+Un attacco in banda è il più comune e facile da sfruttare. Sfrutta \textbf{lo stesso canale di comunicazione} sia per iniettare il codice maligno sia per visualizzare i risultati. I dati estratti vengono mostrati direttamente nella pagina web dell'applicazione.
+
+\begin{exbox}[Tautologia]
+Inietta codice nel \textit{WHERE} affinché la query sia valutata come \textbf{sempre vera}.
+
+\textbf{Query originale prevista dal programmatore:}
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '$username';
+\end{lstlisting}
+L'attaccante inserisce nel campo di login: \texttt{' OR '1'='1}
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '' OR '1'='1';
+\end{lstlisting}
+Poiché \texttt{'1'='1'} è sempre vero, il DB ignora il fallimento del controllo sull'username e restituisce indiscriminatamente \textbf{tutti gli utenti} registrati nella tabella.
+\end{exbox}
+
+\begin{exbox}[Commenti di Fine Riga]
+L'attaccante inietta il suo codice utile e poi aggiunge il marcatore di commento (es. \texttt{--} o \texttt{\#}). Tutti i controlli legittimi scritti dal programmatore dopo quell'input vengono letteralmente ignorati dal DB.
+
+\textbf{Query originale:}
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '$username' AND password = '$pwd';
+\end{lstlisting}
+L'attaccante inserisce come username: \texttt{admin'}
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = 'admin' -- ' AND password = '';
+\end{lstlisting}
+L'intera verifica della password (tutto ciò che segue -{ - }) diventa un commento inutile. L'attaccante entra nell'account admin senza possederne la password.
+\end{exbox}
+
+\begin{exbox}[Query Piggybacked (Aggiuntive)]
+L'attaccante sfrutta il carattere terminatore di istruzione (il punto e virgola \texttt{;}) per chiudere la query legittima e \textbf{accodare una seconda query letale}.
+
+\textbf{Query originale:}
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = '$username';
+\end{lstlisting}
+L'attaccante inserisce: \texttt{'; DROP TABLE users;}
+\begin{lstlisting}[language=SQL]
+SELECT * FROM users WHERE username = ''; DROP TABLE users; --';
+\end{lstlisting}
+Il DB esegue la prima select (a vuoto) e poi, come seconda istruzione autonoma, esegue il comando \texttt{DROP TABLE}, cancellando l'intero database utenti.
+\end{exbox}
+
+\subsection{2. Attacchi Inferenziali (Inferential SQLi)}
+In un attacco inferenziale non c'è un trasferimento diretto e visibile dei dati. L'attaccante deve \textbf{dedurre (inferire)} le informazioni formulando centinaia o migliaia di richieste specifiche e osservando come cambia il comportamento del server.
+
+\begin{itemize}
+    \item \textbf{Error-based SQL Injection:} L'attaccante inietta sintassi errata o funzioni logiche impossibili. Il database va in errore e il server web (se non configurato correttamente) mostra la traccia dell'errore (Stack Trace) sullo schermo, rivelando all'attaccante il tipo di database (es. MySQL, Oracle), la versione e i nomi esatti delle tabelle o colonne nascoste.
+    \item \textbf{Blind SQL Injection (Iniezione Cieca):} L'attaccante fa \textbf{domande booleane} (es. "L'ID 1 ha la password che inizia con 'A'?"). Se la pagina web carica normalmente, la risposta è "Vero". Se carica senza una specifica immagine o impiega un secondo in più a caricare (Time-based Blind SQLi), la risposta è "Falso". Procedendo carattere per carattere, l'attaccante estrae l'intero database.
+\end{itemize}
+
+\subsection{3. Attacchi Fuori Banda (Out-of-Band SQLi)}
+L'attaccante inietta il payload, ma i risultati vengono esfiltrati attraverso un \textbf{canale di comunicazione differente}. Avviene quando il server web è ben difeso in uscita verso l'attaccante, ma il server database retrostante ha il permesso di fare richieste HTTP verso l'esterno. L'attaccante ordina al DB di inviare un file contenente le password verso un server controllato dall'hacker.
+
+
+\section{Contromisure per le SQL Injection}
+\subsection{1. Programmazione Difensiva}
+È la contromisura assoluta e risolutiva, che deve essere implementata direttamente nel codice sorgente:
+\begin{itemize}
+    \item \textbf{Validazione rigorosa dell'Input (Sanitization):} Controllare i tipi. Se il campo "età" deve essere un intero, il server deve respingere qualsiasi input contenente lettere o simboli speciali (come virgolette e apici) usando RegEx.
+    \item \textbf{Inserimento Parametrizzato (Prepared Statements):} È la panacea tecnica per fermare le SQLi. Lo sviluppatore definisce la struttura della query e lascia "buchi" per i parametri. Il database compila la struttura in anticipo. Quando arriva l'input dell'utente, questo viene trattato strettamente come \textbf{valore testuale o numerico}, e mai fuso con il codice eseguibile. Anche se l'utente inietta \texttt{DROP TABLE}, il DB cercherà letteralmente un utente che si chiama "DROP TABLE".
+    \item \textbf{Uso di ORM (SQL DOM):} Uso di framework (es. Hibernate, Entity Framework) che mappano le entità a oggetti e incapsulano la creazione automatica delle query, garantendo validazione e sanitizzazione native.
+\end{itemize}
+
+\newpage
+\subsection{2. Rilevamento (Detection)}
+Agisce per individuare attacchi in corso analizzando il traffico di rete o i log (es. tramite un Web Application Firewall - WAF):
+\begin{itemize}
+    \item \textbf{Signature-based (Sulle firme):} Il firewall confronta il traffico HTTP in entrata con un dizionario di pattern SQL noti (es. la stringa \texttt{UNION SELECT}). Veloce ma aggirabile da payload offuscati.
+    \item \textbf{Anomaly-based (Sulle anomalie):} Usa il Machine Learning. Il sistema impara come appare una query HTTP "normale" durante una fase di addestramento. Qualsiasi richiesta che devia pesantemente dalla norma viene bloccata.
+    \item \textbf{Code Analysis (Analisi dinamica e statica):} Scanner di vulnerabilità automatici che analizzano il codice dell'app o fanno finti attacchi in ambiente di test per scovare le vulnerabilità prima del rilascio.
+\end{itemize}
+
+\subsection{3. Prevenzione a Tempo di Esecuzione (Runtime)}
+L'applicazione auto-monitora le query generate a runtime, confrontando l'albero sintattico (\textit{parse tree}) della query che sta per essere eseguita con un modello astratto previsto dal programmatore. Se la logica della query muta, l'esecuzione viene abortita.
+
+
+\section{Controllo degli Accessi ai Database (Amministrazione)}
+
+Oltre a difendere l'applicazione, è necessario blindare il database stesso sfruttando i permessi granulari del DBMS (come MySQL, PostgreSQL, Oracle). 
+L'amministrazione dei permessi può essere:
+\begin{itemize}
+    \item \textbf{Centralizzata:} Solo pochi amministratori supremi (DBA) gestiscono tutti i permessi.
+    \item \textbf{Basata sulla proprietà (Ownership):} Chi crea una tabella ne è il padrone assoluto e può concederne la lettura/scrittura ad altri.
+    \item \textbf{Decentralizzata:} Il proprietario di un oggetto può permettere a terzi di gestire i permessi di quell'oggetto per conto suo.
+\end{itemize}
+
+
+\begin{warnbox}[Autorizzazioni in Cascata]
+La clausola \texttt{WITH GRANT OPTION} permette a \texttt{utente\_hr} di girare i propri permessi ad altri colleghi. Tuttavia, se l'amministratore esegue il \texttt{REVOKE} su \texttt{utente\_hr}, il sistema innesca una \textbf{revoca a cascata}, cancellando automaticamente tutti i permessi derivati che \texttt{utente\_hr} aveva a sua volta concesso.
+\end{warnbox}
+
+\subsection{Ruoli nel Database (RBAC)}
+I DB moderni non assegnano permessi a singoli utenti, ma a \textbf{Ruoli}.
+Esistono ruoli a livello server (es. \texttt{sysadmin}, \texttt{diskadmin}), a livello di singolo database (es. \texttt{db\_datareader}) e i \textbf{Ruoli Applicativi}. Questi ultimi sono assegnati all'applicazione web stessa e richiedono una password: l'utente accede all'app, e l'app assume un ruolo ristretto per parlare col DB, garantendo il principio del minimo privilegio.
+
+
+\section{Inferenza nei Database e Cifratura}
+
+\begin{defbox}[L'Inferenza (Inference)]
+L'inferenza è un attacco logico e concettuale. Avviene quando un utente, pur facendo esclusivamente query legittime e perfettamente autorizzate, \textbf{incrocia e deduce matematicamente} informazioni sensibili a cui non dovrebbe avere accesso.
+Es. Un utente non può leggere lo stipendio di Alice. Ma ha il permesso di chiedere la "Somma degli stipendi dell'azienda" e poi, il giorno che Alice si licenzia, ricalcolare la "Somma". Sottraendo i due valori, deduce lo stipendio di Alice.
+\end{defbox}
+
+\subsection{Contromisure contro l'Inferenza}
+\begin{itemize}
+    \item \textbf{In fase di progettazione (Design):} Modificare lo schema relazionale del DB per eliminare le dipendenze o introdurre perturbazioni casuali (rumore) nei dati statistici.
+    \item \textbf{A tempo di esecuzione (Runtime):} Un modulo di sicurezza memorizza la cronologia delle query dell'utente. Se si accorge che l'utente sta cercando di "chiudere il cerchio" per un'inferenza, il DB rifiuta o altera l'ultima query.
+\end{itemize}
+
+\subsection{Cifratura dei Database}
+Quando il controllo degli accessi e i firewall falliscono (es. un ladro ruba l'hard disk fisico del server), l'ultima linea di difesa è la \textbf{cifratura a riposo}. 
+\begin{itemize}
+    \item \textbf{I livelli:} Può essere applicata all'intero database (TDE - Transparent Data Encryption), alla singola tabella, colonna o persino al singolo record/cella.
+    \item \textbf{Il problema della Rigidità:} Cifrare una colonna (es. i Cognomi) distrugge la capacità del DB di creare indici, ordinare alfabeticamente o fare ricerche sfocate (\textit{LIKE '\%Rossi\%'}), impattando drasticamente sulle prestazioni applicative.
+    \item \textbf{La gestione delle chiavi:} Dove nascondere la chiave di decifratura? Se è salvata nello stesso server del DB, chi ruba il disco ruba anche la chiave. Se è su un server separato, aggiunge latenza di rete e punti di fallimento strutturali (KMS - Key Management System).
+\end{itemize}

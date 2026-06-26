@@ -1,0 +1,73 @@
+\chapter{Buffer Overflow}
+
+\section{Principi del Buffer Overflow}
+
+\begin{defbox}[Buffer Overflow]
+Un buffer overflow (o buffer overrun/overwrite) è una condizione anomala in cui un programma, scrivendo dati in un'area di memoria preallocata (il buffer), supera i limiti di capienza del buffer stesso, andando a sovrascrivere locazioni di memoria adiacenti.
+\end{defbox}
+
+Questo fenomeno, originato da difetti di programmazione, può essere sfruttato da un attaccante per causare il crash dell'applicazione (Denial of Service) o, peggio, per alterare il flusso di esecuzione del programma e iniettare codice malevolo, ottenendo il controllo del sistema.
+
+\subsection{Cause e Conseguenze}
+La causa principale è la mancanza di controlli di \textit{bounds checking} (verifica dei limiti) in linguaggi di basso livello come C o C++.
+
+Le principali conseguenze includono:
+\begin{itemize}
+    \item \textbf{Corruzione dei dati:} Variabili adiacenti vengono sovrascritte, alterando la logica del programma.
+    \item \textbf{Alterazione del flusso di esecuzione:} Il programma cerca di eseguire istruzioni in un indirizzo alterato dall'attaccante.
+    \item \textbf{Segmentation Fault:} L'accesso a zone di memoria non mappate o protette causa la terminazione anomala del processo.
+    \item \textbf{Esecuzione di codice arbitrario:} L'attaccante inietta il proprio codice (shellcode) e devia il flusso per eseguirlo, ereditando i privilegi del processo vulnerabile.
+\end{itemize}
+
+\subsection{Requisiti per Sfruttare un Overflow}
+Per capitalizzare la vulnerabilità, l'attaccante deve:
+\begin{enumerate}
+    \item \textbf{Identificare il vettore di vulnerabilità:} Trovare un input controllabile dall'esterno non sanato correttamente. Spesso si usa il \textit{fuzzing} (invio massivo di input casuali, es. stringhe molto lunghe) o la \textit{static code analysis}.
+    \item \textbf{Comprendere il layout della memoria (Stack Frame):} L'attaccante deve conoscere o indovinare l'esatta distanza in byte tra l'inizio del buffer e l'indirizzo di ritorno (RET) per sovrascriverlo con estrema precisione.
+\end{enumerate}
+
+\section{Shellcode}
+\begin{defbox}[Shellcode]
+Lo shellcode è un piccolo frammento di codice (generalmente scritto in linguaggio assembly e convertito in byte grezzi - \textit{opcode}) che l'attaccante inietta nella memoria del target. Viene chiamato così perché il suo scopo tradizionale è aprire una shell (es. \texttt{/bin/sh} su Linux o \texttt{cmd.exe} su Windows) per consentire all'attaccante di inviare comandi.
+\end{defbox}
+
+\subsection{Caratteristiche e Restrizioni}
+Lo shellcode è \textbf{altamente dipendente dall'architettura} (x86, ARM, x64) e dal sistema operativo attaccato, poiché invoca direttamente le chiamate di sistema (System Calls o \textit{syscall}) bypassando le librerie. 
+
+La scrittura dello shellcode è complessa e deve rispettare rigide regole dettate dai vettori di iniezione:
+\begin{description}
+    \item[Position Independent Code (PIC)] Il codice non deve usare indirizzi assoluti in memoria, poiché la posizione del buffer cambia da esecuzione a esecuzione (specie se ci sono meccanismi di ASLR). Utilizza invece salti relativi.
+    \item[Nessun byte NULL (\texttt{0x00})] Le funzioni C che manipolano le stringhe (\texttt{strcpy}, \texttt{sprintf}) si fermano appena incontrano un byte NULL, considerandolo la fine della stringa. Se lo shellcode contiene uno \texttt{0x00}, verrebbe copiato solo in parte, corrompendosi. Gli sviluppatori di shellcode usano trucchi assembly (es. operazione logica \texttt{XOR EAX, EAX}) per azzerare i registri senza scrivere zeri.
+\end{description}
+
+\section{Difese Contro i Buffer Overflow}
+
+Nel corso degli anni, le architetture e i sistemi operativi hanno implementato difese stratificate (a tempo di compilazione e a tempo di esecuzione).
+
+\subsection{Difese a Tempo di Compilazione}
+
+\subsubsection{Scelta del Linguaggio e Librerie Sicure}
+Utilizzare linguaggi strongly typed o managed (Java, C\#, Python) che eseguono automaticamente il bounds checking, eliminando alla radice il problema. Se si deve usare il C/C++, i programmatori devono usare versioni sicure delle librerie standard (es. \texttt{strncpy} al posto di \texttt{strcpy}, \texttt{snprintf} invece di \texttt{sprintf}) oppure framework esterni come \textit{Libsafe}.
+
+\subsubsection{Meccanismi di Protezione dello Stack (Canaries)}
+\begin{warnbox}[Stack Canaries (StackGuard)]
+L'estensione StackGuard del compilatore GCC inserisce un piccolo valore casuale (chiamato \textbf{canarino} o \textit{stack cookie}) tra le variabili locali e l'indirizzo di ritorno (RET) al momento della chiamata della funzione.
+Prima di eseguire l'istruzione \texttt{RET}, la CPU controlla l'integrità del canarino. Se un buffer overflow cerca di sovrascrivere il RET, sovrascriverà inevitabilmente anche il canarino. Il mismatch del valore causa l'immediata terminazione del programma, sventando l'attacco.
+\end{warnbox}
+Altri sistemi, come \textbf{Stackshield / RAD (Return Address Defender)}, copiano il RET originale in un'area di memoria isolata e protetta (shadow stack) all'ingresso della funzione, confrontandolo all'uscita per verificarne l'integrità.
+
+\subsection{Difese a Tempo di Esecuzione}
+\subsubsection{Randomizzazione dello Spazio degli Indirizzi (ASLR)}
+L'Address Space Layout Randomization (ASLR) è una difesa software del sistema operativo. Modifica in modo causale gli indirizzi di base dello stack, dell'heap e delle librerie condivise (libc) ad ogni nuova esecuzione del programma. In questo modo, l'attaccante non può \textit{hardcodare} l'indirizzo a cui far saltare l'esecuzione, rendendo l'attacco una scommessa statistica (spesso destinata a fallire causando un semplice crash).
+
+\subsubsection{Pagine di Guardia}
+Inserimento di pagine di memoria vuote e non mappate tra aree critiche di memoria. Qualsiasi tentativo di accesso (lettura/scrittura) sequenziale da parte di un buffer overflowing che oltrepassa il limite urterà la \textit{guard page}, innescando una violazione di memoria (page fault) e il blocco del programma.
+
+\section{Altre Forme di Attacchi Overflow}
+
+\begin{description}
+    \item[Sostituzione dello Stack Frame] Se un off-by-one error (errore di un solo byte) permette di sovrascrivere l'ultimo byte del Frame Pointer (EBP), l'attaccante non sovrascrive direttamente il RET. Invece, fa puntare l'EBP a uno \textit{stack frame fittizio} creato precedentemente nell'area dati o nello stack, alterando la catena delle chiamate di funzione e dirottando l'esecuzione.
+    \item[Heap Overflow] L'heap è l'area di memoria per le allocazioni dinamiche (\texttt{malloc}, \texttt{new}). Qui non c'è un indirizzo di ritorno (RET) da sovrascrivere.
+L'attaccante mira a sovrascrivere i metadati di gestione della memoria (usati dalle funzioni \texttt{free()}) per corrompere i puntatori, oppure sovrascrive esplicitamente i \textit{puntatori a funzione} o i \textit{VTable pointers} del C++ presenti nelle strutture dati vicine, forzandole a puntare allo shellcode.
+\textbf{Difese:} Allocatori heap sicuri (che verificano l'integrità dei metadati), ASLR dell'heap e heap non eseguibile.
+\end{description}

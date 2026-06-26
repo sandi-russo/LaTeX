@@ -1,0 +1,163 @@
+\chapter{Intrusion Detection System}
+
+\section{Introduzione}
+
+\begin{defbox}[Intrusion Detection System (IDS)]
+Gli Intrusion Detection System (IDS) sono strumenti di sicurezza progettati per monitorare e analizzare eventi all'interno di un sistema o di una rete, con l'obiettivo di identificare in tempo reale, o quasi, i tentativi di accesso non autorizzati.
+\end{defbox}
+
+\section{Struttura di un IDS}
+Un IDS è tipicamente strutturato in tre componenti logici principali:
+\begin{description}
+    \item[Sensori] Raccolgono dati da varie parti del sistema come pacchetti di rete, file di log o chiamate di sistema. Queste informazioni vengono inoltrate agli analizzatori.
+    \item[Analizzatori] Ricevono i dati dai sensori e hanno il compito di determinare se si è verificata un'intrusione. Possono anche suggerire o intraprendere azioni di risposta.
+    \item[Interfaccia utente] Consente agli amministratori di visualizzare gli output del sistema, ricevere gli alert e controllare le configurazioni dell'IDS.
+\end{description}
+
+\section{Configurazioni di IDS}
+
+Gli IDS si classificano principalmente in base alla fonte e al tipo di dati che analizzano:
+\begin{description}
+    \item[Host-based IDS (HIDS)] Monitora le caratteristiche di un singolo host e gli eventi che vi accadono (es. file di log, integrità dei file di sistema).
+    \item[Network-based IDS (NIDS)] Analizza il traffico di rete su segmenti o dispositivi specifici (es. router, switch), verificando i livelli di rete, trasporto e applicativi per identificare attività anomale.
+    \item[IDS distribuiti o ibridi] Combinano informazioni provenienti da più sensori, sia host-based che network-based, inviandole a un analizzatore centrale per migliorare il rilevamento correlando eventi complessi.
+\end{description}
+
+\section{Principi di Base e Requisiti}
+
+Il principio fondamentale del rilevamento delle intrusioni si basa sull'assunto che il comportamento di un intruso differisca, in modo quantificabile, da quello di un utente legittimo. 
+
+\begin{warnbox}[Falsi Allarmi vs Tasso di Rilevamento]
+La progettazione di un IDS richiede un bilanciamento critico:
+\begin{itemize}
+    \item Un'interpretazione troppo ampia (\textit{lossy}) genera molti \textbf{Falsi Positivi} (comportamenti legittimi segnalati come intrusioni), desensibilizzando gli amministratori.
+    \item Una definizione troppo rigida porta a \textbf{Falsi Negativi} (attacchi reali non rilevati).
+\end{itemize}
+L'obiettivo ideale è massimizzare il tasso di rilevamento mantenendo un basso tasso di falsi allarmi.
+\end{warnbox}
+
+\subsection{Requisiti di un IDS Efficace}
+Per essere realmente utile, un IDS dovrebbe soddisfare i seguenti requisiti:
+\begin{itemize}
+    \item \textbf{Funzionamento continuo:} autonomia con minima supervisione umana.
+    \item \textbf{Tolleranza ai guasti:} capacità di recuperare rapidamente da crash.
+    \item \textbf{Resistenza alla sovversione:} monitoraggio di se stesso per rilevare tentativi di manomissione da parte degli attaccanti.
+    \item \textbf{Basso impatto prestazionale:} overhead ridotto sui sistemi monitorati.
+    \item \textbf{Configurabilità e Adattabilità:} capacità di adattarsi alle variazioni storiche del comportamento legittimo e alle policy di sicurezza.
+    \item \textbf{Scalabilità:} capacità di monitorare da pochi a migliaia di host.
+\end{itemize}
+
+\section{Analisi di un IDS (Metodi di Rilevamento)}
+
+Gli analizzatori IDS utilizzano diversi approcci per identificare le intrusioni.
+
+\subsection{Rilevazione delle Anomalie (Anomaly Detection)}
+Prevede la creazione di un profilo di comportamento "normale" degli utenti legittimi. I comportamenti osservati vengono poi confrontati con questo modello: deviazioni significative vengono segnalate come intrusioni.
+
+\paragraph{Fasi del Processo:}
+\begin{enumerate}
+    \item \textbf{Fase di addestramento:} si costruisce un modello del comportamento legittimo analizzando un periodo di normale attività.
+    \item \textbf{Fase di rilevamento:} il traffico attuale viene confrontato con il modello e classificato.
+\end{enumerate}
+
+Le tecniche spaziano dall'analisi statistica (univariata/multivariata), a sistemi esperti basati su conoscenza, fino ad algoritmi di \textit{machine learning}. 
+\begin{notebox}[Pro e Contro delle Anomalie]
+Può rilevare attacchi sconosciuti (zero-day), ma la creazione di un modello accurato è molto complessa e solitamente genera un alto tasso di falsi positivi quando il sistema o gli utenti cambiano abitudini lecite.
+\end{notebox}
+
+\subsection{Rilevazione tramite Firma o Euristica (Misuse Detection)}
+Questo approccio cerca schemi specifici (\textit{pattern} o firme) associati ad attacchi noti.
+
+\begin{description}
+    \item[Basati su Firma:] Confrontano i dati con un database di pattern di attacchi noti (simile agli antivirus classici). Sono efficienti e generano pochi falsi positivi, ma non rilevano minacce sconosciute e necessitano di continui aggiornamenti del database.
+    \item[Basati su Regole Euristiche:] Utilizzano insiemi di regole logiche per identificare tentativi di sfruttamento di vulnerabilità note. Un esempio storico è \textbf{SNORT}, un NIDS open-source che utilizza regole scritte in formato leggibile per analizzare i pacchetti.
+\end{description}
+
+\section{Host-Based e Network-Based IDS}
+
+\subsection{HIDS Distribuito}
+Tradizionalmente un HIDS opera isolato. Oggi si preferiscono HIDS distribuiti che coordinano le difese su più host.
+L'architettura può essere \textbf{Centralizzata} (un nodo raccoglie tutto, facile correlazione ma rischio di collo di bottiglia) o \textbf{Decentralizzata} (nodi cooperanti, più resilienti ma complessi da sincronizzare).
+
+L'architettura tipica prevede:
+\begin{enumerate}
+    \item \textbf{Agente host:} cattura e filtra i dati di audit locali e li formatta in record standard (HAR).
+    \item \textbf{Agente LAN Monitor:} monitora il traffico locale del segmento LAN.
+    \item \textbf{Gestore Centrale:} aggrega e correla i dati per trarre inferenze (es. lo stesso utente sta fallendo il login su 10 macchine diverse contemporaneamente).
+\end{enumerate}
+
+\subsection{Network-Based Intrusion Detection System (NIDS)}
+Un NIDS agisce come uno \textit{sniffer} passivo sulla rete. Esamina i pacchetti in transito, assemblandone i flussi per cercare pattern malevoli a livello trasporto o applicativo. A differenza dell'HIDS, non consuma risorse sui server di produzione, ma può faticare ad analizzare traffico cifrato (es. HTTPS).
+
+\section{IDS Distribuito e Cooperativo (Ibrido)}
+
+Gli IDS ibridi o SIEM (Security Information and Event Management) integrano dati da NIDS, HIDS, Firewall e log applicativi.
+
+\subsection{Sfide Moderne}
+\begin{itemize}
+    \item \textbf{Minacce veloci e mutanti:} Worm e malware polimorfi o attacchi zero-day sfuggono alle firme tradizionali.
+    \item \textbf{Assenza di confini:} Con il BYOD (Bring Your Own Device) e il cloud, il concetto di "perimetro" e "firewall aziendale" è svanito. Ogni dispositivo è una potenziale via di ingresso.
+\end{itemize}
+
+\subsection{Rilevamento Cooperativo (Gossip)}
+Per affrontare minacce lente e distribuite, si usano \textbf{sistemi cooperativi p2p}. Ogni nodo (host) agisce come sensore locale. Invece di lanciare falsi allarmi per piccoli sospetti, i nodi comunicano tra loro (protocollo di \textit{gossip}). Se la somma delle anomalie locali raggiunge una soglia globale, si innesca la difesa.
+L'approccio aumenta enormemente la copertura, riduce i falsi positivi e sfrutta i dati a livello applicativo dell'host.
+
+\section{Honeypot}
+
+\begin{defbox}[Honeypot]
+Gli honeypot ("barattoli di miele") sono sistemi esca progettati per attirare gli attaccanti e distoglierli dai sistemi critici, raccogliendo al contempo preziose informazioni sul loro comportamento, i loro strumenti e le loro tecniche (Threat Intelligence).
+\end{defbox}
+
+Gli honeypot non ospitano dati reali. Qualsiasi interazione con l'honeypot è da considerarsi \textbf{immediatamente malevola e sospetta}, rendendo l'analisi estremamente pulita (Zero falsi positivi da traffico legittimo).
+
+\subsection{Classificazione degli Honeypot}
+
+\subsubsection{Honeypot a Bassa Interazione}
+Emulano solo alcuni servizi di rete limitati (es. porte FTP, SSH o Web fasulle aperte in ascolto).
+\begin{itemize}
+    \item \textbf{Vantaggi:} Sicurissimi da usare (l'attaccante non può prendere il controllo del sistema host), molto leggeri, facili da installare.
+    \item \textbf{Svantaggi:} Gli attaccanti esperti (o i bot avanzati) capiscono subito che si tratta di un'emulazione e la abbandonano, fornendo poche informazioni.
+\end{itemize}
+
+\subsubsection{Honeypot ad Alta Interazione}
+Offrono un sistema operativo reale e completo (spesso virtualizzato), vulnerabile di proposito. L'attaccante ha accesso a una vera shell.
+\begin{itemize}
+    \item \textbf{Vantaggi:} Ingannano gli hacker più esperti. Permettono di registrare ogni \texttt{keystroke}, catturare l'upload di malware e studiare zero-day exploit completi.
+    \item \textbf{Svantaggi:} Molto complessi da mantenere. Se non adeguatamente confinati (isolamento di rete e virtualizzazione), l'attaccante potrebbe usare l'honeypot per attaccare macchine reali (\textit{pivot}).
+\end{itemize}
+
+\subsection{Posizionamento degli Honeypot nella Rete}
+
+\begin{center}
+\begin{tikzpicture}[node distance=2cm, thick, scale=0.8, transform shape]
+\node (internet) [draw, ellipse, fill=blue!10, minimum width=2cm, minimum height=1cm] {Internet};
+\node (extfw) [draw, rectangle, fill=red!20, right=1.5cm of internet, text width=2cm, align=center] {Firewall\\Esterno};
+\node (dmz) [draw, rectangle, rounded corners, fill=green!10, right=1.5cm of extfw, minimum height=2.5cm, align=center] {DMZ\\(Web/Mail)};
+\node (intfw) [draw, rectangle, fill=red!20, right=1.5cm of dmz, text width=2cm, align=center] {Firewall\\Interno};
+\node (lan) [draw, rectangle, rounded corners, fill=blue!10, right=1.5cm of intfw, minimum height=2.5cm, align=center] {Rete\\Interna (LAN)};
+
+\node (hp1) [draw, star, star points=7, fill=yellow!30, inner sep=1pt, above=1cm of extfw] {HP 1};
+\node (hp2) [draw, star, star points=7, fill=yellow!30, inner sep=1pt, above=1cm of dmz] {HP 2};
+\node (hp3) [draw, star, star points=7, fill=yellow!30, inner sep=1pt, above=1cm of lan] {HP 3};
+
+\draw[<->, >=Stealth] (internet) -- (extfw);
+\draw[<->, >=Stealth] (extfw) -- (dmz);
+\draw[<->, >=Stealth] (dmz) -- (intfw);
+\draw[<->, >=Stealth] (intfw) -- (lan);
+
+\draw[->, dashed, >=Stealth] (internet.north) |- (hp1.west);
+\draw[->, dashed, >=Stealth] (dmz.north) -- (hp2.south);
+\draw[->, dashed, >=Stealth] (lan.north) -- (hp3.south);
+
+\node at (hp1.north) [above, font=\footnotesize] {Esterno};
+\node at (hp2.north) [above, font=\footnotesize] {nella DMZ};
+\node at (hp3.north) [above, font=\footnotesize] {Interno};
+\end{tikzpicture}
+\end{center}
+
+\begin{description}
+    \item[All'Esterno del Firewall (HP 1)] Rileva le scansioni indiscriminate su Internet e i worm. Non presenta alcun rischio per la rete interna, ma raccoglie molto "rumore" di fondo e non aiuta a capire cosa possa passare il firewall.
+    \item[Nella DMZ (HP 2)] Rileva attacchi mirati ai servizi esposti al pubblico. Deve essere protetto rigorosamente per non diventare un ponte verso il firewall interno.
+    \item[Nella Rete Interna (HP 3)] Cruciale per rilevare movimenti laterali di malware già penetrati o tentativi di attacco da parte di minacce interne (\textit{insider threat}). 
+\end{description}

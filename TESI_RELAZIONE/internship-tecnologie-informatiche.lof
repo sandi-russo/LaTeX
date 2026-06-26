@@ -1,0 +1,18 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Esempio di Property Graph con nodi etichettati e proprietà}}{6}{figure.caption.6}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Meccanismo di funzionamento della libreria GDS in Neo4j.}}{8}{figure.caption.7}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Architettura end-to-end: dal Knowledge Graph eterogeneo (nodi Chemical e Disease) all'estrazione degli embedding nello spazio latente, fino al task di Link Prediction tramite rete neurale (MLP).}}{8}{figure.caption.8}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Il meccanismo di aggregazione di GraphSAGE: i vicini campionati vengono aggregati e combinati con la rappresentazione del nodo target.}}{11}{figure.caption.10}%
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Pipeline completa di GraphSAGE per la link prediction Chemical→Disease.}}{12}{figure.caption.11}%
+\contentsline {figure}{\numberline {2.6}{\ignorespaces L'intuizione geometrica di TransE: la relazione $\mathbf {r}$ è un vettore di traslazione da $\mathbf {h}$ a $\mathbf {t}$ nello spazio degli embedding.}}{13}{figure.caption.12}%
+\contentsline {figure}{\numberline {2.7}{\ignorespaces Architettura di HashGNN per la link prediction: Chemical e Disease mantengono spazi di embedding separati fino al decoder.}}{15}{figure.caption.13}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Confronto dei tempi di estrazione nelle tre configurazioni del cluster.}}{27}{figure.caption.18}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces AUC-ROC medio con deviazione standard per i tre modelli su 5 run indipendenti.}}{29}{figure.caption.21}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Tempo medio di training per i tre modelli su 5 run indipendenti.}}{30}{figure.caption.22}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Trade-off tra accuratezza (AUC-ROC) ed efficienza computazionale (tempo di training) per i tre modelli.}}{32}{figure.caption.23}%
+\addvspace {10\p@ }

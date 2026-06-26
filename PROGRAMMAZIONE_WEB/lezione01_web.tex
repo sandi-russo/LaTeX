@@ -1,0 +1,159 @@
+\chapter{Il World Wide Web}
+
+\section{Introduzione al Web}
+
+Il World Wide Web (WWW) è un sistema ipermediale di documenti interconnessi, accessibile attraverso la rete Internet. Nato nel 1989 dalla proposta di Tim Berners-Lee al CERN, ha rivoluzionato il modo in cui le persone accedono e condividono informazioni. Di seguito alcuni passaggi storici fondamentali.
+
+\begin{itemize}
+    \item \textbf{1989 -- Inizio del Web}: Tim Berners-Lee propone un sistema di ipermedia che diventerà il World Wide Web.
+    \item \textbf{1991 -- Primi siti Web}: viene pubblicato il primo sito web, introducendo il concetto di navigazione attraverso link.
+    \item \textbf{1993 -- Mosaic}: il primo browser grafico rende il web accessibile a molti più utenti.
+    \item \textbf{1995 -- Nascita di JavaScript}: Netscape introduce JavaScript, dando il via allo sviluppo di pagine web dinamiche.
+    \item \textbf{1998 -- Google}: Larry Page e Sergey Brin fondano Google, rivoluzionando la ricerca sul web.
+    \item \textbf{2004 -- Web 2.0}: si afferma il concetto di Web 2.0, con siti interattivi, social media e piattaforme basate su utenti come contenuto principale.
+    \item \textbf{2010 -- Diffusione del mobile}: l'adozione crescente di smartphone e tablet spinge verso design e tecnologie web responsive.
+\end{itemize}
+
+\section{Architettura Client-Server}
+
+Il Web si basa sul modello \textbf{Client-Server}:
+
+\begin{itemize}
+    \item \textbf{Client}: richiede risorse (es.\ PC, smartphone, tablet). Tipicamente è il browser.
+    \item \textbf{Server}: fornisce risorse; è un sistema potente e multi-utente, in grado di gestire molte richieste contemporaneamente.
+\end{itemize}
+
+\section{Protocolli di rete}
+
+Un \textbf{protocollo} è un insieme di regole e convenzioni che definiscono come i dati vengono trasmessi, elaborati e ricevuti in una rete di computer.
+
+\subsection{Protocolli a livello di rete (TCP/IP)}
+
+\begin{itemize}
+    \item \textbf{Scopo}: gestire la comunicazione e il routing dei dati su Internet.
+    \item \textbf{Livello di funzionamento}: livello di rete, fornisce l'infrastruttura di base per il trasferimento dei dati.
+    \item \textbf{Esempi}: TCP (Transmission Control Protocol) e IP (Internet Protocol) gestiscono la consegna dei dati attraverso Internet.
+    \item \textbf{Caratteristiche}: affidabilità, routing, consegna dei pacchetti.
+\end{itemize}
+
+\subsection{Protocolli a livello applicativo (HTTP)}
+
+\begin{itemize}
+    \item \textbf{Scopo}: definiscono come le applicazioni e i servizi interagiscono tra loro.
+    \item \textbf{Livello di funzionamento}: livello applicativo, specifica le regole per le richieste e le risposte tra client e server.
+    \item \textbf{Esempio}: HTTP (HyperText Transfer Protocol) è utilizzato per il trasferimento di pagine web nei browser.
+    \item \textbf{Caratteristiche}: comunicazione tra applicazioni, definizione di metodi di richiesta (GET, POST, \dots), gestione delle risorse web.
+\end{itemize}
+
+\section{Il protocollo HTTP}
+
+HTTP (HyperText Transfer Protocol) è il protocollo standard utilizzato per la comunicazione sul Web. Le sue caratteristiche principali sono:
+
+\begin{itemize}
+    \item \textbf{Stateless}: ogni richiesta è indipendente dalle altre, il server non mantiene memoria delle richieste precedenti.
+    \item \textbf{Protocollo basato su testo}: utilizza testo leggibile, facilmente ispezionabile.
+    \item \textbf{Connessione TCP}: affidabile e sequenziale.
+    \item \textbf{Metodi di richiesta}: GET, POST, PUT, DELETE, ecc.
+    \item \textbf{Header HTTP}: trasmettono informazioni aggiuntive (tipo di contenuto, autenticazione, \dots).
+    \item \textbf{Porte predefinite}: 80 per HTTP e 443 per HTTPS.
+\end{itemize}
+
+\subsection{HTTPS}
+
+HTTPS è la versione sicura di HTTP:
+
+\begin{itemize}
+    \item utilizza la crittografia SSL/TLS per proteggere i dati in transito;
+    \item garantisce privacy e sicurezza delle comunicazioni;
+    \item è fondamentale per siti che gestiscono dati sensibili (e-commerce, home banking, login, \dots).
+\end{itemize}
+
+\section{L'URL (Uniform Resource Locator)}
+
+Un \textbf{URL} è una sequenza di caratteri che identifica in modo univoco l'indirizzo di una risorsa sul Web.
+
+\subsection{Struttura di base}
+
+\begin{itemize}
+    \item \textbf{Schema}: specifica il protocollo di comunicazione (es.\ \texttt{http}, \texttt{https}, \texttt{ftp}).
+    \item \textbf{Dominio}: indirizzo del server che ospita la risorsa (es.\ \texttt{www.example.com}).
+    \item \textbf{Percorso}: specifica la posizione della risorsa nel server (es.\ \texttt{/paginaweb/index.html}).
+    \item \textbf{Parametri}: opzionali, trasmettono informazioni aggiuntive (es.\ \texttt{?id=123}).
+    \item \textbf{Anchor}: opzionale, specifica una posizione all'interno della pagina (es.\ \texttt{\#sezione}).
+\end{itemize}
+
+\textbf{Esempio completo di URL:}
+\begin{center}
+\texttt{https://www.example.com/paginaweb/index.html?id=123\#sezione}
+\end{center}
+
+\section{Domini}
+
+Un \textbf{dominio web} è l'indirizzo di un sito web che fornisce un'identità unica e facile da ricordare per accedere a risorse su Internet.
+
+\subsection{Struttura del dominio}
+
+\begin{itemize}
+    \item \textbf{Nome di Dominio}: l'identificatore principale (es.\ \texttt{www.example.com}).
+    \item \textbf{Estensione di Dominio}: la parte finale, generalmente indicante la natura del sito (es.\ \texttt{.com}, \texttt{.org}, \texttt{.net}, \texttt{.edu}).
+\end{itemize}
+
+\subsection{Funzioni principali}
+
+\begin{itemize}
+    \item \textbf{Identificazione}: un dominio identifica un sito web in modo univoco sulla rete.
+    \item \textbf{Indirizzamento}: fornisce l'indirizzo utilizzato dai browser per accedere alle pagine web.
+    \item \textbf{Branding}: spesso riflette il nome di un'azienda o l'obiettivo del sito per scopi di branding.
+\end{itemize}
+
+\subsection{Registrazione dei domini}
+
+I domini web devono essere registrati tramite \textit{registrar} autorizzati. La disponibilità dei nomi di dominio è soggetta a verifica e può richiedere una tassa annuale per il mantenimento.
+
+\section{Il DNS (Domain Name System)}
+
+Il \textbf{Domain Name System (DNS)} è un sistema che traduce gli indirizzi web facili da ricordare (nomi di dominio) in indirizzi IP, consentendo ai computer di individuare e comunicare tra loro su Internet.
+
+\subsection{Funzionamento del DNS}
+
+\begin{enumerate}
+    \item \textbf{Richiesta di risoluzione DNS}: un utente invia una richiesta per accedere a un sito web utilizzando il nome di dominio (es.\ \texttt{www.example.com}).
+    \item \textbf{Interrogazione DNS}: la richiesta viene inviata al server DNS locale (o al server DNS del provider Internet).
+    \item \textbf{Ricerca nel database DNS}: il server DNS cerca il nome di dominio nel suo database. Se lo trova, restituisce l'indirizzo IP corrispondente.
+    \item \textbf{Caching DNS}: se l'indirizzo IP è stato recentemente richiesto, potrebbe essere memorizzato nella cache DNS locale per accelerare le future richieste.
+    \item \textbf{Risposta al client}: il server DNS invia l'indirizzo IP al dispositivo client.
+    \item \textbf{Accesso al sito web}: il dispositivo utilizza l'indirizzo IP ricevuto per stabilire una connessione con il server del sito web desiderato.
+\end{enumerate}
+
+\section{Organizzazione gerarchica dei domini}
+
+I domini web seguono una struttura gerarchica che facilita l'organizzazione e la gestione degli indirizzi web su Internet.
+
+\subsection{Top-Level Domain (TLD)}
+
+Rappresenta la categoria generale o la nazionalità di un dominio. Esempi: \texttt{.com}, \texttt{.org}, \texttt{.net}, \texttt{.gov}, \texttt{.uk}, \texttt{.fr}, \texttt{.it}.
+
+\subsection{Second-Level Domain (SLD)}
+
+\begin{itemize}
+    \item si trova sotto il TLD;
+    \item solitamente rappresenta il nome specifico del sito o dell'azienda;
+    \item esempio: \texttt{example} in \texttt{www.example.com}.
+\end{itemize}
+
+\subsection{Sotto-dominio}
+
+\begin{itemize}
+    \item facoltativo e situato sotto l'SLD;
+    \item può essere utilizzato per specificare sottosezioni o servizi all'interno di un sito;
+    \item esempio: \texttt{www} in \texttt{www.example.com}.
+\end{itemize}
+
+\section{Terminologia di riferimento}
+
+\begin{itemize}
+    \item \textbf{Dominio}: indirizzo principale di un sito web su Internet, utilizzato per identificarlo univocamente.
+    \item \textbf{Sito Web}: insieme di pagine web collegate tra loro che condividono lo stesso dominio.
+    \item \textbf{Pagina Web}: documento digitale visualizzabile in un browser web.
+    \item \textbf{Home Page}: pagina iniziale di un sito web, tipicamente il punto di ingresso per i visitatori.
+\end{itemize}

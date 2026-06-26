@@ -1,0 +1,116 @@
+\chapter{Servizi RESTful}
+
+\section{Introduzione}
+
+I \textbf{servizi RESTful} (REST = REpresentational State Transfer) sono un tipo di web service che si basa su una serie di principi architetturali. Rispetto ai web service tradizionali basati su SOAP/WSDL, i servizi RESTful sono più semplici, leggeri e sfruttano direttamente i meccanismi forniti dal protocollo HTTP.
+
+\section{Principi architetturali}
+
+I servizi RESTful si basano sui seguenti principi:
+
+\begin{itemize}
+    \item \textbf{Identificazione delle risorse}: ogni risorsa è identificata univocamente da un URI.
+    \item \textbf{Utilizzo esplicito dei metodi HTTP}: i metodi HTTP (GET, POST, PUT, DELETE) sono utilizzati per identificare le operazioni da eseguire sulle risorse.
+    \item \textbf{Risorse autodescrittive}: le risorse descrivono il proprio formato tramite tipi di rappresentazione (MIME, JSON, XML, ecc.).
+    \item \textbf{Collegamenti tra risorse}: le risorse sono collegate tra loro tramite hyperlink.
+    \item \textbf{Comunicazione senza stato}: ogni richiesta del client al server deve contenere tutte le informazioni necessarie per essere compresa, senza affidarsi a un contesto memorizzato sul server.
+\end{itemize}
+
+\section{Identificazione delle risorse}
+
+In un'architettura RESTful, ogni risorsa è identificata univocamente da un URI. Esempi di possibili identificatori di risorse:
+
+\begin{verbatim}
+http://www.myapp.com/clienti/1234
+http://www.myapp.com/ordini/2011/98765
+http://www.myapp.com/prodotti/7654
+http://www.myapp.com/ordini/2011
+http://www.myapp.com/prodotti?colore=rosso
+\end{verbatim}
+
+Gli URI sono strutturati in modo gerarchico per rappresentare le relazioni tra le risorse. È possibile utilizzare anche parametri query-string per filtrare le risorse.
+
+\section{Mappare metodi CRUD sui metodi HTTP}
+
+I servizi RESTful utilizzano i metodi HTTP standard per eseguire le operazioni CRUD (Create, Read, Update, Delete) sulle risorse:
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Metodo HTTP} & \textbf{Operazione CRUD} & \textbf{Descrizione} \\
+\hline
+POST & Create & Crea una nuova risorsa \\
+GET & Read & Ottiene una risorsa esistente \\
+PUT & Update & Aggiorna una risorsa o ne modifica lo stato \\
+DELETE & Delete & Elimina una risorsa \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Esempio: URL non conforme a REST}
+
+L'URI:
+
+\begin{verbatim}
+http://www.myapp.com/addCustomer?name=Rossi
+\end{verbatim}
+
+\textbf{non} risponde ai principi REST perché:
+
+\begin{itemize}
+    \item L'azione (``addCustomer'') è codificata nell'URL invece che nel metodo HTTP.
+    \item L'URL dovrebbe invece essere semplicemente \texttt{http://www.myapp.com/clienti}, e per creare un nuovo cliente si dovrebbe usare il metodo HTTP \texttt{POST} con i dati del cliente nel body della richiesta.
+\end{itemize}
+
+\section{Risorse autodescrittive}
+
+In un'architettura RESTful, le risorse possono essere rappresentate in diversi formati:
+
+\begin{itemize}
+    \item \textbf{MIME} (Multipurpose Internet Mail Extensions).
+    \item \textbf{JSON} (JavaScript Object Notation).
+    \item \textbf{XML} (eXtensible Markup Language).
+\end{itemize}
+
+È possibile specificare il formato desiderato nella richiesta HTTP, tramite l'header \texttt{Accept}:
+
+\begin{verbatim}
+GET /clienti/1234 HTTP/1.1
+Host: www.myapp.com
+Accept: application/vnd.myapp.cliente+xml
+\end{verbatim}
+
+Il server, interpretando l'header \texttt{Accept}, restituisce la rappresentazione della risorsa nel formato richiesto.
+
+\section{Collegamento tra risorse: HATEOAS}
+
+\textbf{HATEOAS} (Hypermedia As The Engine Of Application State) è un principio che stabilisce che le risorse devono contenere collegamenti ad altre risorse correlate. Questo permette al client di navigare tra le risorse senza dover conoscere a priori la struttura dell'API.
+
+Esempio di rappresentazione XML di una risorsa con collegamenti:
+
+\begin{lstlisting}[language=XML]
+<ordine>
+    <numero>12345678</numero>
+    <data>01/07/2011</data>
+    <cliente rif="http://www.myapp.com/clienti/1234" />
+    <articoli>
+        <articolo rif="http://www.myapp.com/prodotti/98765" />
+        <articolo rif="http://www.myapp.com/prodotti/43210" />
+    </articoli>
+</ordine>
+\end{lstlisting}
+
+In questo esempio, la risorsa \texttt{ordine} contiene riferimenti ipermediali a:
+
+\begin{itemize}
+    \item La risorsa \texttt{cliente} che ha effettuato l'ordine.
+    \item Le risorse \texttt{prodotto} che corrispondono agli articoli ordinati.
+\end{itemize}
+
+Il client può seguire questi link per ottenere informazioni aggiuntive sulle risorse collegate.
+
+\section{Comunicazione senza stato}
+
+La \textbf{comunicazione senza stato} è una caratteristica fondamentale dei servizi RESTful: essa deriva direttamente dalla natura del protocollo HTTP, che è appunto un protocollo stateless.
+
+Ogni richiesta HTTP deve contenere tutte le informazioni necessarie al server per elaborarla. Il server non mantiene alcuno stato relativo al client tra richieste successive. Questo semplifica la progettazione dei servizi e li rende scalabili, perché qualsiasi server può gestire qualsiasi richiesta.

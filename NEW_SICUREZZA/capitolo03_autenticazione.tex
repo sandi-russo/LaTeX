@@ -1,0 +1,159 @@
+\chapter{Autenticazione Digitale degli Utenti}
+
+\section{Introduzione}
+
+L'autenticazione digitale rappresenta il processo fondamentale con cui si stabilisce la fiducia nelle identità presentate elettronicamente a un sistema informatico. Questa fiducia è cruciale per consentire a un sistema di determinare, in fase successiva, se l'individuo autenticato sia effettivamente autorizzato a compiere specifiche operazioni, come accedere a dati sensibili o modificare configurazioni del sistema.
+
+\section{Modello di Autenticazione Digitale}
+
+Il processo di gestione e verifica di un'identità digitale coinvolge diverse entità organizzative.
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=0.8cm,
+    >=stealth, thick,
+    box/.style={draw, rounded corners, align=center, fill=blue!5, font=\scriptsize, inner sep=5pt, text width=10cm},
+    arrow/.style={->, thick, font=\footnotesize}
+]
+
+    % Flusso verticale con descrizioni più lunghe
+    \node[box] (ra) {\textbf{Registration Authority (RA)} \\ Entità fidata che accerta l'identità del richiedente nel mondo reale durante la fase di registrazione};
+    
+    \node[box, below=of ra] (csp) {\textbf{Credential Service Provider (CSP)} \\ Riceve la garanzia dalla RA ed emette una credenziale elettronica (certificato, chiave crittografica o password) collegata a un token};
+    
+    \node[box, below=of csp] (sub) {\textbf{Sottoscrittore (Utente)} \\ L'utente che ha ottenuto il token e vuole accedere a un servizio, dimostrando di possedere la credenziale};
+    
+    \node[box, below=of sub] (ver) {\textbf{Verificatore} \\ Sistema che interagisce con il sottoscrittore valutando la prova di possesso del token durante l'autenticazione};
+    
+    \node[box, below=of ver] (rp) {\textbf{Relying Party (RP)} \\ Applicazione o servizio finale che si fida dell'asserzione inviata dal verificatore per concedere l'accesso};
+
+    % Frecce verticali
+    \draw[arrow] (ra) -- node[right, font=\footnotesize] {2. Garanzia identità} (csp);
+    \draw[arrow] (csp) -- node[right, font=\footnotesize] {3. Emette credenziale (Token)} (sub);
+    \draw[arrow] (sub) -- node[right, font=\footnotesize] {4. Autenticazione / Prova di possesso} (ver);
+    \draw[arrow] (ver) -- node[right, font=\footnotesize] {5. Asserzione (Verifica OK)} (rp);
+    
+    \draw[arrow] (sub.west) -- ++(-1.8,0) coordinate (mid) |- (ra.west);
+    \node[font=\footnotesize, rotate=90, shift={(2,0.4)}] at (mid) {1. Richiesta identità};
+
+\end{tikzpicture}
+\end{center}
+
+\section{Mezzi di Autenticazione}
+
+L'identità di un utente può essere verificata e autenticata tramite quattro fattori o modalità principali:
+
+\begin{enumerate}
+    \item \textbf{Qualcosa che l'utente conosce (Knowledge):} Come una password, un PIN o le risposte a domande di sicurezza specifiche.
+    \item \textbf{Qualcosa che l'utente possiede (Possession):} Come un dispositivo smartphone, una keycard elettronica, una smart card, un token hardware o una chiave fisica.
+    \item \textbf{Qualcosa che l'utente è (Inherence / Biometria statica):} Basato su caratteristiche fisiche uniche, come il riconoscimento delle impronte digitali, della geometria facciale, dell'iride o della retina.
+    \item \textbf{Qualcosa che l'utente fa (Action / Biometria dinamica):} Basato su caratteristiche comportamentali, come il riconoscimento della voce, le dinamiche della firma autografa o il ritmo di battitura sulla tastiera (\textit{keystroke dynamics}).
+\end{enumerate}
+
+Ciascun metodo presenta punti di forza e vulnerabilità (es. furto, falsificazione, falsi positivi biometrici). Inoltre, la gestione su larga scala di token hardware o dispositivi biometrici può risultare onerosa amministrativamente ed economicamente.
+
+\begin{notebox}[Autenticazione Multifattore (MFA)]
+L'\textbf{Autenticazione Multifattore (MFA)} richiede l'utilizzo combinato di \textit{più di uno} dei metodi sopra elencati per concedere l'accesso (es. Password + Codice via SMS, ovvero \textit{Conoscenza} + \textit{Possesso}). 
+La robustezza del sistema aumenta esponenzialmente: anche se un attaccante ruba la password, non potrà accedere senza possedere anche lo smartphone dell'utente.
+\end{notebox}
+
+\section{Rischi nell'Autenticazione degli Utenti}
+
+La valutazione dei rischi di sicurezza per l'autenticazione considera tre elementi interconnessi per adattare dinamicamente le misure di sicurezza.
+
+\subsection{Livello di Garanzia (Level of Assurance - LoA)}
+Rappresenta il grado di affidabilità e certezza che il sistema ripone nell'identità dell'utente autenticato:
+\begin{itemize}
+    \item \textbf{Livello 1:} Bassa fiducia. Usato dove i rischi sono minimi (es. registrazione in un forum o lettura di articoli gratuiti).
+    \item \textbf{Livello 2:} Fiducia discreta. Adatto a interazioni generiche che richiedono un account verificato (es. e-commerce standard).
+    \item \textbf{Livello 3:} Alta fiducia. Richiesto per l'accesso a dati sensibili o operazioni finanziarie. Impone l'autenticazione multifattoriale (MFA).
+    \item \textbf{Livello 4:} Massima fiducia. Necessario per infrastrutture critiche o transazioni di altissimo valore. Richiede MFA con token hardware crittografici e verifica in presenza dell'identità.
+\end{itemize}
+
+\subsection{Impatto Potenziale e Aree di Rischio}
+Il livello di impatto valuta le conseguenze di una compromissione dell'account. Es, se l'impatto finanziario o operativo è \textbf{Basso}, un LoA 1 è sufficiente. Se è \textbf{Moderato} (es. frode finanziaria limitata, danni all'immagine), si richiede un LoA 2 o 3. Se l'impatto è \textbf{Alto} (es. catastrofi finanziarie, blocco di ospedali o reti elettriche, lesioni letali), è tassativo operare a LoA 4.
+
+\section{Autenticazione Basata su Password}
+\subsection{Vulnerabilità e Contromisure}
+
+\begin{warnbox}[Vulnerabilità dei sistemi a password]
+\begin{enumerate}
+    \item \textbf{Attacco offline (es. furto del database):} L'attaccante esfiltra il file degli hash e usa potenza di calcolo per craccarli offline. \textit{Contromisure:} Hashing forte con Salt (es. Argon2, bcrypt), protezione rigorosa del file \textit{shadow}.
+    \item \textbf{Brute-force o Dictionary Attack online:} Tentativi ripetuti di login su un account. \textit{Contromisure:} Account lockout (blocco dopo $N$ tentativi), ritardi progressivi, CAPTCHA.
+    \item \textbf{Password Spraying / Credential Stuffing:} Provare poche password molto comuni (es. "123456") su migliaia di account, o usare credenziali trapelate da altri siti. \textit{Contromisure:} MFA, blacklist di password note o compromesse, monitoraggio degli IP anomali.
+    \item \textbf{Ingegneria sociale e Phishing:} L'utente viene ingannato a rivelare la password. \textit{Contromisure:} MFA (soprattutto token hardware FIDO2 immuni al phishing), formazione aziendale.
+    \item \textbf{Riutilizzo delle password:} L'utente usa la stessa password ovunque. \textit{Contromisure:} Integrazione con Password Manager, single sign-on (SSO) protetto da MFA.
+\end{enumerate}
+\end{warnbox}
+
+\section{Hash delle Password e Uso del Salt}
+
+Un sistema sicuro \textbf{non memorizza mai le password in chiaro}. Utilizza invece funzioni crittografiche per salvarne solo un derivato. 
+
+\begin{defbox}[Hashing con Salt]
+Il \textbf{Salt} è una stringa o un numero casuale generato dal sistema nel momento in cui l'utente crea o cambia la propria password. Il processo funziona così:
+\begin{enumerate}
+    \item La password scelta ($P$) viene concatenata al Salt univoco ($S$).
+    \item La stringa combinata ($P + S$) viene passata in una funzione di Hashing lenta e robusta.
+    \item Il risultato (l'\textit{Hash}) e il \textit{Salt} (che è pubblico) vengono salvati nel database.
+\end{enumerate}
+Al login, il sistema recupera il Salt dell'utente, lo unisce alla password digitata, ne ricalcola l'Hash e verifica se combacia con quello salvato.
+\end{defbox}
+
+\subsection{Perché il Salt è indispensabile?}
+\begin{itemize}
+    \item \textbf{Prevenzione dei duplicati:} Se Alice e Bob scelgono entrambi "Juventus123", i loro Salt saranno diversi, generando Hash completamente differenti nel database. Un amministratore malintenzionato non può notare l'uguaglianza.
+    \item \textbf{Difesa contro le Rainbow Table:} Rende inefficaci le tabelle pre-calcolate di hash. Un attaccante dovrebbe pre-calcolare una tabella separata per ogni singolo possibile valore di Salt (miliardi di tabelle), il che è computazionalmente e spazialmente impossibile.
+    \item \textbf{Aumento del costo di cracking offline:} L'attaccante che ruba il database è costretto a craccare le password \textit{una alla volta}, rallentando drasticamente il processo.
+\end{itemize}
+
+\section{Cracking delle Password e Approcci Moderni}
+
+L'evoluzione tecnologica ha cambiato le regole del gioco nel password cracking:
+\begin{itemize}
+    \item \textbf{Aumento della potenza di calcolo (GPU e ASIC):} A differenza delle normali CPU, le moderne schede video (GPU) possono parallelizzare le operazioni di hashing, permettendo di testare decine di miliardi di combinazioni al secondo.
+    \item \textbf{Modelli Probabilistici e IA:} Strumenti moderni (es. Hashcat, John the Ripper) non fanno solo forza bruta stupida, ma usano regole di mascheramento e apprendimento automatico per dedurre come gli utenti creano le password (es. maiuscola iniziale, parola, anno finale "Napoli2023!"), testando prima le combinazioni statisticamente più probabili.
+\end{itemize}
+
+\subsection{Migliorare la Selezione della Password}
+Per proteggersi da hardware sempre più potente, le contromisure lato utente e sistema includono:
+\begin{itemize}
+    \item \textbf{Passphrase:} Sostituire le password complesse ma corte (es. "k9\#X1z!") con frasi lunghe ma facili da ricordare (es. "cavallo-batteria-graffetta-corretta"). La lunghezza estrema rende il cracking matematicamente infattibile, pur migliorando l'usabilità.
+    \item \textbf{Controllo reattivo e proattivo:} Impedire l'uso di password presenti in enormi dizionari di violazioni note (es. servizio \textit{Have I Been Pwned}).
+\end{itemize}
+
+\section{Autenticazione Basata su Token}
+
+I token trasferiscono la sicurezza dal dominio mentale (memoria) al dominio fisico.
+
+\subsection{Memory Card}
+Le memory card (es. carte magnetiche, vecchi badge aziendali) immagazzinano dati statici, come un codice identificativo, ma non hanno capacità di calcolo. 
+\begin{itemize}
+    \item \textbf{Vantaggi:} Combinate a un PIN, forniscono una base di sicurezza a due fattori economica.
+    \item \textbf{Svantaggi:} Sono facilmente clonabili. Se un attaccante copia la banda magnetica e ruba il PIN (es. tramite uno \textit{skimmer} o una telecamera), il sistema è compromesso.
+\end{itemize}
+
+\subsection{Smart Card e Token Crittografici}
+Le smart card e i token USB crittografici rappresentano un salto qualitativo:
+\begin{itemize}
+    \item \textbf{Capacità computazionale:} Includono un vero e proprio microprocessore interno in grado di eseguire calcoli crittografici complessi in isolamento.
+    \item \textbf{Sicurezza delle chiavi:} La chiave privata inserita nel token non è esportabile. Il chip firma le richieste internamente. Nessun malware sul computer può rubare la chiave.
+    \item \textbf{Funzionalità dinamiche:} Usano protocolli \textit{Challenge-Response}. Il server invia una sfida casuale (challenge), la smart card la cifra con la sua chiave e invia la risposta. Se l'attaccante intercetta la comunicazione, non potrà riutilizzarla (\textit{replay attack}) perché la sfida successiva sarà diversa.
+    \item \textbf{Applicazioni avanzate:} Supportano la Firma Digitale qualificata (eSign), l'identità nazionale (CIE, ePass) e l'autenticazione forte aziendale.
+\end{itemize}
+
+\section{Autenticazione Biometrica}
+
+L'autenticazione biometrica eleva la sicurezza legando l'accesso direttamente alla fisiologia o al comportamento inscindibile dell'utente.
+
+\subsection{Tipologie di Caratteristiche Biometriche}
+
+\begin{description}
+    \item[Riconoscimento Facciale] Identifica la geometria e le proporzioni del volto. Sistemi avanzati usano proiettori di punti 3D (es. FaceID) o termocamere a infrarossi per garantire il rilevamento della "vitalità" (\textit{liveness detection}), impedendo l'uso di foto, video o maschere in silicone.
+    \item[Impronte Digitali] Analizza i pattern di creste, solchi e minuzie del polpastrello, estraendo un \textit{template} numerico univoco (non viene salvata l'immagine dell'impronta vera e propria).
+    \item[Geometria della Mano] Misura forma, lunghezza e larghezza delle dita. È meno accurata ma veloce e storicamente diffusa per il controllo degli accessi fisici in ambito industriale.
+    \item[Schema della Retina] Analizza il pattern univoco dei vasi sanguigni sul fondo dell'occhio. Offre una sicurezza militare ma è altamente intrusiva e richiede l'avvicinamento dell'utente a uno scanner specifico.
+    \item[Scansione dell'Iride] Analizza i complessi intrecci visibili nella parte colorata dell'occhio. Ha tassi di accuratezza eccellenti ed è meno invasiva della retina, permettendo letture anche a distanza.
+    \item[Dinamica della Firma] Non controlla \textit{come appare} la firma, ma \textit{come viene eseguita}. Analizza accelerazione, velocità e pressione della penna su un tablet grafico. È un tratto comportamentale quasi impossibile da falsificare per un falsario tradizionale.
+    \item[Riconoscimento Vocale] Analizza il timbro e le risonanze delle corde vocali. Tuttavia, è suscettibile a variazioni nel tempo (malattie, stress) e ai recenti e sofisticati attacchi basati su \textit{Deepfake} vocali e intelligenza artificiale.
+\end{description}

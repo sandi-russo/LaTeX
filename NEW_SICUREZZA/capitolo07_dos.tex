@@ -1,0 +1,136 @@
+\chapter{Attacchi Denial-of-Service}
+
+\section{Introduzione}
+
+\begin{defbox}[Denial-of-Service (DoS)]
+Un attacco Denial-of-Service (DoS) è un tentativo di compromettere la disponibilità di un servizio ostacolandone o bloccandone completamente la fornitura.
+L'attacco tenta di esaurire alcune risorse critiche associate al servizio (ad esempio, larghezza di banda o memoria), impedendogli di rispondere alle richieste degli utenti.
+\end{defbox}
+
+\begin{warnbox}[Distributed Denial-of-Service (DDoS)]
+Gli attacchi DDoS raggiungono un'efficacia nettamente superiore sfruttando molteplici sistemi informatici compromessi come fonti di attacco simultanee. Queste reti sono costituite da computer e dispositivi (noti come \textit{bot} o \textit{zombie}) infettati da malware, che ne permette il controllo a distanza da parte di un attaccante tramite una \textit{botnet}.
+\end{warnbox}
+
+\section{TCP SYN Flood}
+
+Un attacco SYN flood è un tipo di DoS che mira a rendere un server indisponibile consumandone tutte le risorse di connessione. Inviando ripetutamente pacchetti di richieste di connessione iniziale (SYN), l'attaccante esaurisce le porte o la tabella di stato del server, obbligandolo a rispondere lentamente o a non rispondere affatto al traffico legittimo.
+
+\subsection{Funzionamento del TCP SYN Flood}
+
+\subsubsection{Funzionamento Base di una Connessione TCP}
+
+Gli attacchi SYN flood sfruttano il processo di \textit{three-way handshake} di una connessione TCP.
+\begin{enumerate}
+    \item Il client invia un pacchetto \texttt{SYN} al server per avviare la connessione.
+    \item Il server risponde con un pacchetto \texttt{SYN/ACK} confermando la ricezione e accettando la comunicazione.
+    \item Il client restituisce un pacchetto \texttt{ACK} per confermare a sua volta.
+\end{enumerate}
+
+\subsubsection{Provocare un Denial-of-Service}
+
+Per provocare il DoS, l'attaccante sfrutta il fatto che dopo aver ricevuto il pacchetto \texttt{SYN} iniziale, il server alloca risorse per la connessione (che entra nello stato \textit{semi-aperta} o \textit{SYN-RECEIVED}), risponde con \texttt{SYN/ACK} e attende l'ultimo \texttt{ACK}.
+
+\subsection{Come si Verifica l'Attacco}
+\begin{enumerate}
+    \item L'attaccante invia un elevato volume di pacchetti \texttt{SYN} al server, spesso falsificando (\textit{spoofing}) l'indirizzo IP di origine.
+    \item Il server risponde a ciascuna richiesta con \texttt{SYN/ACK} e alloca una porta/struttura dati, in attesa del completamento.
+    \item Poiché l'IP è falsificato (o l'attaccante semplicemente ignora il \texttt{SYN/ACK}), l'atteso pacchetto \texttt{ACK} non arriverà mai. Il server mantiene la connessione aperta fino al timeout. Saturate le risorse disponibili, il server smette di accettare nuove connessioni.
+\end{enumerate}
+
+\subsection{Tipologie di Attacco SYN Flood}
+\begin{description}
+    \item[Attacco diretto] L'indirizzo IP dell'attaccante \textbf{non} è spoofato. È raro, poiché l'attaccante è vulnerabile e la mitigazione è banale (blocco dell'IP). Spesso usato solo se l'attaccante opera tramite botnet, dove l'IP esposto è quello del dispositivo infetto.
+    \item[Attacco di spoofing] L'attaccante falsifica l'indirizzo IP nei pacchetti \texttt{SYN}. Rendere più difficile l'identificazione. Risalire all'origine richiede complesse indagini con i provider di servizi Internet (ISP).
+    \item[Attacco distribuito (DDoS)] L'attacco è sferrato tramite una botnet e \textbf{ogni} bot falsifica ulteriormente gli IP sorgente. Rintracciare l'origine o mitigare l'attacco tramite semplici filtri IP diventa quasi impossibile.
+\end{description}
+
+\subsection{Mitigazione degli Attacchi SYN Flood}
+Le moderne infrastrutture mitigate in cloud (es. Cloudflare) si interpongono tra il server vittima e l'attaccante. Gestiscono il processo di \textit{three-way handshake} esternamente. La connessione viene passata al server reale \textbf{solo se e quando} il client invia il pacchetto \texttt{ACK} finale. Questa strategia sposta il carico del SYN flood sull'infrastruttura globale di mitigazione, risparmiando il server.
+
+\section{ICMP Flood}
+
+\begin{defbox}[ICMP Flood / Ping Flood]
+Un ICMP flood è un attacco DoS volumetrico in cui l'attaccante sommerge un dispositivo target con pacchetti \texttt{ICMP Echo-Request} (Ping), saturandone la banda o la capacità di elaborazione.
+\end{defbox}
+
+\subsection{Funzionamento dell'ICMP Flood}
+Il protocollo ICMP (Internet Control Message Protocol) è utilizzato dai dispositivi per comunicazioni diagnostiche (come i tool \texttt{ping} o \texttt{traceroute}). L'attacco mira a costringere il bersaglio a elaborare e rispondere a un volume insostenibile di richieste.
+
+\begin{enumerate}
+    \item L'attaccante invia un flusso massiccio di pacchetti \texttt{ICMP Echo-Request} verso l'IP vittima.
+    \item Il server bersaglio, per specifiche di protocollo, è tenuto a inviare un pacchetto \texttt{ICMP Echo-Reply} per ciascuna richiesta ricevuta.
+    \item Questo doppio lavoro (ricezione massiccia ed emissione massiccia) satura sia le risorse CPU del bersaglio sia la larghezza di banda del suo collegamento di rete.
+\end{enumerate}
+
+\subsection{Mitigare l'ICMP Flood}
+La mitigazione più semplice consiste nel limitare (rate-limiting) o disabilitare del tutto la risposta ai pacchetti ICMP sul router di frontiera o sul firewall del dispositivo vittima, eliminando l'onere dell'elaborazione della risposta.
+
+\section{UDP Flood}
+
+Un UDP flood è un attacco DoS volumetrico in cui un gran numero di pacchetti UDP (User Datagram Protocol) viene inviato a porte casuali di un server bersaglio, con l'obiettivo di esaurirne la capacità elaborativa o saturare la tabella di stato del firewall.
+
+\subsection{Funzionamento dell'UDP Flood}
+UDP è un protocollo \textit{connectionless}, non richiede handshake. Quando un server riceve un datagramma UDP, esegue due passaggi:
+\begin{enumerate}
+    \item Controlla se c'è un'applicazione (servizio) in ascolto sulla porta di destinazione.
+    \item Se nessuna applicazione è in ascolto, il sistema operativo risponde inviando al mittente un pacchetto \texttt{ICMP Destination Unreachable}.
+\end{enumerate}
+
+\begin{exbox}[Il Paragone dell'UDP Flood]
+Si può paragonare a una receptionist d'albergo che riceve telefonate continue per camere diverse. Per ogni chiamata, deve controllare l'elenco (la tabella delle porte), verificare che l'ospite non ci sia o non risponda, e poi informare il chiamante (il pacchetto ICMP). Se i centralini si illuminano contemporaneamente di richieste fittizie, la receptionist è subito sopraffatta e non può gestire i veri clienti.
+\end{exbox}
+
+\subsection{Mitigare l'UDP Flood}
+I sistemi operativi moderni limitano per default la velocità di generazione dei pacchetti ICMP. Tuttavia, se il volume di traffico UDP è enorme, il \textit{firewall stateful} a monte del server andrà comunque in saturazione cercando di tracciare tutte queste "finte connessioni". La mitigazione efficace richiede filtraggi a monte (presso l'ISP o servizi anti-DDoS cloud) per assorbire il volume prima che raggiunga il target.
+
+\section{HTTP Flood}
+
+\begin{warnbox}[HTTP Flood (Livello 7)]
+È un attacco DoS applicativo (Livello 7 OSI) progettato per sommergere un server Web con richieste HTTP apparentemente legittime. È estremamente insidioso perché è difficile distinguere le richieste malevole da un improvviso picco di traffico reale (effetto \textit{flash crowd}).
+\end{warnbox}
+
+\subsection{Tipologie di Attacco HTTP Flood}
+\begin{description}
+    \item[HTTP GET] Botnet coordinate inviano continue richieste per scaricare risorse pesanti (immagini, PDF, o pagine dinamiche) costringendo il server web a consumare CPU e I/O disco per recuperarle e inviarle.
+    \item[HTTP POST] Spesso diretto verso moduli di login o di ricerca. Il server deve gestire i parametri e spesso interrogare un database di backend. L'elaborazione del DB è computazionalmente costosa, quindi con poche richieste POST ben assestate l'attaccante può paralizzare l'intero stack applicativo (esaurimento risorse DB).
+\end{description}
+
+\subsection{Mitigare un HTTP Flood}
+Implementare una "challenge" (es. CAPTCHA, controlli JavaScript invisibili o analisi comportamentale) prima di consentire l'accesso al server backend, per verificare se il client è un browser umano o un bot.
+
+\section{DNS Amplification Attack}
+
+Gli attacchi di amplificazione sono una combinazione sofisticata di \textit{reflection} (riflessione) e \textit{amplification} (amplificazione), solitamente basati su protocolli UDP.
+
+\subsection{Concetti Chiave}
+\begin{description}
+    \item[Reflection Attack] L'attaccante invia richieste a server legittimi terzi (riflettori) \textbf{falsificando l'IP sorgente} per farlo coincidere con quello della vittima. Il server terzo elaborerà la richiesta e invierà la risposta alla vittima.
+    \item[Amplification Attack] Sfrutta servizi in cui una richiesta piccola (\textit{trigger packet}) genera una risposta molto più grande (fattore di amplificazione). L'attaccante moltiplica l'efficacia della sua banda.
+\end{description}
+
+\subsection{Funzionamento del DNS Amplification Attack}
+Sfrutta i server DNS (Open Resolvers) per amplificare enormemente il traffico contro un bersaglio.
+
+\begin{center}
+\begin{tikzpicture}[node distance=2cm, auto, thick, scale=0.9, transform shape]
+\node (att) [draw, rounded corners, fill=red!20, text width=2.5cm, align=center, minimum height=1cm] {Attaccante};
+\node (dns) [draw, rounded corners, fill=green!20, text width=2.5cm, align=center, right=3cm of att, minimum height=1cm] {Server DNS\\(Riflettore)};
+\node (vic) [draw, rounded corners, fill=blue!10, text width=2.5cm, align=center, below=2cm of dns, minimum height=1cm] {Vittima};
+
+\draw[->, >=Stealth, red, thick] (att) -- node[above, text width=2.5cm, align=center, font=\footnotesize] {1. Query piccola\\IP Src = Vittima} (dns);
+\draw[->, >=Stealth, red, line width=2pt] (dns) -- node[right, text width=2.8cm, align=left, font=\footnotesize] {2. Risposta enorme\\(Amplificata)} (vic);
+\end{tikzpicture}
+\end{center}
+
+\begin{enumerate}
+    \item L'attaccante invia (tramite botnet) query UDP falsificando l'IP mittente con l'IP della vittima verso numerosi server DNS pubblici (Open Resolvers).
+    \item La richiesta chiede record molto estesi (es. parametro \texttt{ANY}, firme DNSSEC o ampi record TXT/IPv6).
+    \item I server DNS, comportandosi correttamente secondo il protocollo, inviano le risposte massive all'indirizzo IP che credono essere il richiedente (la vittima).
+    \item La rete della vittima viene invasa da un volume di traffico che è decine di volte superiore a quello generato originariamente dall'attaccante (fattore di amplificazione fino a 50x o più).
+\end{enumerate}
+
+\subsection{Mitigare il DNS Amplification Attack}
+\begin{itemize}
+    \item \textbf{Ingress Filtering (BCP 38)}: I provider di rete dovrebbero scartare i pacchetti in uscita che hanno IP sorgente non appartenenti alla propria sottorete, impedendo di fatto l'IP spoofing.
+    \item \textbf{Sicurezza dei Server DNS}: Disabilitare la ricorsione pubblica sui server DNS (\textit{Open Resolvers}). Un DNS dovrebbe fornire ricorsione solo agli utenti della propria rete locale, non a tutta Internet.
+\end{itemize}

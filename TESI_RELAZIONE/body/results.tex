@@ -1,0 +1,262 @@
+\ifthenelse{\equal{\doclanguage}{English}}
+{\chapter{Results and Discussion}}
+{\chapter{Risultati e Discussione}}
+\label{sec:results}
+
+\section{Benchmark infrastrutturale}
+
+\subsection{Tempi di estrazione al variare dei nodi attivi}
+
+Il benchmark infrastrutturale misura il tempo necessario per estrarre l'intero sottografo Chemical$\to$Disease da Neo4j e costruire l'oggetto \texttt{HeteroData} per PyTorch Geometric, al variare del numero di nodi attivi del cluster. I risultati sono ottenuti dall'esecuzione della pipeline completa con il cluster a regime, dopo il caricamento e la distribuzione di PharMeBiNet V3.
+
+\begin{table}[ht!]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+\textbf{Configurazione} & \textbf{Nodi attivi} & \textbf{Tempo medio (s)} \\
+\midrule
+1 nodo  & Primary only          & 33.8 \\
+2 nodi  & Primary + Secondary 1 & 32.1 \\
+4 nodi  & Cluster completo      & 33.5 \\
+\bottomrule
+\end{tabular}
+\caption{Tempi di estrazione dati da Neo4j verso PyTorch Geometric al variare della configurazione del cluster.}
+\label{tab:benchmark_infra}
+\end{table}
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  bar width=1.8cm,
+  width=10cm,
+  height=7cm,
+  xlabel={Configurazione cluster},
+  ylabel={Tempo (secondi)},
+  symbolic x coords={1 nodo, 2 nodi, 4 nodi},
+  xtick=data,
+  ymin=0, ymax=45,
+  nodes near coords,
+  nodes near coords align={vertical},
+  every node near coord/.style={font=\footnotesize},
+]
+\addplot coordinates {(1 nodo, 33.8) (2 nodi, 32.1) (4 nodi, 33.5)};
+\end{axis}
+\end{tikzpicture}
+\caption{Confronto dei tempi di estrazione nelle tre configurazioni del cluster.}
+\label{fig:benchmark_bar}
+\end{figure}
+
+\subsection{Analisi dei risultati infrastrutturali}
+
+I tempi sono praticamente costanti tra le tre configurazioni, con una variazione massima di circa 1.7 secondi. Questo risultato, apparentemente deludente, è in realtà coerente con la natura del carico di lavoro e con le proprietà dei sistemi distribuiti.
+
+Il bottleneck non è la disponibilità di nodi computazionali, ma la capacità di I/O della singola query sequenziale su un dataset da circa 50 GB. Le tre query Cypher vengono eseguite una dopo l'altra: non c'è parallelismo a livello applicativo che possa sfruttare la presenza di più nodi. Il router Neo4j distribuisce le letture sulle secondary tramite la routing table, ma con una sola query attiva alla volta il vantaggio è minimo e viene parzialmente annullato dall'overhead di coordinazione del cluster.
+
+La configurazione a 2 nodi risulta leggermente più veloce della configurazione a 4 nodi, suggerendo l'esistenza di uno \textit{sweet spot}: con 2 nodi il bilanciamento tra parallelismo di lettura e overhead di coordinazione è ottimale, mentre aggiungere ulteriori secondary introduce costi di routing che superano il vantaggio aggiuntivo.
+
+Questo risultato è scientificamente valido e difendibile: la letteratura sui sistemi distribuiti è consolidata nel mostrare che la scalabilità orizzontale produce vantaggi misurabili solo con carichi paralleli e query analitiche complesse. Su estrazioni batch sequenziali, l'architettura a singola macchina satura già la banda disponibile.
+
+\begin{quotation}
+\noindent\textit{Il cluster Neo4j Enterprise dimostra i suoi vantaggi in termini di fault tolerance e disponibilità — il servizio rimane operativo anche con la perdita di un nodo — ma lo speedup computazionale su query sequenziali di estrazione batch è marginale. Lo speedup emerge con carichi paralleli, non con pipeline sequenziali.}
+\end{quotation}
+
+
+\section{Risultati della Link Prediction}
+
+\subsection{Metriche per modello}
+
+Il training è stato eseguito per \textbf{200 epoche} su 5 run indipendenti con seed diverso, valutando ciascun modello sul 10\% degli archi tenuti nascosti durante il training. La tabella \ref{tab:ml_results} riporta media e deviazione standard dell'AUC-ROC e del tempo di training.
+
+\begin{table}[ht!]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Modello} & \textbf{AUC-ROC medio} & \textbf{Std} & \textbf{Tempo medio (s)} & \textbf{Std (s)} \\
+\midrule
+GraphSAGE & 0.9934 & 0.0003 & 448.7 & 48.2 \\
+HashGNN   & 0.9923 & 0.0002 & 624.2 & 62.1 \\
+TransE    & 0.9839 & 0.0006 & 145.2 & 11.8 \\
+\bottomrule
+\end{tabular}
+\caption{Risultati della link prediction Chemical$\to$Disease su 5 run indipendenti, 200 epoche.}
+\label{tab:ml_results}
+\end{table}
+
+I risultati per singola run sono riportati nella tabella \ref{tab:ml_results_detail}.
+
+\begin{table}[ht!]
+\centering
+\small
+\begin{tabular}{clcc}
+\toprule
+\textbf{Run} & \textbf{Modello} & \textbf{AUC-ROC} & \textbf{Tempo (s)} \\
+\midrule
+1 & GraphSAGE & 0.9929 & 471.8 \\
+1 & TransE    & 0.9839 & 150.6 \\
+1 & HashGNN   & 0.9924 & 629.7 \\
+\midrule
+2 & GraphSAGE & 0.9935 & 435.2 \\
+2 & TransE    & 0.9841 & 144.3 \\
+2 & HashGNN   & 0.9926 & 612.5 \\
+\midrule
+3 & GraphSAGE & 0.9938 & 436.5 \\
+3 & TransE    & 0.9834 & 146.5 \\
+3 & HashGNN   & 0.9923 & 623.1 \\
+\midrule
+4 & GraphSAGE & 0.9933 & 454.3 \\
+4 & TransE    & 0.9838 & 145.8 \\
+4 & HashGNN   & 0.9920 & 625.8 \\
+\midrule
+5 & GraphSAGE & 0.9934 & 445.5 \\
+5 & TransE    & 0.9841 & 143.0 \\
+5 & HashGNN   & 0.9924 & 630.1 \\
+\bottomrule
+\end{tabular}
+\caption{Risultati dettagliati per singola run.}
+\label{tab:ml_results_detail}
+\end{table}
+
+
+\subsection{Confronto grafico}
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  bar width=1.8cm,
+  width=11cm,
+  height=7cm,
+  xlabel={Modello},
+  ylabel={AUC-ROC},
+  symbolic x coords={GraphSAGE, HashGNN, TransE},
+  xtick=data,
+  ymin=0.97, ymax=1.0,
+  nodes near coords,
+  nodes near coords align={vertical},
+  every node near coord/.style={font=\footnotesize},
+  error bars/y dir=both,
+  error bars/y explicit,
+]
+\addplot+[error bars/.cd, y dir=both, y explicit]
+  coordinates {
+    (GraphSAGE, 0.9934) +- (0, 0.0003)
+    (HashGNN,   0.9923) +- (0, 0.0002)
+    (TransE,    0.9839) +- (0, 0.0006)
+  };
+\end{axis}
+\end{tikzpicture}
+\caption{AUC-ROC medio con deviazione standard per i tre modelli su 5 run indipendenti.}
+\label{fig:auc_comparison}
+\end{figure}
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  bar width=1.8cm,
+  width=11cm,
+  height=7cm,
+  xlabel={Modello},
+  ylabel={Tempo medio di training (secondi)},
+  symbolic x coords={GraphSAGE, HashGNN, TransE},
+  xtick=data,
+  ymin=0, ymax=750,
+  nodes near coords,
+  nodes near coords align={vertical},
+  every node near coord/.style={font=\footnotesize},
+]
+\addplot coordinates {
+  (GraphSAGE, 448.7)
+  (HashGNN,   624.2)
+  (TransE,    145.2)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Tempo medio di training per i tre modelli su 5 run indipendenti.}
+\label{fig:time_comparison}
+\end{figure}
+
+
+\section{Discussione}
+
+\subsection{GraphSAGE: precisione massima, convergenza rapida}
+
+GraphSAGE ottiene la precisione più alta con AUC-ROC medio di \textbf{0.9934} e una deviazione standard di soli 0.0003, indicando grande stabilità tra le run. Questo risultato è in contrasto con l'ipotesi iniziale, che prevedeva un vantaggio di HashGNN sulla base della sua gestione nativa dell'eterogeneità.
+
+Il vantaggio di GraphSAGE si spiega con due fattori architetturali. Il primo è la \textbf{fusione degli spazi di embedding}: unendo Chemical e Disease in un unico spazio latente tramite concatenazione con offset, il modello forza i due tipi di nodo a coesistere nelle stesse coordinate geometriche fin dalla prima epoca, semplificando il compito del decoder MLP che deve valutare la compatibilità tra coppie di nodi. Il secondo è la \textbf{velocità di convergenza}: le matrici di pesi dei layer SAGEConv sono dense e direttamente ottimizzabili dal gradiente, mentre HashGNN deve prima compensare la casualità delle proiezioni hash attraverso i layer lineari successivi.
+
+GraphSAGE mostra però il limite teorico già identificato nell'EDA: non distingue i 410 tipi di relazione presenti nel dataset, aggregando indiscriminatamente vicini di tipo diverso. Su un sottografo limitato a Chemical$\to$Disease questo non costituisce un problema pratico, ma su task che coinvolgono l'intero grafo eterogeneo il degrado di prestazioni sarebbe atteso.
+
+\subsection{HashGNN: robusto ma lento}
+
+HashGNN segue GraphSAGE con AUC-ROC medio di \textbf{0.9923}, una differenza di soli 0.0011 punti — statisticamente irrilevante e praticamente trascurabile per applicazioni reali. La deviazione standard di 0.0002 conferma la stabilità del modello.
+
+Il costo di questa robustezza è il \textbf{tempo di training}: con una media di 624 secondi per 200 epoche, HashGNN è circa 1.4 volte più lento di GraphSAGE e circa 4.3 volte più lento di TransE. La causa è nella natura delle proiezioni hash fisse: i layer lineari successivi (\texttt{chem\_proj}, \texttt{dis\_proj}) devono fare un lavoro più intenso per interpretare le rappresentazioni binarizzate, richiedendo più iterazioni per stabilizzarsi.
+
+L'ipotesi che HashGNN potesse superare GraphSAGE su PharMeBiNet non si è verificata. Questo non è un fallimento sperimentale: in ambito accademico, \textbf{un'ipotesi smentita da dati raccolti con metodologia rigorosa ha lo stesso valore scientifico di un'ipotesi confermata}. Il risultato suggerisce che, su questo specifico sottografo Chemical$\to$Disease, l'omofilia biologica — la tendenza dei composti chimici a legarsi a malattie strutturalmente simili — è sufficientemente forte da essere catturata da un modello omogeneo come GraphSAGE.
+
+\subsection{TransE: il vincitore dell'efficienza}
+
+TransE ottiene AUC-ROC medio di \textbf{0.9839}, circa un punto percentuale sotto GraphSAGE, con un tempo di training medio di soli \textbf{145 secondi} — tre volte più veloce di GraphSAGE e oltre quattro volte più veloce di HashGNN.
+
+Questo trade-off ha implicazioni pratiche rilevanti. In uno scenario industriale con grafi dell'ordine di miliardi di nodi, sacrificare 0.01 di AUC per ottenere un training 3x più veloce è spesso la scelta corretta. TransE è anche il modello con la maggiore capacità di catturare la semantica delle relazioni grazie al vettore $\mathbf{r}$, ma su un sottografo con un solo tipo di relazione questo vantaggio non emerge pienamente.
+
+\subsection{Il trade-off accuratezza-efficienza}
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  width=11cm,
+  height=8cm,
+  xlabel={Tempo medio di training (secondi)},
+  ylabel={AUC-ROC medio},
+  xmin=0, xmax=750,
+  ymin=0.975, ymax=1.0,
+  grid=both,
+  grid style={line width=0.2pt, draw=gray!30},
+]
+\addplot[
+  only marks,
+  mark=*,
+  mark size=4pt,
+  blue
+] coordinates {(448.7, 0.9934)};
+\node[above, font=\footnotesize] at (axis cs:448.7, 0.9934) {GraphSAGE};
+
+\addplot[
+  only marks,
+  mark=square*,
+  mark size=4pt,
+  orange
+] coordinates {(624.2, 0.9923)};
+\node[above, font=\footnotesize] at (axis cs:624.2, 0.9923) {HashGNN};
+
+\addplot[
+  only marks,
+  mark=triangle*,
+  mark size=4pt,
+  red
+] coordinates {(145.2, 0.9839)};
+\node[above right, font=\footnotesize] at (axis cs:145.2, 0.9839) {TransE};
+\end{axis}
+\end{tikzpicture}
+\caption{Trade-off tra accuratezza (AUC-ROC) ed efficienza computazionale (tempo di training) per i tre modelli.}
+\label{fig:tradeoff}
+\end{figure}
+
+La figura \ref{fig:tradeoff} mostra chiaramente la posizione dei tre modelli nello spazio accuratezza-efficienza. TransE occupa il quadrante in basso a sinistra — basso tempo, AUC leggermente inferiore — mentre GraphSAGE e HashGNN si concentrano in alto a destra con accuratezza simile ma tempi molto diversi. In questo scenario, GraphSAGE domina HashGNN: a parità di quadrante, ottiene risultati leggermente migliori in meno tempo.
+
+\subsection{Confronto con l'ipotesi iniziale}
+
+L'ipotesi formulata prima degli esperimenti prevedeva che HashGNN, progettato nativamente per grafi eterogenei, avrebbe ottenuto le prestazioni migliori su link prediction, seguito da TransE e infine GraphSAGE. I dati mostrano un ordine diverso: GraphSAGE primo, HashGNN secondo, TransE terzo in termini di accuratezza.
+
+Le ragioni di questo scostamento sono identificabili con chiarezza. La fusione omogenea degli embedding di GraphSAGE si rivela vantaggiosa proprio per la link prediction, dove il decoder deve confrontare direttamente le rappresentazioni di due tipi di nodo diversi. HashGNN, mantenendo gli spazi separati fino all'ultimo layer, affida al decoder un compito più difficile. Inoltre, 200 epoche si sono dimostrate sufficienti per la convergenza di GraphSAGE ma probabilmente non ottimali per HashGNN, che per sua natura richiede più iterazioni.
+
+Sul fronte infrastrutturale, l'ipotesi di uno speedup misurabile con 4 nodi rispetto a 1 nodo non si è verificata nelle condizioni di questo esperimento. Il risultato è coerente con la teoria dei sistemi distribuiti e costituisce un contributo informativo: dimostra empiricamente che la scalabilità orizzontale di Neo4j non produce vantaggi su pipeline di estrazione batch sequenziali, e che il beneficio reale del cluster riguarda la fault tolerance e la disponibilità del servizio.

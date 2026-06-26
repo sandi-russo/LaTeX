@@ -1,0 +1,159 @@
+\documentclass[a4paper,11pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{lmodern}
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{booktabs, array, tabularx, colortbl}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable, listings, listingsutf8}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usetikzlibrary{positioning, calc, arrows.meta, shapes.geometric, shapes.misc, decorations.pathreplacing, decorations.markings, fit, backgrounds, patterns, matrix, chains, trees}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween, groupplots}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{MidnightBlue}\bfseries,
+  commentstyle=\color{OliveGreen}\itshape,
+  stringstyle=\color{BrickRed},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{gray!40},
+  backgroundcolor=\color{gray!5},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  language=Python
+}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\leftmark}
+\fancyhead[R]{\small Intelligenza Artificiale}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=MidnightBlue, urlcolor=RoyalBlue}
+
+% Section styling
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{MidnightBlue}}
+  {\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{RoyalBlue}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{NavyBlue}}
+  {\thesubsection}{1em}{}
+
+% Custom boxes
+\newtcolorbox{defbox}[1][]{
+  colback=blue!5, colframe=MidnightBlue,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{exbox}[1][]{
+  colback=green!5, colframe=OliveGreen,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{notebox}[1][]{
+  colback=yellow!5, colframe=Goldenrod,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{warnbox}[1][]{
+  colback=red!5, colframe=BrickRed,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{thmbox}[1][]{
+  colback=purple!5, colframe=Purple,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+\newtcolorbox{codebox}[1][]{
+  colback=gray!5, colframe=gray!60,
+  fonttitle=\bfseries, title={#1},
+  breakable, enhanced
+}
+
+% Paragraph
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+
+% Enumerate style
+\usepackage{enumitem}
+\setlist[itemize]{topsep=4pt, itemsep=2pt}
+\setlist[enumerate]{topsep=4pt, itemsep=2pt}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{3cm}
+{\Huge\bfseries\color{MidnightBlue} Laboratorio di\\[6pt] Intelligenza Artificiale\par}
+\vspace{1.5cm}
+{\Large\color{NavyBlue} Appunti di corso -- A.A.\ 2025/2026\par}
+\vspace{1cm}
+{\large Prof.\ Giacomo Fiumara -- Universit\`a di Messina\par}
+\vspace{0.5cm}
+{\normalsize Testi di riferimento:\par}
+{\small Russell \& Norvig, \emph{Artificial Intelligence: A Modern Approach}\par}
+{\small A.\ G\'eron, \emph{Hands-On Machine Learning with Scikit-Learn, Keras \& TensorFlow}\par}
+{\small Appunti basati sul materiale di Aurora Fabio\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\include{lezione1}
+\include{lezione2}
+\include{lezione3}
+\include{lezione4}
+\include{lezione5}
+\include{lezione6}
+\include{lezione7}
+\include{lezione8}
+\include{lezione9}
+\include{lezione10}
+\include{lezione11}
+
+\appendix
+\section{FORMULE}
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{@{} l l @{}}
+Regressione lineare & $y = \theta_0 + \theta_1 x$ \\
+Accuratezza & $\displaystyle\frac{TP + TN}{TP + TN + FP + FN}$ \\[4pt]
+Precisione & $\displaystyle\frac{TP}{TP + FP}$ \\[4pt]
+Recall & $\displaystyle\frac{TP}{TP + FN}$ \\[4pt]
+F1-Score & $\displaystyle 2 \cdot \frac{P \cdot R}{P + R}$ \\[4pt]
+False Positive Rate & $\displaystyle\frac{FP}{FP + TN}$ \\[4pt]
+Impurit\`a di Gini & $\displaystyle G_i = 1 - \sum_{k=1}^{n} p_{i,k}^2$ \\[4pt]
+Entropia di Shannon & $\displaystyle H_i = -\sum_{k=1}^{n} p_{i,k} \log_2 p_{i,k}$ \\[4pt]
+Costo CART (classif.) & $\displaystyle J(k,t_k) = \frac{m_L}{m} G_L + \frac{m_R}{m} G_R$ \\[4pt]
+Costo CART (regr.) & $\displaystyle J(k,t_k) = \frac{m_L}{m} MSE_L + \frac{m_R}{m} MSE_R$ \\[4pt]
+OvO classificatori & $\displaystyle\frac{N(N-1)}{2}$ \\
+Inerzia ($K$-Means) & $\displaystyle J = \sum_{j} \sum_{x \in C_j} \|x - \mu_j\|^2$ \\[4pt]
+Silhouette & $\displaystyle s = \frac{b-a}{\max(a,b)}$ \\[4pt]
+Percettrone & $\displaystyle z = \mathbf{w}^T\mathbf{x} + b$ \\[4pt]
+Softmax & $\displaystyle \text{softmax}(z)_k = \frac{e^{z_k}}{\sum_j e^{z_j}}$ \\[4pt]
+Aggiornamento Hebb & $\displaystyle w \leftarrow w + \eta(y - \hat{y})\,x$ \\[4pt]
+Init.\ Glorot & $\displaystyle \sigma^2 = \frac{2}{n_{in}+n_{out}}$ \\[4pt]
+Init.\ He & $\displaystyle \sigma^2 = \frac{2}{n_{in}}$ \\[4pt]
+\end{tabular}
+\end{center}
+
+\end{document}

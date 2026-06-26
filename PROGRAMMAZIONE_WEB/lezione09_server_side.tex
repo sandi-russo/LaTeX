@@ -1,0 +1,697 @@
+\chapter{Tecnologie Server-side}
+
+\section{Introduzione alle tecnologie server-side}
+
+Le principali tecnologie per costruire applicazioni web possono essere distinte in:
+
+\begin{itemize}
+    \item \textbf{Client-side}: il codice è elaborato sul client, dal browser. Es.\ JavaScript (e jQuery).
+    \item \textbf{Server-side}: il codice è elaborato sul server. Es.\ PHP, Java Servlet e JSP, ASP.NET, Ruby, Python, Perl.
+    \item \textbf{Approcci ibridi}: es.\ AJAX (jQuery).
+\end{itemize}
+
+Le tecnologie server-side servono principalmente per:
+
+\begin{enumerate}
+    \item Acquisire informazioni dal client, per esempio dati inseriti dall'utente in un modulo online o dati contenuti in un link.
+    \item Inserire dati in un database (per es.\ i dati di registrazione di un utente) o leggere dati da un database (per es.\ per verificare username e password di un utente).
+\end{enumerate}
+
+Per far funzionare una tecnologia server-side è necessario che il Web Server la \emph{supporti}; cosa significa dipende dalla specifica tecnologia. Inoltre, siccome tipicamente le tecnologie server-side interagiscono con un database, è necessario che sul server ci sia un DBMS che supporti l'interazione con il database prescelto.
+
+\section{Inviare dati al Web Server}
+
+\subsection{Metodi di invio}
+
+I dati da inviare al Web Server possono derivare da:
+
+\begin{itemize}
+    \item Moduli online (\texttt{form}).
+    \item Link con parametri.
+\end{itemize}
+
+Il client invia i dati al Web Server inserendoli nell'HTTP request. Esistono due modi per codificare i dati:
+
+\begin{itemize}
+    \item Metodo \textbf{GET}.
+    \item Metodo \textbf{POST}.
+\end{itemize}
+
+\subsection{Moduli online (form)}
+
+In HTML, un modulo online contiene campi di input, un metodo e un'azione:
+
+\begin{lstlisting}[language=HTML5]
+<FORM METHOD="POST" ACTION="identif.php">
+    Login: <INPUT TYPE="text" NAME="login"/>
+    Password: <INPUT TYPE="password" NAME="pwd"/>
+    <INPUT TYPE="Submit" VALUE="OK"/>
+</FORM>
+\end{lstlisting}
+
+\begin{itemize}
+    \item \textbf{Campi di input}: elementi attraverso cui l'utente fornisce dei dati. Tra i campi di input c'è anche il pulsante di invio.
+    \item \textbf{Metodo} (attributo \texttt{METHOD}): modo in cui vengono codificati i dati da inviare al server (POST o GET).
+    \item \textbf{Azione} (attributo \texttt{ACTION}): script o programma server-side che raccoglie ed elabora i dati contenuti nel form.
+\end{itemize}
+
+I dati inseriti dall'utente assumono la forma di coppie \texttt{<nome, valore>}, dove:
+
+\begin{itemize}
+    \item \textbf{nome} = valore dell'attributo \texttt{name} nel tag HTML.
+    \item \textbf{valore} = ciò che l'utente ha scritto o selezionato.
+\end{itemize}
+
+\subsection{Contenuto della HTTP request}
+
+Quando l'utente fa click sul pulsante di invio, viene costruita una HTTP request che contiene:
+
+\begin{itemize}
+    \item L'indicazione della risorsa server-side (script o programma) che gestirà i dati, ricavata dall'attributo \texttt{ACTION}.
+    \item I dati, nella forma di coppie \texttt{<nome, valore>}, ricavati dai campi di input riempiti/selezionati dall'utente.
+\end{itemize}
+
+\subsection{Differenza tra i metodi GET e POST}
+
+\textbf{Metodo GET} (richiesta di una risorsa): eventuali dati, cioè le coppie \texttt{<nome, valore>}, sono scritti in coda alla risorsa richiesta; saranno quindi visibili nell'URL (nella barra degli indirizzi del browser). Per esempio:
+
+\begin{verbatim}
+HTTP header
+risorsa = identif.php?login=admin&pwd=pippo
+...
+HTTP body
+...
+\end{verbatim}
+
+\textbf{Metodo POST} (invio di dati al server + indicazione della risorsa che li deve elaborare): i dati (parametri) sono scritti all'interno del corpo (\texttt{body}) dell'HTTP request; non saranno quindi visibili nella barra degli indirizzi del browser. Per esempio:
+
+\begin{verbatim}
+HTTP header
+risorsa = identif.php
+...
+HTTP body
+dati: <login, admin>
+      <pwd, pippo>
+\end{verbatim}
+
+\subsection{Link con parametri}
+
+In HTML, un link con parametri si scrive così:
+
+\begin{lstlisting}[language=HTML5]
+<A HREF="param.php?risposta=alan">Alan</A><BR>
+<A HREF="param.php?risposta=kit">Kit</A><BR>
+<A HREF="param.php?risposta=john">John</A>
+\end{lstlisting}
+
+Quando l'utente fa click sul link, viene costruita una HTTP request che contiene l'indicazione della risorsa server-side (nel link, attributo \texttt{HREF}) insieme ai dati. Il metodo usato per la codifica dei dati è \textbf{GET}.
+
+\subsection{URL rewriting}
+
+L'URL rewriting è utilizzato per gestire la sessione se i cookies sono stati disattivati: il Web Server scrive il session-id come parametro degli URL presenti nella pagina. Quando il client deve costruire una HTTP request (per es.\ quando l'utente clicca su un link), all'URL indicato nell'HTTP request viene aggiunto il session-id. Per esempio:
+
+\begin{lstlisting}[language=HTML5]
+<A HREF="adduser.php">
+\end{lstlisting}
+
+diventa:
+
+\begin{lstlisting}[language=HTML5]
+<A HREF="adduser.php?PHPSESSID=68cf093a2ec5aa4f6cb60">
+\end{lstlisting}
+
+\section{Salvare i dati in un database}
+
+\subsection{Database e DBMS}
+
+I database ci permettono di salvare dati in modo strutturato. Esistono diverse tipologie di database: relazionali, a oggetti, ecc. I più utilizzati sono i database relazionali.
+
+La struttura di un database relazionale può essere definita a vari livelli: concettuale, logico e fisico.
+
+\subsection{Livello logico: rappresentazione tabellare}
+
+Esempio della tabella \texttt{LIBRI}:
+
+\begin{center}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+NumInv & Autore & Titolo & Anno\_ed & Editore \\
+\hline
+123 & Allende & Eva Luna & ... & Feltrinelli \\
+456 & Benni & Terra! & ... & Feltrinelli \\
+789 & Voltolini & 10 & ... & Feltrinelli \\
+\hline
+\end{tabular}
+\end{center}
+
+Quando si vuole costruire una tabella, bisogna innanzitutto definire la sua struttura: i nomi dei campi (colonne) e i tipi di dati in essi contenuti.
+
+\subsection{Interazione con un database}
+
+L'interazione può avvenire tramite una User Interface oppure tramite uno script/programma server-side:
+
+\begin{itemize}
+    \item \textbf{Interrogazione} (leggere dal DB).
+    \item \textbf{Manipolazione di dati}: inserimento, cancellazione, aggiornamento.
+    \item \textbf{Modifiche strutturali} (creazione tabelle, ecc.).
+    \item \textbf{Modifiche dei permessi} di accesso.
+\end{itemize}
+
+Ogni interazione con la base di dati viene interpretata, analizzata ed eseguita dal DBMS (DataBase Management System) e costituisce una query, espressa in SQL (Structured Query Language). Per esempio:
+
+\begin{lstlisting}[language=SQL]
+-- Interrogazione
+SELECT * FROM libri WHERE Editore='Feltrinelli'
+
+-- Manipolazione
+INSERT INTO utenti (nome, eta) VALUES('lia', 23)
+DELETE FROM libri WHERE NumInv='123-ab'
+
+-- Modifiche strutturali
+DROP TABLE utenti
+
+-- Modifiche dei permessi
+GRANT ALL ON myDB.* TO 'anna'@'localhost'
+\end{lstlisting}
+
+Se è un'interrogazione (\texttt{SQL SELECT}), restituisce come risultato un insieme di record (recordset). Se è una manipolazione di dati (\texttt{INSERT}, \texttt{DELETE}, \texttt{UPDATE}) o di elementi strutturali (\texttt{DROP TABLE}), o di permessi, restituisce un'indicazione di successo o errore (tipicamente \texttt{true} o \texttt{false}).
+
+\section{PHP}
+
+\subsection{Che cos'è PHP}
+
+PHP (\url{php.net}) è:
+
+\begin{itemize}
+    \item Un linguaggio di programmazione ad alto livello.
+    \item Pensato per il web, cioè in grado di leggere il contenuto della HTTP request proveniente dal client e scrivere all'interno della HTTP response che verrà inviata al client.
+    \item Interpretato (da un interprete PHP).
+    \item Server-side (cioè interpretato ed eseguito sul server).
+    \item Open Source: l'interprete PHP è distribuito secondo la filosofia Open Source.
+\end{itemize}
+
+\subsection{Struttura di un'applicazione PHP}
+
+Un'applicazione web scritta in PHP è un insieme di pagine web, cioè file di testo con estensione \texttt{.php}, che contengono:
+
+\begin{itemize}
+    \item Codice HTML (ed eventualmente JavaScript client-side).
+    \item Codice PHP = programma (script) server-side.
+\end{itemize}
+
+Esempio:
+
+\begin{lstlisting}[language=PHP]
+<H1>PHP: esempio</H1>
+<?php
+    $id = $_POST["login"];
+    $pwd = $_POST["password"];
+    if ($id == "admin" && $pwd == "pippo") {
+        echo "<P>Benvenuto amministratore!</P>";
+    }
+    else {
+        echo "<P>Buongiorno ".$id."</P>";
+    }
+?>
+<P>
+Questa e' una pagina web dinamica
+</P>
+\end{lstlisting}
+
+\subsection{Funzionamento di PHP}
+
+Cosa succede quando il browser invia una HTTP request al server basata su un URL del tipo \url{http://www.esempio.it/dida.php}?
+
+\begin{itemize}
+    \item Il Web Server si accorge, grazie all'estensione del file indicato nell'URL, che la risorsa richiesta è una pagina PHP: gira l'HTTP request all'interprete PHP.
+    \item L'interprete PHP interpreta (ed esegue) gli script contenuti nella pagina indicata. Tipicamente, alcune istruzioni PHP gli diranno di:
+    \begin{itemize}
+        \item Leggere i dati (parametri) contenuti nell'HTTP request. Per esempio:
+        \begin{lstlisting}[language=PHP]
+$id = $_GET["username"];
+// oppure
+$id = $_POST["username"];
+        \end{lstlisting}
+        \item Connettersi a un database (per leggere o scrivere dati). Per esempio:
+        \begin{lstlisting}[language=PHP]
+$r = $db->query("SELECT * from libri WHERE titolo='$tit'");
+        \end{lstlisting}
+    \end{itemize}
+    \item L'esecuzione dello script PHP produce un risultato, tipicamente del testo o del codice HTML, che viene inserito nella pagina al posto dello script.
+    \item La pagina risultante, composta dall'HTML originario + il risultato dell'esecuzione dello script, viene inviata al browser.
+\end{itemize}
+
+Altro esempio di HTML + PHP con le shortcut \texttt{<?=\ ?>}:
+
+\begin{lstlisting}[language=PHP]
+<?php
+    $p = "Everything";
+?>
+<p>
+The answer to the ultimate question of Life, the
+Universe and <?= $p ?> is <?= 6*7 ?>
+</p>
+\end{lstlisting}
+
+Output:
+
+\begin{verbatim}
+The answer to the ultimate question of Life,
+the Universe and Everything is 42
+\end{verbatim}
+
+\subsection{Stack LAMP}
+
+Tipicamente PHP è utilizzato in combinazione con altre tecnologie:
+
+\begin{itemize}
+    \item \textbf{Linux}: Sistema operativo (\url{www.linuxfoundation.org}).
+    \item \textbf{Apache}: Web server (\url{www.apache.org}).
+    \item \textbf{MySQL/MariaDB}: DBMS (\url{www.mysql.com}, \url{mariadb.org}).
+    \item \textbf{PHP}: Interprete script server-side (\url{www.php.net}).
+\end{itemize}
+
+Questa combinazione è nota come \textbf{LAMP}. Sono possibili combinazioni diverse:
+
+\begin{itemize}
+    \item \textbf{WAMP}: Windows + Apache + MySQL/MariaDB + PHP.
+    \item \textbf{MAMP}: Mac OS + Apache + MySQL/MariaDB + PHP.
+    \item \textbf{XAMPP}: pacchetto multi-piattaforma (\url{www.apachefriends.org}) contenente Apache, MySQL/MariaDB, PHP e Perl.
+\end{itemize}
+
+\subsection{Esempio di interazione con un DB tramite PHP}
+
+\begin{lstlisting}[language=PHP]
+<h1>I miei film</h1>
+<ul>
+<?php
+    $db = new PDO("mysql:dbname=myMovies;host=localhost",
+                  "anna", "annaPwd");
+    $rows = $db->query("SELECT * FROM movies WHERE year=2015");
+    foreach ($rows as $row) {
+?>
+    <li><?= $rows["name"] ?> stelle: <?= $rows["stars"] ?></li>
+<?php
+    }
+?>
+</ul>
+\end{lstlisting}
+
+\section{Digressione: Open Source}
+
+Open Source Initiative (OSI, \url{www.opensource.org}) è un'associazione no-profit che ha l'obiettivo di gestire e promuovere la produzione di software open source. Il software open source (o software libero) deve rispettare una serie di criteri:
+
+\begin{itemize}
+    \item Il codice sorgente del programma deve essere disponibile.
+    \item Il software può essere modificato e distribuito (con un nome diverso) alle stesse condizioni.
+    \item La licenza del software deve consentire a chiunque di ridistribuire il software secondo le stesse modalità.
+    \item Chiunque può partecipare allo sviluppo del software.
+    \item Il software deve essere distribuito gratuitamente (senza diritti d'autore o profitti).
+\end{itemize}
+
+L'idea alla base dell'Open Source Initiative è che quando i programmatori possono leggere, modificare e ridistribuire il codice sorgente di un programma, quel software si evolve: la gente lo migliora, lo adatta, lo corregge. Questo rapido processo evolutivo produce software migliore rispetto al tradizionale modello chiuso.
+
+\section{Java Servlet}
+
+\subsection{Premessa su Java}
+
+Java (\url{www.java.com}) è:
+
+\begin{itemize}
+    \item Un linguaggio di programmazione ad alto livello, orientato agli oggetti.
+    \item Per la traduzione dei sorgenti in linguaggio macchina utilizza un approccio misto: il sorgente (\texttt{myProgram.java}) viene compilato da un compilatore Java, che genera un file in bytecode (\texttt{myProgram.class}). Questo bytecode viene interpretato ed eseguito da un interprete Java, generalmente chiamato Java Virtual Machine (JVM) o Java Runtime Environment (JRE).
+    \item Server-side: il bytecode viene interpretato ed eseguito sul server (la JVM risiede sul server).
+\end{itemize}
+
+Il compilatore e il bytecode sono indipendenti dalla macchina; la JVM invece, dovendo tradurre in linguaggio macchina specifico, dipende dalla macchina (S.O.\ + CPU).
+
+\subsection{Cosa sono le Java Servlet}
+
+Le \textbf{Java Servlet} sono programmi Java pensati per la programmazione web server-side. Devono soddisfare questi requisiti:
+
+\begin{itemize}
+    \item Li si deve poter invocare tramite un URL, per esempio \url{http://www.esempio.it/didaManager}.
+    \item Devono essere in grado di manipolare HTTP request e HTTP response. In particolare:
+    \begin{itemize}
+        \item Il Web Server deve poter passare al programma la HTTP request proveniente dal client, contenente i dati, affinché la Servlet possa leggerne il contenuto.
+        \item Quando la Servlet ha elaborato il risultato (per es.\ un frammento di codice HTML), lo deve poter inserire nell'HTTP response che verrà inviata al client dal Web Server.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Esempio di Java Servlet}
+
+\begin{lstlisting}[language=Java]
+public class GeoMgr extends HttpServlet {
+    protected void doGet(HttpServletRequest request,
+                         HttpServletResponse response)
+            throws ServletException, IOException {
+        String param = request.getParameter("par");
+        response.setContentType("text/html;charset=UTF-8");
+        try (PrintWriter resp = response.getWriter()) {
+            resp.print("Parametro: " + param);
+        }
+    }
+
+    protected void doPost(HttpServletRequest request,
+                          HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        try (PrintWriter resp = response.getWriter()) {
+            String geoMgrResponse = "";
+            // ...
+            resp.print(geoMgrResponse);
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Funzionamento delle Java Servlet}
+
+Cosa succede quando il browser invia una HTTP request al server basata su un URL del tipo \url{http://www.esempio.it/didaManager}?
+
+Sul server devono essere installate due cose:
+
+\begin{enumerate}
+    \item Un \textbf{Servlet Container} (o Web Container o Servlet Engine) che:
+    \begin{itemize}
+        \item Carica le Servlet nel processo del Web Server (alla prima invocazione della Servlet).
+        \item Supporta il protocollo HTTP (per gestire il flusso HTTP request/response).
+        \item Gestisce al suo interno più applicazioni, ognuna identificata da un \emph{servlet context} (nome univoco, es.\ \texttt{didaManager}).
+    \end{itemize}
+    \item Una \textbf{Java Virtual Machine} (o JRE), cioè un interprete Java che interpreti ed esegua il bytecode della Servlet.
+\end{enumerate}
+
+Inoltre il programmatore deve aver compilato il sorgente Java e caricato sul server il file bytecode (\texttt{didaManager.class}).
+
+Flusso di esecuzione:
+
+\begin{itemize}
+    \item Il Web Server vede che la risorsa richiesta è una Java Servlet e gira l'HTTP request al Servlet Container.
+    \item Il Servlet Container cerca tra i suoi contesti il programma corrispondente e chiede all'interprete Java (JVM/JRE) di interpretare ed eseguire il programma.
+    \item Come nel caso di PHP, tipicamente alcune istruzioni gli diranno di leggere i parametri contenuti nell'HTTP request:
+    \begin{lstlisting}[language=Java]
+request.getParameter("par");
+    \end{lstlisting}
+    e di connettersi a un database:
+    \begin{lstlisting}[language=Java]
+Statement stm = connection.createStatement();
+ResultSet rs = stm.executeQuery("SELECT * from libri");
+    \end{lstlisting}
+    \item L'esecuzione produce un risultato, tipicamente testo o codice HTML, che viene inserito nel body dell'HTTP response:
+    \begin{lstlisting}[language=Java]
+response.setContentType("text/html;charset=UTF-8");
+try (PrintWriter resp = response.getWriter()) {
+    String geoMgrResponse = "";
+    // ...
+    resp.print(geoMgrResponse);
+}
+    \end{lstlisting}
+    \item L'HTTP response viene passata dal Servlet Container al Web Server ed inviata al browser.
+\end{itemize}
+
+\subsection{Web Server con Servlet Container}
+
+Tipicamente si utilizzano Web Server che includono un Servlet Container (e la JVM/JRE):
+
+\begin{itemize}
+    \item \textbf{Tomcat} (\url{tomcat.apache.org}): Web server open source, sviluppato dalla Apache Software Foundation, che include un Servlet Container e la JVM/JRE.
+    \item \textbf{GlassFish} (\url{glassfish.java.net}): Application Server open source, sviluppato inizialmente dalla Sun Microsystems e attualmente gestito dalla Oracle. Include un Web Server, un Servlet Container e la JVM/JRE.
+\end{itemize}
+
+Un \textbf{Application Server} è un software che comprende diverse funzionalità per la gestione di applicazioni complesse; tipicamente include un Web Server.
+
+\section{JSP (Java Server Pages)}
+
+\subsection{Che cosa sono le JSP}
+
+Un'applicazione web basata sulle JSP (Java Server Pages) è un insieme di pagine web con estensione \texttt{.jsp}, che contengono:
+
+\begin{itemize}
+    \item Codice HTML (ed eventualmente JavaScript client-side).
+    \item Codice Java, oppure tag JSTL (JSP Standard Tag Library), cioè una libreria di tag che corrispondono a istruzioni Java.
+\end{itemize}
+
+\subsection{Esempio di JSP con codice Java}
+
+\begin{lstlisting}[language=Java]
+<H1>JSP: esempio</H1>
+<%
+    connection = DriverManager.getConnection(cStr);
+    Statement stm = connection.createStatement();
+    ResultSet rs = stm.executeQuery(
+        "SELECT * FROM products WHERE price > 100");
+%>
+<P>
+Questa e' una pagina web dinamica
+</P>
+\end{lstlisting}
+
+\subsection{Esempio di JSP con tag JSTL}
+
+\begin{lstlisting}[language=HTML5]
+<H1>JSP: esempio</H1>
+<sql:setDataSource driver="com.mysql.jdbc.Driver"
+    url="jdbc:mysql://localhost/database_name"
+    var="localSource" user="database_user" ... />
+
+<sql:query dataSource="${localSource}"
+    sql="SELECT * FROM products WHERE price > 100"
+    var="result" />
+<P>
+Questa e' una pagina web dinamica
+</P>
+\end{lstlisting}
+
+I tag JSTL sembrano tag di un linguaggio di mark-up, ma lo sono solo in apparenza: vengono infatti tradotti in istruzioni Java (quindi in istruzioni di un linguaggio di programmazione).
+
+\subsection{Funzionamento delle JSP}
+
+Cosa succede quando il browser invia una HTTP request al server basata su un URL del tipo \url{http://www.esempio.it/dida.jsp}?
+
+\begin{itemize}
+    \item Il Web Server, grazie all'estensione del file, si accorge che la risorsa è una JSP e gira l'HTTP request al Servlet Container.
+    \item Se è la prima volta che quella JSP viene richiesta (o se è stata modificata):
+    \begin{itemize}
+        \item Il Servlet Container invoca il \textbf{JSP Engine} (chiamato talvolta compilatore JSP).
+        \item Il JSP Engine trasforma la pagina (HTML + JSTL tags/istruzioni Java) in una Java Servlet (in un sorgente scritto in Java, es.\ \texttt{didaServlet.java}). In particolare:
+        \begin{itemize}
+            \item Trasforma i tag HTML (e le eventuali istruzioni JavaScript) in istruzioni Java che scrivono nel body della HTTP response. Per esempio:
+\begin{lstlisting}[language=Java]
+// <H1>JSP: esempio</H1> diventa:
+PrintWriter pw;
+pw = httpResponse.getWriter();
+pw.print("<H1>JSP: esempio</H1>");
+\end{lstlisting}
+            \item Se la JSP contiene direttamente codice Java, lo include nella Servlet.
+            \item Se la JSP contiene tag JSTL, li traduce in istruzioni Java e le include nella Servlet.
+            \item Compila la Servlet, invocando il compilatore Java, e produce la versione in bytecode.
+            \item Invoca l'interprete Java (JVM/JRE), che interpreta ed esegue la Servlet.
+        \end{itemize}
+    \end{itemize}
+    \item Se invece la Servlet compilata è già disponibile (non è la prima volta che quella JSP viene richiesta), il Servlet Container invoca semplicemente l'interprete Java.
+\end{itemize}
+
+Così il caso è ricondotto a quello di una normale Servlet: alcune istruzioni (derivanti da quelle incluse dal programmatore nella JSP) diranno di leggere i parametri contenuti nell'HTTP request, di connettersi a un database, ecc. Il risultato prodotto viene inserito nel body dell'HTTP response.
+
+\subsection{Tecnologie necessarie}
+
+Per far funzionare le JSP è necessaria sul server la stessa tecnologia che si usa per le Java Servlet:
+
+\begin{itemize}
+    \item Un Servlet Container che contenga anche un JSP Engine (il quale a sua volta contiene il compilatore Java).
+    \item L'interprete Java (JVM/JRE).
+\end{itemize}
+
+Anche in questo caso si possono usare Tomcat o GlassFish.
+
+\section{ASP.NET}
+
+ASP.NET è un framework (gratuito) che supporta la costruzione di applicazioni web (pagine web con estensione \texttt{.aspx}) server-side.
+
+Caratteristiche:
+
+\begin{itemize}
+    \item Nel framework .NET possono essere utilizzati diversi linguaggi di programmazione: il più usato è \textbf{Visual C\#}.
+    \item \textbf{Visual Studio}: ambiente di sviluppo integrato (IDE) di Microsoft per sviluppare applicazioni Web, mobile e Windows in ambiente .NET. Comprende:
+    \begin{itemize}
+        \item .NET Framework.
+        \item IIS (Web Server).
+        \item SQL Server (DBMS).
+    \end{itemize}
+    \item Visual Studio include anche librerie client-side (per inserire script JavaScript, AJAX, jQuery, ecc.).
+    \item \textbf{Visual Studio Express}: versione gratuita per sviluppare applicazioni web (scaricabile da \url{www.asp.net}).
+\end{itemize}
+
+\section{Common Gateway Interface (CGI)}
+
+\subsection{Che cos'è CGI}
+
+Per capire come funzionano Ruby, Python e Perl dobbiamo introdurre un vecchio concetto: gli script CGI.
+
+\begin{itemize}
+    \item \textbf{CGI} (Common Gateway Interface) = standard che definisce la comunicazione tra un Web Server e un programma che risiede sul file system del server.
+    \item I linguaggi di programmazione più usati sono Perl, Python, C e C++.
+\end{itemize}
+
+\subsection{Funzionamento di un programma CGI}
+
+Il Web Server:
+
+\begin{enumerate}
+    \item Riceve dal browser, tramite URL (es.\ \url{http://myserver.it/cgi-bin/myprogram}), la richiesta di esecuzione di un programma.
+    \item Attraverso l'interfaccia CGI, passa al programma gli eventuali dati (parametri) ricevuti nell'HTTP request.
+    \item Sempre attraverso l'interfaccia CGI, manda in esecuzione il programma richiesto, tipicamente invocando l'opportuno interprete.
+    \item Riceve dal programma (tramite l'interfaccia CGI) il risultato.
+    \item Invia al browser il risultato (nel body dell'HTTP response).
+\end{enumerate}
+
+\subsection{In cosa consiste un'interfaccia CGI}
+
+Un'interfaccia CGI consiste in:
+
+\begin{enumerate}
+    \item \textbf{Configurazione del Web Server}: si indica dove (percorso nel file system) si trovano gli script CGI, generalmente nella cartella \texttt{cgi-bin}.
+    \item \textbf{Script (programma) CGI} che contiene tipicamente istruzioni che corrispondono a comandi del sistema operativo (per es.\ l'indicazione dell'interprete da usare) e/o istruzioni in un linguaggio di programmazione. Per esempio (Perl):
+\begin{lstlisting}
+#!/usr/bin/perl -Tw
+print "Content-Type:text/html\n\n";
+print "<html><head>...</head>";
+\end{lstlisting}
+\end{enumerate}
+
+Quando il Web Server riceve una HTTP request, riconosce che si tratta della richiesta di esecuzione di uno script CGI se è stato opportunamente configurato e se lo script è presente nella cartella apposita. Lo script CGI viene eseguito utilizzando l'interprete di solito indicato nella prima riga dello script.
+
+\section{Python}
+
+Python (\url{www.python.org}) è un linguaggio di programmazione molto utilizzato sul web:
+
+\begin{itemize}
+    \item È \textbf{server-side} (eseguito sul server).
+    \item Utilizza un approccio misto (come Java): il codice sorgente (\texttt{myProgram.py}) viene compilato (\texttt{myProgram.pyc}) in un linguaggio intermedio (bytecode), specifico di Python, che viene poi interpretato ed eseguito dall'interprete (Virtual Machine).
+    \item La sua implementazione di base (CPython, reference implementation) è open source ed è gestita dalla Python Software Foundation.
+    \item Sul web può essere usato per scrivere programmi invocabili tramite CGI.
+\end{itemize}
+
+Python è uno dei 4 linguaggi utilizzati da Google (insieme a JavaScript, Java e C++), è il principale linguaggio con cui è implementato YouTube ed è usato al CERN e alla NASA. Nel download di Python (che comprende compilatore e interprete) è incluso anche un ambiente di sviluppo (un IDE) chiamato \textbf{IDLE}.
+
+\section{Perl}
+
+Perl (\url{https://www.perl.org}) è un linguaggio di programmazione utilizzato anche sul web (server-side), creato nel 1987 da Larry Wall. Perl è:
+
+\begin{itemize}
+    \item Server-side (eseguito sul server).
+    \item Interpretato (da un interprete Perl).
+    \item Open Source: l'interprete Perl è distribuito secondo la filosofia Open Source.
+    \item Sul web può essere usato per scrivere programmi invocabili tramite CGI.
+\end{itemize}
+
+\section{Ruby}
+
+Ruby (\url{www.ruby-lang.org}) è un linguaggio di programmazione molto utilizzato sul web, creato in Giappone all'inizio degli anni '90. Ruby è:
+
+\begin{itemize}
+    \item Server-side (eseguito sul server).
+    \item Interpretato (da un interprete Ruby).
+    \item Open Source.
+    \item Sul web può essere usato:
+    \begin{enumerate}
+        \item Per scrivere programmi invocabili tramite CGI.
+        \item All'interno delle pagine HTML (con estensione \texttt{.rhtml}) grazie a \textbf{embedded Ruby} (eRuby/ERb).
+    \end{enumerate}
+\end{itemize}
+
+Esempio di eRuby in una pagina \texttt{.rhtml}:
+
+\begin{lstlisting}
+<%
+    nome = params[:nome]
+    eta = params[:eta]
+    # ... inserimento nel DB
+%>
+\end{lstlisting}
+
+\section{Strumenti di sviluppo}
+
+Tipicamente, per utilizzare questi linguaggi si usano strumenti che semplificano il lavoro del programmatore di applicazioni web. I principali tipi di strumenti sono:
+
+\begin{itemize}
+    \item \textbf{IDE} (Integrated Development Environment).
+    \item \textbf{Framework}.
+    \item \textbf{Librerie}.
+\end{itemize}
+
+\subsection{Integrated Development Environment (IDE)}
+
+Un IDE è un software che offre diverse funzionalità integrate. Tipicamente include:
+
+\begin{itemize}
+    \item Un \textbf{editor} per scrivere/modificare il codice sorgente.
+    \item \textbf{Compilatori/interpreti} e strumenti per la corretta creazione dell'applicazione finale (file di configurazione, ecc.).
+    \item Strumenti per il \textbf{debugging}, cioè per la ricerca e correzione degli errori (``bug'' = errore nel software).
+    \item Un \textbf{Web Server}.
+    \item Un \textbf{Servlet Container}.
+\end{itemize}
+
+Alcuni IDE sono dedicati a un singolo linguaggio, altri supportano più linguaggi.
+
+\textbf{Esempi di IDE}:
+
+\begin{itemize}
+    \item \textbf{NetBeans} (\url{https://netbeans.org/}): nasce alla Sun Microsystems ed è ora della Oracle. Nato come IDE per Java, è stato poi esteso per supportare vari altri linguaggi (JavaScript, PHP).
+    \item \textbf{Eclipse} (\url{www.eclipse.org}): IDE open source, multi-linguaggio, molto utilizzato per sviluppare applicazioni web Java. Può essere esteso per supportare diversi linguaggi (PHP, Python, Ruby, JavaScript) e tipi di applicazioni (es.\ smartphone) con l'aggiunta di plug-in.
+\end{itemize}
+
+\subsection{Framework}
+
+Un \textbf{framework} è:
+
+\begin{itemize}
+    \item Un ambiente software, generalmente un insieme di librerie.
+    \item Offre dei \emph{template} (modelli) astratti di codice che implementano funzionalità generiche e che possono essere modificati dal programmatore aggiungendo codice specifico.
+    \item Generalmente un framework comprende anche compilatori/interpreti e Web Server.
+    \item Tipicamente (a differenza degli IDE) i framework sono \emph{language-specific}.
+\end{itemize}
+
+Una delle principali caratteristiche dei framework è che offrono la possibilità di sviluppare applicazioni \textbf{multi-piattaforma} (o cross-platform): il codice sorgente viene scritto una sola volta e poi distribuito su più piattaforme. Il framework si occuperà di ricompilare il codice in modo che si adatti automaticamente a sistemi operativi diversi. Questo aspetto è molto importante per lo sviluppo di applicazioni mobile.
+
+\subsubsection*{Esempi di framework}
+
+\textbf{Framework per PHP}:
+
+\begin{itemize}
+    \item Esistono molti framework per PHP.
+    \item Uno dei più famosi è \textbf{Zend Framework} (\url{framework.zend.com}).
+\end{itemize}
+
+\textbf{Framework per Python}:
+
+\begin{itemize}
+    \item Esistono diversi framework per Python.
+    \item Il più famoso è \textbf{Django} (\url{www.djangoproject.com/}).
+\end{itemize}
+
+\textbf{Framework per Ruby}:
+
+\begin{itemize}
+    \item Esistono diversi framework per Ruby.
+    \item Il più famoso è sicuramente \textbf{Ruby on Rails}, o Rails (\url{rubyonrails.org}).
+\end{itemize}
+
+\subsection{Librerie}
+
+Una \textbf{libreria} è un insieme di funzioni (o strutture dati) predefinite, utilizzabili all'interno di un programma. Lo sviluppo di librerie ha lo scopo di fornire al programmatore funzionalità già pronte, evitandogli di dover riscrivere ogni volta le stesse funzioni (es.\ accesso a database, manipolazione di dati in formati particolari, ecc.).
+
+\section{Come scegliere una tecnologia web}
+
+Generalmente si tiene conto di diversi fattori, per esempio:
+
+\begin{itemize}
+    \item \textbf{Tipo di applicazione} da sviluppare (semplice/complessa, multimediale, con molti dati, con molti utenti, molto interattiva).
+    \item \textbf{Competenze dei programmatori coinvolti} (la tecnologia è già conosciuta? quanto è facile da apprendere?).
+    \item \textbf{Sistema Operativo e Web Server} disponibili (quali tecnologie sono supportate?).
+    \item \textbf{Documentazione disponibile}.
+    \item \textbf{Supporto} (comunità di sviluppatori o supporto del produttore).
+    \item \textbf{Librerie, moduli e template} (esistono librerie per realizzare funzionalità particolari, es.\ archivi, photogallery?).
+    \item \textbf{Popolarità}.
+    \item \textbf{Costo} (è free o a pagamento? che tipo di licenze offre?).
+\end{itemize}

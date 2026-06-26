@@ -1,0 +1,703 @@
+\chapter{OOP in JavaScript e DOM}
+
+\section{Introduzione alla OOP}
+
+La \textbf{programmazione orientata agli oggetti} è un paradigma di programmazione che usa l'astrazione (una classe può essere considerata un modello astratto istanziabile) per creare modelli basati sul mondo reale.
+
+\textbf{Caratteristiche principali}:
+\begin{itemize}
+    \item Modularità
+    \item Polimorfismo
+    \item Incapsulamento
+    \item Ereditarietà
+\end{itemize}
+
+\section{Terminologia}
+
+\begin{itemize}
+    \item \textbf{Namespace}: un contenitore che consente agli sviluppatori di includere tutte le funzionalità sotto un nome unico, specifico per l'applicazione.
+    \item \textbf{Class}: definisce le caratteristiche dell'oggetto. Una classe è una definizione del modello, delle proprietà e dei metodi di un oggetto.
+    \item \textbf{Object}: istanza di una classe.
+    \item \textbf{Property}: una caratteristica di un oggetto, come un colore.
+    \item \textbf{Method}: una capacità di un oggetto, come ad esempio ``cammina''. È una procedura o funzione associata a una classe.
+    \item \textbf{Constructor}: un metodo invocato nel momento in cui l'oggetto viene istanziato. Di solito ha lo stesso nome della classe che lo contiene.
+    \item \textbf{Inheritance}: una classe può ereditare caratteristiche da un'altra classe.
+    \item \textbf{Encapsulation}: una modalità di raggruppamento di dati e metodi che ne fanno uso.
+    \item \textbf{Abstraction}: l'insieme del complesso di eredità, metodi e proprietà di un oggetto deve rispecchiare adeguatamente un modello reale.
+    \item \textbf{Polymorphism}: classi diverse potrebbero definire lo stesso metodo o proprietà (``poly'' = molti, ``morfismo'' = forme).
+\end{itemize}
+
+\section{Programmazione prototype-based}
+
+Un \textbf{namespace} è un contenitore che consente agli sviluppatori di includere tutte le funzionalità sotto un nome unico, specifico per l'applicazione. In JavaScript un namespace è solo un altro oggetto che contiene metodi, proprietà e oggetti.
+
+\textbf{Nota}: in JavaScript non c'è alcuna differenza a livello di linguaggio tra oggetti regolari e namespace.
+
+L'idea alla base della creazione di un namespace in JavaScript è semplice: creare un oggetto globale, e tutte le variabili, i metodi e le funzioni diventano proprietà di tale oggetto. L'uso dei namespace riduce anche il rischio di conflitti tra nomi in un'applicazione.
+
+\subsection{Esempio di namespace}
+
+\begin{lstlisting}[language=JavaScript]
+// global namespace
+var MYAPP = MYAPP || {};
+
+// sub namespace
+MYAPP.event = {};
+
+// Create container called MYAPP.commonMethod
+MYAPP.commonMethod = {
+    regExForName: "", // define regex for name validation
+    regExForPhone: "", // define regex for phone validation
+    validateName: function(name) {
+        // Do something with name
+        // "this.regExForName" to access
+    },
+    validatePhoneNo: function(phoneNo) {
+        // do something with phone number
+    }
+};
+
+// Object together with the method declarations
+MYAPP.event = {
+    addListener: function(el, type, fn) {
+        // code stuff
+    },
+    removeListener: function(el, type, fn) {
+        // code stuff
+    },
+    getEvent: function(e) {
+        // code stuff
+    }
+};
+
+// Syntax for Using addListener method:
+MYAPP.event.addListener("yourel", "type", callback);
+\end{lstlisting}
+
+\section{Classi e prototipi}
+
+JavaScript è un linguaggio basato sui prototipi e non contiene alcuna dichiarazione di classe (ECMAScript 6 la introduce ma come elemento sintattico). JavaScript utilizza le funzioni come costruttori per emulare le classi.
+
+Definire una classe è facile come definire una funzione:
+
+\begin{lstlisting}[language=JavaScript]
+var Person = function () {};
+\end{lstlisting}
+
+\section{Oggetti}
+
+Per creare una nuova istanza di un oggetto \texttt{obj} utilizziamo l'istruzione \texttt{new obj} assegnando il risultato ad una variabile:
+
+\begin{lstlisting}[language=JavaScript]
+var person1 = new Person();
+var person2 = new Person();
+\end{lstlisting}
+
+\subsection{Il costruttore}
+
+Il costruttore viene chiamato quando si istanzia un oggetto. In genere, il costruttore è un metodo della classe. In JavaScript la funzione funge da costruttore dell'oggetto, pertanto non è necessario definire esplicitamente un metodo costruttore. Ogni azione dichiarata nella classe viene eseguita al momento della creazione di un'istanza.
+
+\begin{lstlisting}[language=JavaScript]
+var Person = function () {
+    console.log('instance created');
+};
+
+var person1 = new Person();
+var person2 = new Person();
+\end{lstlisting}
+
+\section{Proprietà}
+
+Le proprietà sono variabili contenute nella classe; ogni istanza dell'oggetto ha queste proprietà. Le proprietà sono impostate nel costruttore (funzione) della classe in modo che siano create su ogni istanza.
+
+La parola chiave \texttt{this}, che si riferisce all'oggetto corrente, consente di lavorare con le proprietà all'interno della classe.
+
+L'accesso (in lettura o scrittura) ad una proprietà al di fuori della classe è fatto con la sintassi: \texttt{NomeIstanza.Proprieta}.
+
+All'interno della classe la sintassi \texttt{this.Proprieta} è utilizzata per ottenere o impostare il valore della proprietà.
+
+\begin{lstlisting}[language=JavaScript]
+var Person = function (firstName) {
+    this.firstName = firstName;
+    console.log('Person instantiated');
+};
+
+var person1 = new Person('Alice');
+var person2 = new Person('Bob');
+
+console.log('person1 is ' + person1.firstName); // "person1 is Alice"
+console.log('person2 is ' + person2.firstName); // "person2 is Bob"
+\end{lstlisting}
+
+\section{Metodi}
+
+I metodi sono funzioni (e definiti come funzioni), ma per il resto seguono la stessa logica delle proprietà. Chiamare un metodo è simile all'accesso a una proprietà, ma si aggiunge \texttt{()} alla fine del nome del metodo, eventualmente con argomenti. Per definire un metodo va assegnata una funzione a una proprietà della proprietà \texttt{prototype} della classe.
+
+\begin{lstlisting}[language=JavaScript]
+var Person = function (firstName) {
+    this.firstName = firstName;
+};
+
+Person.prototype.sayHello = function() {
+    console.log("Hello, I'm " + this.firstName);
+};
+
+var person1 = new Person("Alice");
+var person2 = new Person("Bob");
+
+person1.sayHello(); // "Hello, I'm Alice"
+person2.sayHello(); // "Hello, I'm Bob"
+\end{lstlisting}
+
+\subsection{Contesto dei metodi}
+
+In JavaScript i metodi sono oggetti funzione regolarmente associati a un oggetto come una proprietà, il che significa che è possibile richiamare i metodi ``fuori dal contesto''.
+
+\begin{lstlisting}[language=JavaScript]
+var Person = function (firstName) {
+    this.firstName = firstName;
+};
+
+Person.prototype.sayHello = function() {
+    console.log("Hello, I'm " + this.firstName);
+};
+
+var person1 = new Person("Alice");
+var person2 = new Person("Bob");
+
+var helloFunction = person1.sayHello;
+
+person1.sayHello();    // "Hello, I'm Alice"
+person2.sayHello();    // "Hello, I'm Bob"
+helloFunction();       // "Hello, I'm undefined"
+                       // (o TypeError in strict mode)
+
+console.log(helloFunction === person1.sayHello);        // true
+console.log(helloFunction === Person.prototype.sayHello); // true
+
+helloFunction.call(person1); // "Hello, I'm Alice"
+\end{lstlisting}
+
+Tutti i riferimenti alla funzione \texttt{sayHello} si riferiscono tutti alla stessa funzione.
+
+Il valore di \texttt{this} nel corso di una chiamata alla funzione dipende da come noi lo chiamiamo:
+\begin{itemize}
+    \item Quando chiamiamo il metodo in un'espressione come \texttt{person1.sayHello()}, \texttt{this} è riferito all'oggetto da cui abbiamo ottenuto la funzione (\texttt{person1}).
+    \item Chiamare la funzione da una variabile --- \texttt{helloFunction()} --- imposta \texttt{this} come riferimento all'oggetto globale (\texttt{window}, sui browser).
+    \item Si può impostare \texttt{this} esplicitamente utilizzando \texttt{Function\#call}, \texttt{Function\#apply} o \texttt{bind}.
+\end{itemize}
+
+\section{Ereditarietà}
+
+L'ereditarietà è un modo per creare una classe come una versione specializzata di una o più classi. La classe specializzata viene comunemente chiamata figlio, e l'altra classe viene comunemente chiamata padre o genitore.
+
+In JavaScript si esegue questa operazione assegnando un'istanza della classe padre alla classe figlio, e poi specializzandola. Nel browser moderni è anche possibile utilizzare \texttt{Object.create} per implementare l'ereditarietà.
+
+\begin{lstlisting}[language=JavaScript, caption=Esempio di ereditarietà]
+// Define the Person constructor
+var Person = function(firstName) {
+    this.firstName = firstName;
+};
+
+// Add methods to Person.prototype
+Person.prototype.walk = function() {
+    console.log("I am walking!");
+};
+Person.prototype.sayHello = function() {
+    console.log("Hello, I'm " + this.firstName);
+};
+
+// Define the Student constructor
+function Student(firstName, subject) {
+    // Call the parent constructor
+    Person.call(this, firstName);
+    // Initialize Student-specific properties
+    this.subject = subject;
+}
+
+Student.prototype = Object.create(Person.prototype);
+Student.prototype.constructor = Student;
+
+// Replace the "sayHello" method
+Student.prototype.sayHello = function() {
+    console.log("Hello, I'm " + this.firstName
+        + ". I'm studying " + this.subject + ".");
+};
+
+// Add a "sayGoodBye" method
+Student.prototype.sayGoodBye = function() {
+    console.log("Goodbye!");
+};
+
+// Example usage:
+var student1 = new Student("Janet", "Applied Physics");
+student1.sayHello();    // "Hello, I'm Janet. I'm studying Applied Physics."
+student1.walk();        // "I am walking!"
+student1.sayGoodBye();  // "Goodbye!"
+
+// Check that instanceof works correctly
+console.log(student1 instanceof Person);  // true
+console.log(student1 instanceof Student); // true
+\end{lstlisting}
+
+\section{Incapsulamento}
+
+Nell'esempio precedente \texttt{Student} non ha bisogno di sapere come sia realizzato il metodo \texttt{walk()} della classe \texttt{Person}, ma può comunque utilizzarlo; la classe \texttt{Student} non ha bisogno di definire in modo esplicito questo metodo se non vogliamo cambiarlo.
+
+Questo è chiamato \textbf{incapsulamento}, per cui ogni classe impacchetta dati e metodi in una singola unità.
+
+Il nascondere informazioni (\textit{information hiding}) è una caratteristica comune ad altri linguaggi, spesso in forma di metodi e proprietà private e protette.
+
+\section{Astrazione}
+
+L'astrazione è un meccanismo che permette di modellare la parte corrente del problema, sia con eredità (specializzazione) o la composizione.
+
+JavaScript ottiene la specializzazione per eredità e composizione, permettendo che istanze di classe siano valori di attributi di altri oggetti. La classe \texttt{Function} di JavaScript eredita dalla classe \texttt{Object} (questo dimostra la specializzazione del modello) e la proprietà \texttt{Function.prototype} è un'istanza di \texttt{Object} (ciò dimostra la composizione).
+
+\begin{lstlisting}[language=JavaScript]
+var foo = function () {};
+console.log('foo is a Function: ' + (foo instanceof Function));
+// "foo is a Function: true"
+console.log('foo.prototype is an Object: ' + (foo.prototype instanceof Object));
+// "foo.prototype is an Object: true"
+\end{lstlisting}
+
+\section{Ereditarietà di proprietà}
+
+Gli oggetti JavaScript sono ``contenitori'' dinamici di properties (\textit{own properties}). Gli oggetti JavaScript hanno un link ad un oggetto \textit{prototype}. Provando ad accedere ad una property di un oggetto, la property non solo sarà ricercata sull'oggetto ma anche sul prototipo, sul prototipo del prototipo e così via fino a trovare una property con il nome specificato o fino alla fine della catena stessa.
+
+\begin{lstlisting}[language=JavaScript, caption=Prototype chain]
+// Assumiamo di avere un oggetto o con le sue properties a and b:
+// {a: 1, b: 2}
+// o.[[Prototype]] ha le properties b and c:
+// {b: 3, c: 4}
+// Infine, o.[[Prototype]].[[Prototype]] e' null.
+
+console.log(o.a); // 1
+// C'e' una property 'a' su o? Si, e il suo valore e' 1.
+
+console.log(o.b); // 2
+// Il prototype ha anche una property 'b', ma non e' visitata
+// (property shadowing).
+
+console.log(o.c); // 4
+// Non c'e' 'c' su o; viene cercata sul prototype.
+
+console.log(o.d); // undefined
+// Non c'e' 'd' ne' su o, ne' sul prototype,
+// ne' oltre (null). Return undefined.
+\end{lstlisting}
+
+\section{Polimorfismo}
+
+Così come tutti i metodi e le proprietà sono definite all'interno della proprietà \texttt{prototype}, classi diverse possono definire metodi con lo stesso nome; i metodi sono nell'ambito della classe in cui sono definiti, a meno che le due classi siano in un rapporto padre-figlio (cioè una eredita dall'altra in una catena di ereditarietà).
+
+\section{Ereditarietà di metodi}
+
+JavaScript non ha ``metodi'' nella forma tipica dei linguaggi basati sulle classi. In JavaScript, qualunque funzione può essere aggiunta ad un oggetto come fosse property. Una funzione ereditata agisce come ogni altra property, incluse le \textit{property shadowing} (una forma di sovrascrittura di metodi).
+
+Quando viene eseguita una funzione ereditata, il valore del \texttt{this} punta all'oggetto ereditante, non all'oggetto prototype dove la funzione è una property proprietaria.
+
+\begin{lstlisting}[language=JavaScript]
+var o = {
+    a: 2,
+    m: function(b) {
+        return this.a + 1;
+    }
+};
+
+console.log(o.m()); // 3
+// Chiamando o.m, 'this' si riferisce a o
+
+var p = Object.create(o);
+// p e' un oggetto che eredita da o
+p.a = 12; // crea una propria property 'a' su p
+console.log(p.m()); // 13
+// quando p.m e' chiamata, 'this' si riferisce a p
+// Cosi' quando p eredita la funzione m di o,
+// 'this.a' significa p.a
+\end{lstlisting}
+
+\section{Classi in JavaScript (ECMAScript 6)}
+
+\subsection{Dichiarazione di classe}
+
+\begin{lstlisting}[language=JavaScript]
+class Polygon {
+    constructor(height, width) {
+        this.height = height;
+        this.width = width;
+    }
+}
+\end{lstlisting}
+
+Un'importante differenza tra la dichiarazione di una funzione e la dichiarazione di una classe è che le dichiarazioni di funzione sono \textit{hoisted} mentre quelle delle classi no. Bisogna dichiarare la classe e poi si può usarla, altrimenti il codice solleva un'eccezione.
+
+\begin{lstlisting}[language=JavaScript]
+var p = new Polygon(); // ReferenceError
+class Polygon {}
+
+// VS
+
+var p = new Polygon(); // p is a new Polygon
+function Polygon() {
+    this.nome = 'Poligono';
+    console.log('New Polygon');
+}
+\end{lstlisting}
+
+\subsection{Class Expression}
+
+\begin{lstlisting}[language=JavaScript]
+// unnamed
+var Polygon = class {
+    constructor(height, width) {
+        this.height = height;
+        this.width = width;
+    }
+};
+
+// named
+var Polygon = class Polygon {
+    constructor(height, width) {
+        this.height = height;
+        this.width = width;
+    }
+};
+\end{lstlisting}
+
+Il nome dato è locale al corpo della classe. Anche le Class expressions soffrono degli stessi problemi di hoisting menzionati per le dichiarazioni di Classi. Viene usato lo \texttt{strict mode}.
+
+\subsection{Costruttore}
+
+Una classe può avere solo un costruttore, altrimenti \texttt{SyntaxError}. Un costruttore può usare la parola chiave \texttt{super} per richiamare il costruttore della classe padre.
+
+\begin{lstlisting}[language=JavaScript, caption=Metodi prototipo]
+class Polygon {
+    constructor(height, width) {
+        this.height = height;
+        this.width = width;
+    }
+
+    get area() {
+        return this.calcArea();
+    }
+
+    calcArea() {
+        return this.height * this.width;
+    }
+}
+\end{lstlisting}
+
+\subsection{Metodi statici}
+
+La parola chiave \texttt{static} definisce un metodo statico. I metodi statici sono chiamati senza istanziare la loro classe e non possono essere chiamati su una classe istanziata. Vengono usati per creare funzioni di utilità.
+
+\begin{lstlisting}[language=JavaScript]
+class Point {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    static distance(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+}
+
+const p1 = new Point(5, 5);
+const p2 = new Point(10, 10);
+console.log(Point.distance(p1, p2));
+\end{lstlisting}
+
+\subsection{This con metodi prototipo e statico}
+
+Quando un metodo statico o prototipo è chiamato senza un oggetto valutato \texttt{this}, allora il valore di \texttt{this} sarà \texttt{undefined} all'interno della funzione chiamata. Il comportamento sarà lo stesso perfino se scriviamo il codice in modalità non-strict, perché tutte le funzioni, metodi, costruttori, getter o setter sono eseguiti in modo strict.
+
+\begin{lstlisting}[language=JavaScript]
+class Animal {
+    speak() {
+        return this;
+    }
+    static eat() {
+        return this;
+    }
+}
+
+let obj = new Animal();
+obj.speak();  // Animal {}
+let speak = obj.speak;
+speak();      // undefined
+
+Animal.eat(); // class Animal
+let eat = Animal.eat;
+eat();        // undefined
+\end{lstlisting}
+
+\subsection{Sottoclassi con extends}
+
+La keyword \texttt{extends} viene usata nelle class declarations o class expressions per creare una classe figlia di un'altra classe.
+
+\begin{lstlisting}[language=JavaScript]
+class Animal {
+    constructor(name) {
+        this.name = name;
+    }
+    speak() {
+        console.log(this.name + ' makes a noise.');
+    }
+}
+
+class Dog extends Animal {
+    speak() {
+        console.log(this.name + ' barks.');
+    }
+}
+\end{lstlisting}
+
+Si possono anche estendere le classi tradizionali basate su funzioni:
+
+\begin{lstlisting}[language=JavaScript]
+function Animal(name) {
+    this.name = name;
+}
+Animal.prototype.speak = function() {
+    console.log(this.name + ' makes a noise.');
+};
+
+class Dog extends Animal {
+    speak() {
+        super.speak();
+        console.log(this.name + ' barks.');
+    }
+}
+
+var d = new Dog('Mitzie');
+d.speak();
+\end{lstlisting}
+
+\subsection{Superclassi con super}
+
+La keyword \texttt{super} è usata per chiamare le funzioni di un oggetto padre.
+
+\begin{lstlisting}[language=JavaScript]
+class Cat {
+    constructor(name) {
+        this.name = name;
+    }
+    speak() {
+        console.log(this.name + ' makes a noise.');
+    }
+}
+
+class Lion extends Cat {
+    speak() {
+        super.speak();
+        console.log(this.name + ' roars.');
+    }
+}
+\end{lstlisting}
+
+\section{Document Object Model (DOM)}
+
+\begin{quote}
+``The Document Object Model is a platform- and language-neutral interface that will allow programs and scripts to dynamically access and update the content, structure and style of documents. The document can be further processed and the results of that processing can be incorporated back into the presented page.'' --- W3C
+\end{quote}
+
+I browser possono utilizzare un loro DOM, per cui possono esserci differenze nell'interfaccia (DOM) dipendenti dal browser. JavaScript può interagire con il DOM, come altri linguaggi.
+
+\subsection{Verifica supporto DOM level 1}
+
+\begin{lstlisting}[language=JavaScript]
+<script type="text/javascript">
+function domw3c() {
+    if(document.getElementById) {
+        // il browser supporta il DOM di livello 1 del W3C
+        alert(":) DOM Supportato!");
+    }
+    else {
+        // il browser NON supporta il DOM di livello 1 del W3C
+        alert(":( DOM NON Supportato!");
+    }
+}
+</script>
+\end{lstlisting}
+
+\subsection{Tipi di nodi}
+
+\begin{itemize}
+    \item \textbf{Documento}: normalmente esiste un solo nodo di questo tipo nella rappresentazione di una pagina HTML e costituisce la radice dell'albero; in presenza di pagine con frame ci sono più nodi di tipo documento.
+    \item \textbf{Elemento}: un nodo di tipo elemento individua in genere un tag HTML, come ad esempio \texttt{<body>}, \texttt{<div>}, \texttt{<p>}.
+    \item \textbf{Attributo}: un nodo di tipo attributo corrisponde ad un attributo di un tag HTML, come ad esempio l'attributo \texttt{src} del tag \texttt{<img>}.
+    \item \textbf{Testo}: un nodo di tipo testo corrisponde al contenuto testuale di un nodo, compresi eventuali spazi e caratteri speciali.
+\end{itemize}
+
+\section{Selezionare gli elementi}
+
+\subsection{Per id}
+
+\begin{lstlisting}[language=HTML5]
+<p id="mio_par">This is a paragraph.</p>
+<script type="text/javascript">
+console.log(document.getElementById('mio_par'));
+</script>
+\end{lstlisting}
+
+\subsection{Per tag}
+
+\begin{lstlisting}[language=HTML5]
+<p id="mio_par">This is a paragraph.</p>
+<p id="mio_par2">This is a paragraph.</p>
+<script type="text/javascript">
+console.log(document.getElementsByTagName('p'));
+</script>
+\end{lstlisting}
+
+\subsection{Query selector}
+
+Utilizzano i selettori CSS:
+
+\begin{lstlisting}[language=JavaScript]
+var divList = document.querySelectorAll("div.messaggio");
+var p = document.querySelector("#mioParagrafo");
+\end{lstlisting}
+
+\section{Modificare elementi del DOM}
+
+\begin{lstlisting}[language=JavaScript]
+var p = document.getElementById("mioParagrafo");
+p.innerHTML = "Testo del <b>paragrafo</b>";
+\end{lstlisting}
+
+\textbf{Metodi per gli attributi}:
+\begin{itemize}
+    \item \texttt{hasAttribute(attrName)}: restituisce \texttt{true} se l'elemento ha l'attributo specificato come parametro.
+    \item \texttt{hasAttributes()}: restituisce \texttt{true} se l'elemento ha almeno un attributo valorizzato.
+    \item \texttt{getAttribute(attrName)}: restituisce il valore dell'attributo specificato come parametro.
+    \item \texttt{setAttribute(attrName, value)}: imposta un valore per un attributo.
+\end{itemize}
+
+\subsection{Attributi e proprietà}
+
+Alcuni attributi sono accessibili come proprietà dell'oggetto (elemento).
+
+\begin{lstlisting}[language=JavaScript]
+var imgList = document.getElementsByTagName("img");
+
+for(var i = 0; i < imgList.length; i++) {
+    if (!imgList[i].src)
+        imgList[i].src = "default.png";
+}
+\end{lstlisting}
+
+Gli elementi restituiti sono oggetti, e come tali in JavaScript possono essere modificati:
+
+\begin{lstlisting}[language=JavaScript]
+var img = document.getElementById("miaImmagine");
+img.miaProprieta = "nuovo valore";
+\end{lstlisting}
+
+\textbf{Attenzione alla differenza tra proprietà e attributi}:
+
+\begin{lstlisting}[language=HTML5]
+<img id="miaImmagine" src="default.png" />
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript]
+var img = document.getElementById("miaImmagine");
+console.log(img.src);                // "http://www.html.it/default.png"
+console.log(img.getAttribute("src"));  // "default.png"
+\end{lstlisting}
+
+Con \texttt{input}:
+
+\begin{lstlisting}[language=HTML5]
+<input id="txtNome" type="text" value="Mario" />
+\end{lstlisting}
+
+Inizialmente i valori dell'attributo \texttt{value} e della corrispondente proprietà coincidono. Ma se l'utente cambia il valore della casella di testo avremo valori differenti tra proprietà e attributo. In particolare, la proprietà \texttt{value} sarà sincronizzata con il nuovo valore inserito dall'utente, mentre l'attributo continuerà ad avere il valore iniziale.
+
+\section{Navigare il DOM}
+
+\begin{lstlisting}[language=HTML5]
+<div id="mainDiv">
+    <h1>Titolo</h1>
+    <p>Un paragrafo</p>
+    <p>Un altro paragrafo</p>
+</div>
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript]
+var div = document.getElementById("mainDiv");
+
+for (var i = 0; i < div.childNodes.length; i++) {
+    console.log(div.childNodes[i].innerHTML);
+    // attenzione al testo
+}
+\end{lstlisting}
+
+\subsection{Trovare siblings}
+
+\begin{lstlisting}[language=JavaScript]
+var me = document.getElementById("mainDiv");
+var allSiblings = me.parentNode.childNodes;
+var mySiblings = [];
+
+for (var i = 0; i < allSiblings.length; i++) {
+    if (allSiblings[i] !== me) {
+        mySiblings.push(allSiblings[i]);
+    }
+}
+
+// Oppure
+[].forEach.call(allSiblings, function(el) {
+    if (el !== me) mySiblings.push(el);
+});
+\end{lstlisting}
+
+\section{Aggiungere e rimuovere elementi del DOM}
+
+\begin{lstlisting}[language=JavaScript]
+var mainDiv = document.getElementById("mainDiv");
+var img = document.createElement("img");
+var srcAttr = document.createAttribute("src");
+
+srcAttr.value = "default.png";
+img.setAttributeNode(srcAttr);
+
+mainDiv.appendChild(img);
+\end{lstlisting}
+
+\section{Eventi del DOM}
+
+\subsection{Attraverso addEventListener}
+
+\begin{lstlisting}[language=HTML5]
+<a href="#" id="test">test</a>
+<script>
+// definisce la funzione callback
+function clickOnTest(event) {
+    console.log('Click su test');
+}
+
+// ottiene l'elemento 'test'
+var test = document.getElementById('test');
+
+// associa l'evento click alla callback
+test.addEventListener('click', clickOnTest);
+</script>
+\end{lstlisting}
+
+\subsection{Attraverso gli attributi}
+
+\begin{lstlisting}[language=HTML5]
+<a href="#" onclick="alert(this.innerHTML)">Ciao</a>
+\end{lstlisting}
+
+\subsection{Attraverso le proprietà}
+
+\begin{lstlisting}[language=JavaScript]
+document.images[0].onload = alert('Immagine caricata');
+\end{lstlisting}

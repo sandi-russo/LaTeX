@@ -1,0 +1,151 @@
+\chapter{Controllo degli Accessi}
+
+\section{Introduzione}
+
+L'obiettivo principale del controllo degli accessi è quello di regolamentare rigorosamente \textbf{chi} può accedere alle risorse, \textbf{in che modo} e in \textbf{quali circostanze}. 
+
+\subsection{Obiettivi Principali}
+Gli obiettivi della sicurezza informatica nel controllo degli accessi si concentrano su tre aspetti cardine:
+\begin{enumerate}
+    \item \textbf{Impedire l'accesso non autorizzato:} proteggere i dati sensibili da utenti o processi esterni senza permessi.
+    \item \textbf{Prevenire accessi impropri da utenti legittimi:} evitare che utenti autorizzati eseguano operazioni non permesse dal loro ruolo (es. un dipendente che legge lo stipendio dei colleghi).
+    \item \textbf{Consentire l'accesso autorizzato:} garantire che gli utenti legittimi possano operare sulle risorse in modo sicuro e senza inutili ostacoli.
+\end{enumerate}
+
+\subsection{Contesto Operativo}
+Il controllo degli accessi non è un blocco isolato, ma opera all'interno di un flusso logico sequenziale:
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2cm,
+    >=stealth, thick,
+    box/.style={draw, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center, fill=blue!5},
+    arrow/.style={->, thick}
+]
+    \node[box] (autenticazione) {\textbf{Autenticazione}\\Chi sei?};
+    \node[box, right=of autenticazione] (autorizzazione) {\textbf{Autorizzazione}\\Cosa puoi fare?};
+    \node[box, right=of autorizzazione] (controllo) {\textbf{Controllo (Audit)}\\Cosa hai fatto?};
+
+    \draw[arrow] (autenticazione) -- (autorizzazione);
+    \draw[arrow] (autorizzazione) -- (controllo);
+\end{tikzpicture}
+\end{center}
+
+\begin{description}
+    \item[Autenticazione] Processo di verifica delle credenziali di un utente per confermarne l'identità.
+    \item[Autorizzazione (Controllo degli Accessi)] Concessione effettiva dei diritti e dei permessi a un'entità per l'uso delle risorse di sistema.
+    \item[Controllo (Audit)] Registrazione e revisione a posteriori dei file di log per assicurare la conformità alle policy e individuare le violazioni.
+\end{description}
+
+
+\section{Modelli e Politiche di Controllo degli Accessi}
+
+Le politiche definiscono architetture e logiche con cui i permessi vengono assegnati. Si dividono storicamente in quattro categorie principali, non esclusive, ma che possono essere combinate.
+
+\begin{defbox}[1. Controllo degli Accessi Discrezionale (DAC)]
+Il DAC (\textit{Discretionary Access Control}) basa i permessi sull'identità del richiedente. È definito "discrezionale" perché \textbf{il proprietario} della risorsa ha la discrezione assoluta di trasferire i propri privilegi o concedere l'accesso ad altri utenti. È il modello classico usato dalla maggior parte dei sistemi operativi (es. permessi file in Linux/Windows).
+\end{defbox}
+
+Per implementare il DAC si utilizza la \textbf{Matrice degli Accessi}, una struttura dati bidimensionale in cui le righe sono i \textit{Soggetti} (utenti) e le colonne gli \textit{Oggetti} (file). L'intersezione contiene i permessi (Lettura, Scrittura, Esecuzione).
+Poiché la matrice è tipicamente enorme e molto sparsa (piena di celle vuote), viene implementata in due modi:
+\begin{itemize}
+    \item \textbf{Access Control List (ACL):} Si scompone la matrice \textit{per colonna}. Ogni oggetto ha una lista degli utenti e dei relativi permessi. Molto efficiente per sapere "chi può accedere a questo file?", ma lento per sapere "a quali file ha accesso questo utente?".
+    \item \textbf{Capability Ticket:} Si scompone la matrice \textit{per riga}. Ogni utente ha un proprio "biglietto" o portachiavi che elenca tutte le risorse a cui ha accesso.
+\end{itemize}
+
+\begin{defbox}[2. Controllo degli Accessi Obbligatorio (MAC)]
+Nel MAC (\textit{Mandatory Access Control}), la politica di accesso è determinata rigidamente dal sistema e l'utente non ha alcuna discrezionalità. Si basa su:
+\begin{itemize}
+    \item \textbf{Etichette di sensibilità} associate agli oggetti (es. Non Classificato, Segreto, Top Secret).
+    \item \textbf{Livelli di autorizzazione} (Clearance) assegnati ai soggetti.
+\end{itemize}
+Il sistema confronta i due valori e decide se consentire l'accesso. È tipico di ambienti militari e governativi ad alta sicurezza.
+\end{defbox}
+
+\begin{defbox}[3. Controllo degli Accessi Basato sui Ruoli (RBAC)]
+L'RBAC (\textit{Role-Based Access Control}) disaccoppia utenti e permessi introducendo l'entità del \textbf{Ruolo}.
+Un ruolo rappresenta una specifica funzione lavorativa (es. Medico, Infermiere, Amministratore). I permessi vengono assegnati \textit{ai ruoli}, e gli utenti vengono assegnati \textit{ai ruoli}.
+Questo modello:
+\begin{itemize}
+    \item Semplifica drasticamente la gestione del turnover (se un dipendente cambia mansione, basta cambiare il suo ruolo, non mille permessi singoli).
+    \item Facilita l'applicazione rigorosa del principio del \textbf{Minimo Privilegio}.
+\end{itemize}
+\end{defbox}
+
+\begin{center}
+\begin{tikzpicture}[
+    node distance=2.5cm,
+    >=stealth, thick,
+    box/.style={draw, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center, fill=gray!10},
+    arrow/.style={->, thick}
+]
+    \node[box] (utenti) {\textbf{Utenti}\\(Alice, Bob)};
+    \node[box, right=of utenti] (ruoli) {\textbf{Ruoli}\\(Admin, HR)};
+    \node[box, right=of ruoli] (permessi) {\textbf{Permessi}\\(Read, Write)};
+
+    \draw[<->] (utenti) -- node[above, font=\footnotesize] {Assegnazione} (ruoli);
+    \draw[<->] (ruoli) -- node[above, font=\footnotesize] {Associazione} (permessi);
+\end{tikzpicture}
+\end{center}
+
+\begin{defbox}[4. Controllo degli Accessi Basato sugli Attributi (ABAC)]
+L'ABAC (\textit{Attribute-Based Access Control}) è il modello moderno più dinamico e granulare. Autorizza l'accesso valutando in tempo reale un set di attributi booleani legati a:
+\begin{itemize}
+    \item \textbf{Soggetto:} es. Età, qualifica, dipartimento.
+    \item \textbf{Risorsa:} es. Data di creazione, classificazione del documento.
+    \item \textbf{Ambiente:} es. Orario d'ufficio, geolocalizzazione, tipo di rete (VPN vs Wi-Fi pubblico).
+\end{itemize}
+Permette policy del tipo: \textit{"I Medici possono leggere le cartelle cliniche (Soggetto/Oggetto) solo dall'IP dell'ospedale (Ambiente) e solo durante i turni lavorativi (Ambiente)"}.
+\end{defbox}
+
+
+\section{Gestione delle Identità, Credenziali e Accessi (ICAM)}
+
+L'ICAM (\textit{Identity, Credential, and Access Management}) rappresenta l'infrastruttura completa e standardizzata per gestire il ciclo di vita delle identità digitali in aziende e istituzioni.
+Questo sistema permette di creare identità affidabili per persone e per \textbf{NPE} (\textit{Non-Person Entities}, es. server, API, dispositivi IoT).
+
+Si divide in tre pilastri fondamentali:
+
+\subsection{1. Gestione delle Identità}
+Si occupa della creazione iniziale e del ciclo di vita dell'identità digitale. Inizia con il \textit{provisioning} (raccolta dei dati e approvazione), la definizione degli attributi per identificare univocamente il soggetto, fino ad arrivare alla dismissione e revoca quando il soggetto abbandona l'organizzazione.
+
+\subsection{2. Gestione delle Credenziali}
+Una credenziale è l'oggetto crittografico che lega indissolubilmente l'identità a un token fisico o logico (smart card, certificato X.509). Il ciclo prevede:
+\begin{enumerate}
+    \item \textbf{Approvazione:} Verifica della necessità della credenziale.
+    \item \textbf{Iscrizione:} L'utente dimostra la propria identità, fornendo dati biometrici o documenti ufficiali.
+    \item \textbf{Generazione e Distribuzione:} Creazione tecnica del token e consegna sicura.
+    \item \textbf{Manutenzione:} Procedure in caso di smarrimento, scadenza o revoca anticipata.
+\end{enumerate}
+
+\subsection{3. Gestione degli Accessi}
+Il processo operativo che utilizza le credenziali per autorizzare l'ingresso. Si appoggia su:
+\begin{itemize}
+    \item \textbf{Gestione delle risorse:} Classifica le risorse e definisce le regole di protezione.
+    \item \textbf{Gestione dei privilegi:} Assegna autorizzazioni agli utenti in base al loro profilo.
+    \item \textbf{Gestione delle politiche (Policy):} Motore logico che valuta in tempo reale se concedere l'accesso in base a regole di contesto (tipico dell'ABAC).
+\end{itemize}
+
+\begin{notebox}[Federazione delle Identità]
+La \textbf{federazione} permette a organizzazioni distinte di instaurare una fiducia reciproca per riconoscere le credenziali emesse dalle altre parti (es. accedere ai servizi della Pubblica Amministrazione usando l'identità SPID rilasciata da aziende private o accedere a servizi universitari tramite \textit{Eduroam} / \textit{IDEM}).
+\end{notebox}
+
+
+\section{Trust Framework (OITF)}
+
+Nell'ambito dell'e-commerce, della PA digitale e delle transazioni online globali, condividere attributi di identità è complesso. Deve vigere il principio del \textbf{need-to-know}: se un servizio deve solo verificare che l'utente sia maggiorenne, non deve ricevere il nome, l'indirizzo o l'età esatta, ma solo un flag booleano.
+
+Per standardizzare questa fiducia su scala globale, è nato l'\textbf{Open Identity Trust Framework (OITF)}.
+Esso fornisce un sistema aperto per lo scambio di identità e attributi, basato su standard come \textbf{OpenID}.
+
+\subsection{Componenti e Ruoli del Framework OITF}
+Il trust framework opera come un rigido programma di certificazione e responsabilità legale, distribuendo il carico su più attori:
+
+\begin{itemize}
+    \item \textbf{Soggetti:} Gli utenti finali (clienti, cittadini).
+    \item \textbf{Fornitori di Identità (IDP - Identity Provider):} Organizzazioni che registrano, autenticano l'utente e generano i token di asserzione.
+    \item \textbf{Relying Parties (RP - Service Provider):} Applicazioni o siti web che offrono il servizio finale e si fidano delle affermazioni dell'IDP.
+    \item \textbf{Fornitori di Attributi (AP):} Entità specializzate che certificano specifici tratti dell'utente (es. l'Università certifica che l'utente è uno studente, la Banca certifica l'affidabilità creditizia).
+\end{itemize}
+
+L'OITF prevede inoltre figure di governance come \textbf{Periti e Revisori} (che certificano la conformità tecnica e legale degli IDP e dei RP) e \textbf{Risolutori di dispute} (arbitri legali in caso di frodi o violazioni delle policy condivise all'interno della rete di fiducia AXN - Attribute Exchange Network).

@@ -1,0 +1,358 @@
+\chapter{Scope e Closure in JavaScript}
+
+\section{Scope}
+
+In JavaScript, lo \textbf{scope} definisce la visibilità delle variabili:
+\begin{itemize}
+    \item Una variabile dichiarata all'interno di una funzione è \textbf{locale}.
+    \item Una variabile dichiarata fuori da qualsiasi funzione è \textbf{globale}.
+\end{itemize}
+
+In una pagina web, le variabili globali appartengono all'oggetto \texttt{window}. È possibile utilizzarle da tutti gli script nella pagina.
+
+Le variabili globali e locali con lo stesso nome sono variabili diverse.
+
+\textbf{Nota}: le variabili create senza la parola chiave \texttt{var}, \texttt{let} o \texttt{const} sono sempre globali, anche se sono definite all'interno di una funzione.
+
+\section{Esempio: contatore}
+
+Consideriamo un contatore implementato come variabile globale:
+
+\begin{lstlisting}[language=JavaScript]
+var counter = 0;
+function add() {
+    counter += 1;
+}
+add();
+\end{lstlisting}
+
+In questo caso, la variabile \texttt{counter} dovrebbe essere cambiata solo dalla funzione \texttt{add}, ma essendo globale ogni script della pagina può utilizzarla e cambiarla.
+
+Se invece utilizziamo una variabile locale:
+
+\begin{lstlisting}[language=JavaScript]
+function add() {
+    var counter = 0;
+    counter += 1;
+    return counter;
+}
+\end{lstlisting}
+
+Così non funziona: dà sempre 1!
+
+\section{Accesso allo scope}
+
+\begin{itemize}
+    \item Tutte le funzioni hanno accesso allo scope globale.
+    \item Tutte le funzioni hanno accesso allo scope ``al di sopra'' di esse.
+    \item JavaScript supporta le funzioni annidate, che hanno accesso allo scope della funzione più esterna.
+\end{itemize}
+
+Questo potrebbe risolvere il problema del contatore, \textbf{se}:
+\begin{itemize}
+    \item potessimo invocare la funzione \texttt{plus} dall'esterno;
+    \item potessimo eseguire \texttt{counter = 0} solo una volta.
+\end{itemize}
+
+\section{Closure}
+
+\begin{lstlisting}[language=JavaScript, caption=Esempio di closure]
+var add = (function () {
+    var counter = 0;
+    return function () {
+        counter += 1;
+        return counter;
+    };
+})();
+
+add(); // 1
+add(); // 2
+add(); // 3
+\end{lstlisting}
+
+Alla variabile \texttt{add} è assegnato il valore di ritorno di una \textit{self-invoking function}. La self-invoking function è eseguita solo una volta. Imposta il counter a 0 e ritorna una funzione.
+
+In questo modo, \texttt{add} diventa una funzione. La cosa importante è che essa può accedere alla variabile \texttt{counter} nello scope genitore (quello della self-invoking function).
+
+Questo meccanismo viene detto, in JavaScript, \textbf{closure}, e rende possibile che una funzione abbia delle variabili ``private''. \texttt{counter} è protetto dallo scope della funzione anonima, e può essere utilizzato e cambiato solo dalla funzione \texttt{add}.
+
+\subsection{Definizioni di closure}
+
+\textbf{W3C}: una closure è una funzione che ha accesso allo scope genitore, dopo che la funzione genitore ha concluso la sua esecuzione (è chiusa).
+
+\textbf{MDN}: una closure è un tipo speciale di oggetto che combina due cose: una funzione, e l'ambiente in cui la funzione è stata creata. L'ambiente consiste di tutte le variabili che erano nello scope al momento in cui la closure è stata creata. Queste funzioni ``ricordano'' l'ambiente in cui sono state create.
+
+\section{Emulazione di metodi privati con le closure}
+
+\begin{lstlisting}[language=JavaScript, caption=Metodi privati tramite closure]
+var counter = (function () {
+    var privateCounter = 0;
+    function changeBy(val) {
+        privateCounter += val;
+    }
+    return {
+        increment: function () { changeBy(1); },
+        decrement: function () { changeBy(-1); },
+        value: function () { return privateCounter; }
+    };
+})();
+\end{lstlisting}
+
+È stato creato un solo ambiente condiviso da tre funzioni: \texttt{counter.increment}, \texttt{counter.decrement} e \texttt{counter.value}. Questo ambiente è stato creato nel corpo di una funzione anonima, che è eseguita immediatamente.
+
+L'ambiente ha due elementi privati: \texttt{privateCounter} e \texttt{changeBy}. Nessuno di questi può essere acceduto fuori dalla funzione anonima. Invece, possono essere acceduti dalle tre funzioni pubbliche che sono restituite dall'involucro della funzione anonima.
+
+Queste sono closure che condividono lo stesso ambiente. Grazie allo scoping di JavaScript, esse hanno accesso a \texttt{privateCounter} e \texttt{changeBy}.
+
+\subsection{Factory function}
+
+Invece di usare una self-invoking function, possiamo assegnare la funzione anonima ad una variabile (quindi non viene eseguita in questa fase).
+
+\begin{lstlisting}[language=JavaScript]
+function makeCounter() {
+    var privateCounter = 0;
+    function changeBy(val) {
+        privateCounter += val;
+    }
+    return {
+        increment: function () { changeBy(1); },
+        decrement: function () { changeBy(-1); },
+        value: function () { return privateCounter; }
+    };
+}
+
+var counter1 = makeCounter();
+var counter2 = makeCounter();
+\end{lstlisting}
+
+In questo modo, possiamo creare diversi contatori. Ognuno di questi mantiene la propria indipendenza dagli altri. Ognuno ha un ambiente diverso, ogni volta che viene invocata la funzione \texttt{makeCounter()}: la variabile \texttt{privateCounter} contiene una differente istanza per ogni volta che \texttt{makeCounter()} viene invocata.
+
+\section{Ancora sullo scope}
+
+Nel contesto globale, dichiarare una variabile con \texttt{var} vuol dire sostanzialmente assegnare una nuova proprietà all'oggetto \texttt{window} (che è lo scope delle variabili globali):
+
+\begin{lstlisting}[language=JavaScript]
+var x = 9;
+// equivale a
+window.x = 9;
+\end{lstlisting}
+
+\section{Scope e contesto}
+
+Lo \textbf{scope} riguarda l'accesso alle variabili di una funzione quando è invocata, ed è unico per ogni invocazione (contesto di esecuzione).
+
+Il \textbf{contesto} è sempre il valore della parola chiave \texttt{this}, che è il riferimento all'oggetto che ``possiede'' il codice in esecuzione.
+
+\subsection{Il contesto}
+
+\begin{lstlisting}[language=JavaScript]
+var obj = {
+    foo: function() {
+        return this;
+    }
+};
+obj.foo() === obj; // true
+\end{lstlisting}
+
+Il contesto è determinato da come una funzione è invocata. Quando una funzione è invocata come un metodo di un oggetto, \texttt{this} è impostato all'oggetto sul quale il metodo è chiamato.
+
+\begin{lstlisting}[language=JavaScript]
+function foo() {
+    alert(this);
+}
+new foo(); // foo
+foo();     // window
+\end{lstlisting}
+
+Lo stesso principio si applica quando viene invocata una funzione con l'operatore \texttt{new}, per creare un'istanza di un oggetto. In questo caso, il valore di \texttt{this} dentro lo scope della funzione sarà impostato alla nuova istanza creata.
+
+Quando invece si chiama una funzione slegata dall'oggetto (\textit{unbound}), allora \texttt{this} si imposta per default all'oggetto genitore, cioè \texttt{window}.
+
+\section{Contesto di esecuzione}
+
+Quando il codice viene eseguito in JavaScript, l'ambiente in cui viene eseguito è molto importante, e risulta essere uno dei seguenti:
+\begin{itemize}
+    \item \textbf{Codice globale}: l'ambiente di default dove il codice è eseguito la prima volta.
+    \item \textbf{Codice funzione}: ogni volta che il flusso dell'esecuzione entra nel corpo di una funzione.
+    \item \textbf{Codice eval}: il codice da eseguire all'interno della funzione \texttt{eval()}.
+\end{itemize}
+
+Si ha un solo contesto di esecuzione globale, ma un numero indefinito di contesti legati alle funzioni. Ogni chiamata crea un nuovo contesto di esecuzione, che crea uno scope privato dove ogni cosa dichiarata all'interno rimane non direttamente accessibile dall'esterno.
+
+\subsection{Lo stack del contesto di esecuzione}
+
+Quando un browser carica per la prima volta lo script, entra nel contesto di esecuzione globale per default.
+
+Se, nel contesto globale, viene chiamata una funzione, il flusso del programma prosegue all'interno della funzione che viene chiamata, creando un nuovo contesto di esecuzione e inserendo questo contesto di esecuzione al di sopra dello stack.
+
+Se all'interno della funzione viene richiamata un'altra funzione succede lo stesso, e una volta che la funzione termina la sua esecuzione viene eliminata dallo stack.
+
+\begin{lstlisting}[language=JavaScript, caption=Esempio di stack ricorsivo]
+(function foo(i) {
+    if (i === 3) {
+        return;
+    } else {
+        foo(++i);
+    }
+}(0));
+\end{lstlisting}
+
+Il codice chiama se stesso 3 volte, incrementando il valore di \texttt{i} di 1. Ogni volta che la funzione \texttt{foo} è chiamata, un nuovo contesto di esecuzione viene creato. Quando il contesto ha terminato l'esecuzione, viene eliminato dallo stack e il controllo torna al contesto successivo fin quando non si raggiunge di nuovo il contesto globale.
+
+\section{Il contesto di esecuzione in dettaglio}
+
+Ogni volta che una funzione è invocata, viene creato un nuovo contesto di esecuzione. All'interno dell'interprete JavaScript, ogni chiamata ad un contesto di esecuzione ha due fasi:
+
+\begin{enumerate}
+    \item \textbf{Creation Stage} (quando una funzione è chiamata, ma ancora non è stato eseguito alcun codice):
+    \begin{itemize}
+        \item Viene creata la Scope Chain.
+        \item Vengono create le variabili, le funzioni e gli argomenti.
+        \item Viene determinato il valore di \texttt{this}.
+    \end{itemize}
+    \item \textbf{Activation / Code Execution Stage}: vengono assegnati i valori, i riferimenti alle funzioni e viene interpretato/eseguito il codice.
+\end{enumerate}
+
+È quindi possibile rappresentare concettualmente il contesto di esecuzione di una funzione come un oggetto con tre proprietà:
+
+\begin{lstlisting}[language=JavaScript]
+executionContextObj = {
+    'scopeChain': {
+        // variableObject + all parent execution context's variableObject
+    },
+    'variableObject': {
+        // function arguments/parameters, inner variable and function declarations
+    },
+    'this': {}
+}
+\end{lstlisting}
+
+\subsection{Activation / Variable Object [AO/VO]}
+
+Questo \texttt{executionContextObj} è creato quando la funzione viene invocata, ma prima che questa venga effettivamente eseguita. Questa è considerata la prima fase (Creation Stage): qui l'interprete crea l'oggetto \texttt{executionContextObj} effettuando una scansione sulla funzione per gli argomenti passati e per le dichiarazioni di eventuali funzioni e variabili locali.
+
+Il risultato di questa scansione è la proprietà \texttt{variableObject} dell'oggetto \texttt{executionContextObj}.
+
+\section{Scope chain}
+
+La proprietà \texttt{scopeChain} di ogni execution context è la collezione dei Variable Object [VO] più tutti i Variable Objects dei genitori nel momento dell'esecuzione.
+
+\begin{center}
+\texttt{Scope = VO + All Parent VOs}
+\end{center}
+
+Esempio: \texttt{scopeChain = [ [VO] + [VO1] + [VO2] + [VO n+1] ];}
+
+\begin{lstlisting}[language=JavaScript, caption=Esempio di scope chain]
+function one() {
+    two();
+    function two() {
+        three();
+        function three() {
+            alert('I am at function three');
+        }
+    }
+}
+one();
+// three() Scope Chain = [ [three() VO] + [two() VO] + [one() VO] + [Global VO] ];
+\end{lstlisting}
+
+\section{Lexical scoping}
+
+Un'importante caratteristica di JavaScript è che l'interprete usa il \textbf{lexical scoping}.
+
+Nello specifico significa che tutte le funzioni interne sono staticamente (lessicalmente) legate al contesto di esecuzione genitore nel quale le funzioni sono fisicamente definite al livello di codice.
+
+\begin{lstlisting}[language=JavaScript, caption=Esempio di lexical scoping (var)]
+var myAlerts = [];
+for (var i = 0; i < 5; i++) {
+    myAlerts.push(
+        function inner() {
+            alert(i);
+        }
+    );
+}
+myAlerts[0](); // 5
+myAlerts[1](); // 5
+myAlerts[2](); // 5
+myAlerts[3](); // 5
+myAlerts[4](); // 5
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript, caption=Lexical scoping con funzioni annidate]
+function one() {
+    var a = 1;
+    two();
+    function two() {
+        var b = 2;
+        three();
+        function three() {
+            var c = 3;
+            alert(a + b + c); // 6
+        }
+    }
+}
+one();
+\end{lstlisting}
+
+\section{Ancora chiusure}
+
+\begin{lstlisting}[language=JavaScript]
+function foo() {
+    var a = 'private variable';
+    return function bar() {
+        alert(a);
+    }
+}
+var callAlert = foo();
+callAlert(); // 'private variable'
+\end{lstlisting}
+
+\textbf{Rappresentazione concettuale dei contesti}:
+
+\begin{lstlisting}
+// Global Context when evaluated
+global.VO = {
+    foo: pointer to foo(),
+    callAlert: returned value of global.VO.foo
+    scopeChain: [global.VO]
+}
+
+// Foo Context when evaluated
+foo.VO = {
+    bar: pointer to bar(),
+    a: 'private variable',
+    scopeChain: [foo.VO, global.VO]
+}
+
+// Bar Context when evaluated
+bar.VO = {
+    scopeChain: [bar.VO, foo.VO, global.VO]
+}
+\end{lstlisting}
+
+\section{Risoluzione di variabili e prototype chain}
+
+\begin{lstlisting}[language=JavaScript]
+var bar = {};
+function foo() {
+    bar.a = 'Set from foo()';
+    return function inner() {
+        alert(bar.a);
+    }
+}
+foo()(); // 'Set from foo()'
+\end{lstlisting}
+
+\begin{lstlisting}[language=JavaScript]
+var bar = {};
+function foo() {
+    Object.prototype.a = 'Set from prototype';
+    return function inner() {
+        alert(bar.a);
+    }
+}
+foo()(); // 'Set from prototype'
+\end{lstlisting}
+
+Nel secondo caso, \texttt{bar.a} non è definito direttamente su \texttt{bar}, quindi JavaScript risale la \textit{prototype chain} fino a trovare la proprietà definita in \texttt{Object.prototype}.

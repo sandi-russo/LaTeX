@@ -1,0 +1,211 @@
+\chapter{Creare un Plugin WordPress}
+
+\section{Introduzione}
+
+Un \textbf{plugin} di WordPress è un'estensione che aggiunge funzionalità al CMS. In questo capitolo vedremo come strutturare e implementare un semplice plugin, esaminando sia la struttura dei file sia i principali meccanismi utilizzati da WordPress per interfacciarsi con i plugin (azioni, filtri, hook).
+
+\section{Struttura di file e directory}
+
+Un plugin WordPress è tipicamente organizzato in questo modo:
+
+\begin{itemize}
+    \item \textbf{Cartella del plugin}: es.\ \texttt{myplugin}.
+    \item \textbf{File principale del plugin}: es.\ \texttt{myplugin.php}.
+    \item \textbf{Cartella plugin di WordPress}: \texttt{wp-content/plugins}.
+\end{itemize}
+
+Il percorso completo del file principale sarà:
+
+\begin{verbatim}
+wp-content/plugins/myplugin/myplugin.php
+\end{verbatim}
+
+\section{Header del file principale}
+
+Il file principale deve contenere un header con le informazioni del plugin. WordPress utilizza questi metadati per riconoscere il plugin e mostrarne le informazioni nella bacheca:
+
+\begin{lstlisting}[language=PHP]
+<?php
+/*
+Plugin Name: My Plugin
+Version: 1.0
+Description: Descrizione del plugin
+Author: Nome Cognome
+Author URI: http://sito.com
+*/
+\end{lstlisting}
+
+I campi principali dell'header sono:
+
+\begin{itemize}
+    \item \texttt{Plugin Name}: il nome del plugin.
+    \item \texttt{Version}: la versione del plugin.
+    \item \texttt{Description}: una breve descrizione.
+    \item \texttt{Author}: l'autore del plugin.
+    \item \texttt{Author URI}: URL dell'autore.
+\end{itemize}
+
+\section{Percorsi e URL}
+
+Durante lo sviluppo di un plugin si ha spesso bisogno di riferirsi ad altri file all'interno della struttura del plugin stesso.
+
+\subsection{Percorsi (paths)}
+
+I percorsi vengono usati per \textbf{includere file PHP} dalla struttura del plugin. La funzione \texttt{plugin\_dir\_path()} restituisce il percorso sul file system:
+
+\begin{lstlisting}[language=PHP]
+define('MY_PLUGIN_PATH', plugin_dir_path(__FILE__));
+// risultato: /home/nomeutente/sito.com/public_html/
+//            wp-content/plugins/my_plugin/
+\end{lstlisting}
+
+Per includere un file si usa:
+
+\begin{lstlisting}[language=PHP]
+require_once(MY_PLUGIN_PATH . 'framework/MyClass.php');
+\end{lstlisting}
+
+\subsection{URL}
+
+Gli URL vengono usati per referenziare risorse che devono essere caricate dal browser: \textbf{CSS, JavaScript, immagini}. La funzione \texttt{plugin\_dir\_url()} restituisce l'URL:
+
+\begin{lstlisting}[language=PHP]
+define('MY_PLUGIN_URL', plugin_dir_url(__FILE__));
+// risultato: http://sito.com/wp-content/plugins/my_plugin/
+\end{lstlisting}
+
+Esempio di registrazione di uno script JavaScript:
+
+\begin{lstlisting}[language=PHP]
+wp_register_script(
+    'my',
+    MY_PLUGIN_URL . 'js/my.js',
+    array('jquery'),
+    '1.0',
+    true
+);
+\end{lstlisting}
+
+\section{Azioni e filtri (Hook)}
+
+WordPress utilizza un sistema di \emph{hook} (``agganci'') per permettere ai plugin di interagire con il funzionamento del CMS:
+
+\begin{itemize}
+    \item Le \textbf{action} (azioni) vengono invocate durante un evento di WordPress. Un plugin può registrare una funzione da eseguire quando si verifica un certo evento.
+    \item I \textbf{filter} (filtri) servono a modificare l'output restituito dai componenti dell'applicazione. Un plugin può intercettare e modificare un dato prima che venga utilizzato da WordPress.
+\end{itemize}
+
+Le funzioni principali per registrare gli hook sono:
+
+\begin{itemize}
+    \item \texttt{add\_action()}: registra una funzione da eseguire quando si verifica una certa action.
+    \item \texttt{add\_filter()}: registra una funzione per modificare un certo dato tramite un filter.
+\end{itemize}
+
+\section{Esempio: plugin ``Hello World''}
+
+Costruiamo, passo dopo passo, un semplice plugin che stampa ``hello world'' nel footer delle pagine e offre un'interfaccia di amministrazione per modificare il testo.
+
+\subsection{Header del plugin}
+
+\begin{lstlisting}[language=PHP]
+<?php
+/**
+ * Plugin Name: Test plugin
+ * Plugin URI:  https://mainwp.com
+ * Description: This plugin does some stuff with WordPress
+ * Version:     1.0.0
+ * Author:      Your Name Here
+ * Author URI:  https://mainwp.com
+ * License:     GPL2
+ */
+?>
+\end{lstlisting}
+
+\subsection{Uso di add\_action()}
+
+Aggiungiamo una funzione che stampa ``hello world'' nel footer della pagina. L'action \texttt{wp\_footer} viene invocata da WordPress al momento del rendering del footer di ogni pagina:
+
+\begin{lstlisting}[language=PHP]
+add_action('wp_footer', 'my_function');
+
+function my_function() {
+    echo 'hello world';
+}
+\end{lstlisting}
+
+In questo modo, ogni volta che WordPress esegue l'hook \texttt{wp\_footer}, verrà chiamata la funzione \texttt{my\_function()} che stampa il testo.
+
+\subsection{Creare una voce nel menu di amministrazione}
+
+Per permettere all'amministratore di configurare il plugin dalla bacheca, creiamo una voce nel menu di amministrazione. La funzione \texttt{add\_management\_page()} aggiunge una pagina sotto il menu ``Strumenti'':
+
+\begin{lstlisting}[language=PHP]
+function my_admin_menu() {
+    add_management_page(
+        'Footer Text',         // titolo della pagina
+        'Footer Text',         // titolo del menu
+        'manage_options',      // capability richiesta
+        __FILE__,              // slug
+        'footer_text_admin_page' // funzione di callback
+    );
+}
+\end{lstlisting}
+
+\subsection{Modificare l'interfaccia di amministrazione}
+
+Ecco la funzione di callback che costruisce l'interfaccia della pagina di amministrazione del plugin. Quando l'utente invia il form, il valore viene salvato nella tabella \texttt{wp\_options} tramite \texttt{update\_option()}. Per recuperare il valore si usa \texttt{get\_option()}:
+
+\begin{lstlisting}[language=PHP]
+function footer_text_admin_page() {
+    $textvar = get_option('test_plugin_variable', 'hello world');
+
+    if (isset($_POST['change-clicked'])) {
+        update_option('test_plugin_variable',
+                      $_POST['footertext']);
+        $textvar = get_option('test_plugin_variable',
+                              'hello world');
+    }
+    ?>
+    <div class="wrap">
+        <h1>Footer Text</h1>
+        <p>This simple plugin will output some text to the
+        footer of your template. Change the text below:</p>
+        <form action="<?php echo $_SERVER['REQUEST_URI']; ?>"
+              method="post">
+            Footer Text:
+            <input type="text"
+                   value="<?php echo $textvar; ?>"
+                   name="footertext"
+                   placeholder="hello world"><br/>
+            <input name="change-clicked"
+                   type="hidden" value="1" />
+            <input type="submit" value="Change Text" />
+        </form>
+    </div>
+    <?php
+}
+\end{lstlisting}
+
+\subsection{Commento sul codice}
+
+Il codice mostrato illustra i meccanismi fondamentali di un plugin WordPress:
+
+\begin{itemize}
+    \item Uso degli \textbf{hook} (\texttt{add\_action}) per collegare una funzione a un evento di WordPress.
+    \item Uso di funzioni come \texttt{get\_option()} e \texttt{update\_option()} per memorizzare e recuperare dati persistenti nel database di WordPress.
+    \item Creazione di una \textbf{pagina di amministrazione} nel backend tramite \texttt{add\_management\_page()}.
+    \item Utilizzo di un \textbf{form HTML} per permettere all'amministratore di modificare il testo.
+\end{itemize}
+
+\section{Considerazioni finali}
+
+Lo sviluppo di plugin WordPress segue pattern ben definiti, basati sul sistema di hook (action e filter). La conoscenza di PHP, HTML e dei principi di programmazione web è un prerequisito; inoltre è importante consultare la documentazione ufficiale di WordPress per le API disponibili:
+
+\begin{itemize}
+    \item \url{https://developer.wordpress.org/plugins/}
+    \item \url{https://developer.wordpress.org/rest-api/}
+    \item \url{https://developer.wordpress.org/reference/}
+\end{itemize}
+
+Seguire le best practice per la sicurezza (validazione dell'input, sanitizzazione dell'output, uso di nonce per la protezione CSRF) è fondamentale, soprattutto nello sviluppo di plugin destinati alla distribuzione pubblica.

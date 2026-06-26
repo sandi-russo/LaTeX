@@ -1,0 +1,585 @@
+\chapter{HTML e HTML5}
+
+\section{Ipertesti}
+
+Un \textbf{ipertesto} è un sistema di documentazione o di scrittura digitale in cui i testi, le immagini e altri contenuti sono collegati tra loro attraverso collegamenti (link).
+
+\begin{itemize}
+    \item \textbf{Link}: i collegamenti consentono agli utenti di passare da un punto all'altro all'interno del testo o di accedere a risorse esterne.
+    \item \textbf{Navigazione non lineare}: gli ipertesti consentono una lettura non lineare, in cui gli utenti possono selezionare quali contenuti esplorare successivamente.
+    \item \textbf{Struttura a nodi}: gli ipertesti spesso seguono una struttura ad albero o a rete di nodi collegati tra loro.
+\end{itemize}
+
+\textbf{Esempi di ipertesti:}
+\begin{itemize}
+    \item \textbf{World Wide Web (WWW)}: il web è un esempio di sistema di ipertesti in cui i collegamenti ipertestuali (link) consentono agli utenti di navigare tra pagine web.
+    \item \textbf{Ebook Interattivi}: alcuni ebook consentono di esplorare il contenuto in modo non lineare attraverso link o riferimenti incrociati.
+\end{itemize}
+
+\section{HTML - HyperText Markup Language}
+
+HTML è il linguaggio di markup standard utilizzato per la creazione e la strutturazione delle pagine web. Utilizza marcatori o \textit{tag} per definire l'aspetto e la struttura del contenuto. Supporta testo, immagini, link, forme e altri elementi web. HTML è fondamentale per la creazione di pagine web e costituisce il linguaggio di base per il Web.
+
+\subsection{Storia di HTML}
+
+HTML è stato sviluppato nel 1989 da Tim Berners-Lee, inventore del World Wide Web, presso il CERN (Organizzazione Europea per la Ricerca Nucleare) in Svizzera.
+
+\begin{itemize}
+    \item \textbf{HTML 1.0}: nel 1993 è stata pubblicata la prima specifica HTML 1.0, che ha introdotto concetti come link e form.
+    \item \textbf{Evoluzione}: nel corso degli anni, HTML ha subito numerose revisioni, tra cui HTML 2.0, HTML 3.2 e HTML 4.0.
+    \item \textbf{XHTML e HTML5}: l'evoluzione ha portato a XHTML (una versione più rigorosa di HTML) e successivamente a HTML5, che ha introdotto nuove funzionalità e semplificato la creazione di contenuti multimediali.
+    \item \textbf{Standard W3C}: HTML5 è diventato uno standard del World Wide Web Consortium (W3C) nel 2014 ed è ampiamente utilizzato per sviluppare pagine web moderne.
+\end{itemize}
+
+\section{Struttura di un documento HTML}
+
+\begin{itemize}
+    \item \textbf{DOCTYPE}: dichiarazione di tipo di documento. Indica la versione di HTML utilizzata.
+    \item \textbf{Elemento HTML}: elemento radice del documento. Contiene tutto il contenuto HTML.
+    \item \textbf{Elemento Head}: contiene metadati e informazioni sulla pagina. Non visibile all'utente.
+    \item \textbf{Elemento Body}: contiene il contenuto principale della pagina, visibile all'utente.
+\end{itemize}
+
+\begin{lstlisting}[language=HTML5, caption=Struttura di base di un documento HTML]
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Titolo della pagina</title>
+</head>
+<body>
+    <h1>Intestazione principale</h1>
+    <p>Contenuto della pagina.</p>
+</body>
+</html>
+\end{lstlisting}
+
+\section{Elementi vs. Tag in HTML}
+
+\textbf{Tag HTML}: un tag HTML è una parte del codice HTML che viene utilizzata per definire un elemento. Esempio: \texttt{<p>}, \texttt{<h1>}, \texttt{<a>}, \texttt{<img>}.
+
+\textbf{Elemento HTML}: un elemento HTML è costituito da un tag HTML e tutto ciò che contiene, inclusi attributi e contenuto. Esempio: \texttt{<a href="https://www.example.com">Visita Example</a>}.
+
+\textbf{Differenze}: un tag è una parte specifica del codice HTML, come \texttt{<p>}, che rappresenta un elemento. Un elemento è composto da un tag, eventuali attributi (come \texttt{href} in \texttt{<a>}), e il contenuto all'interno delle parentesi angolari.
+
+\section{Browser e HTML}
+
+I browser web hanno giocato un ruolo cruciale nell'evoluzione del linguaggio di markup HTML, contribuendo alla sua crescita e alla sua adozione diffusa.
+
+Negli anni '90, i primi browser (come Netscape Navigator e Internet Explorer) hanno introdotto molte caratteristiche proprietarie non standard, creando incompatibilità tra browser. L'istituzione del World Wide Web Consortium (W3C) ha promosso la standardizzazione di HTML, dando origine a HTML4 e XHTML.
+
+\textbf{Rinascita con HTML5}: HTML5, introdotto nel 2014, è stato sviluppato in risposta alle esigenze dei moderni browser e ha introdotto nuove funzionalità e semantica.
+
+\section{Informazione e Meta-informazione}
+
+\begin{itemize}
+    \item \textbf{Informazione}: i contenuti principali della pagina web, visibili agli utenti. Ad esempio, testo, immagini, link, ecc. Si trova principalmente nell'elemento \texttt{<body>}.
+    \item \textbf{Meta-informazione}: informazioni aggiuntive sulla pagina web, non visibili direttamente agli utenti, ma utili per il browser e i motori di ricerca. Si trova principalmente nell'elemento \texttt{<head>}.
+\end{itemize}
+
+L'elemento \texttt{<head>} contiene meta-informazioni mentre l'elemento \texttt{<body>} contiene le informazioni.
+
+\section{Contenuto e presentazione in HTML}
+
+\begin{itemize}
+    \item \textbf{Contenuti}: tutto ciò che viene visualizzato sul sito web, come testo, immagini e video. È principalmente definito usando HTML.
+    \item \textbf{Presentazione}: l'aspetto estetico dei contenuti, come colori, stili e layout. È principalmente gestito usando CSS.
+\end{itemize}
+
+\textbf{Importanza della separazione:}
+\begin{itemize}
+    \item \textbf{Manutenibilità}: rende il codice più facile da mantenere e aggiornare.
+    \item \textbf{Accessibilità}: crea un sito web che sia accessibile a tutti gli utenti, inclusi quelli con disabilità.
+    \item \textbf{Riutilizzo}: permette di riutilizzare lo stesso codice CSS per stilizzare diversi elementi o pagine.
+    \item \textbf{Performance}: ottimizza il tempo di caricamento del sito web riducendo il sovraccarico del codice.
+\end{itemize}
+
+\section{Creazione di un documento HTML}
+
+\subsection{Editor di Testo}
+
+Strumento che permette di scrivere codice HTML come testo semplice.
+
+\textbf{Esempi}: Notepad, Sublime Text, Visual Studio Code, Atom.
+
+\textbf{Vantaggi}:
+\begin{itemize}
+    \item Controllo completo sul codice.
+    \item Leggero e veloce.
+    \item Personalizzabile con plugin e temi.
+\end{itemize}
+
+\textbf{Svantaggi}:
+\begin{itemize}
+    \item Richiede conoscenza del linguaggio HTML.
+    \item Non mostra un'anteprima in tempo reale del documento finale.
+\end{itemize}
+
+\subsection{Editor WYSIWYG}
+
+(What You See Is What You Get) Strumento che permette di creare pagine web visualizzando in tempo reale il risultato finale.
+
+\textbf{Esempi}: Adobe Dreamweaver, Microsoft FrontPage, Word.
+
+\textbf{Vantaggi}:
+\begin{itemize}
+    \item Facile da usare anche per chi non conosce il linguaggio HTML.
+    \item Mostra un'anteprima in tempo reale del documento.
+\end{itemize}
+
+\textbf{Svantaggi}:
+\begin{itemize}
+    \item Meno controllo sul codice generato.
+    \item Può essere più pesante e meno personalizzabile.
+\end{itemize}
+
+\section{HTML di base: elementi fondamentali}
+
+\subsection{DOCTYPE}
+
+\texttt{<!DOCTYPE>} è una dichiarazione che deve essere posizionata all'inizio di ogni documento HTML. Non è un tag HTML, ma serve per informare il browser della versione di HTML utilizzata nella pagina.
+
+\textbf{Funzioni}:
+\begin{itemize}
+    \item \textbf{Modalità di Rendering}: aiuta il browser a determinare in quale modalità di rendering visualizzare la pagina (Standards mode, Quirks mode).
+    \item \textbf{Compatibilità}: assicura che il browser interpreti e visualizzi la pagina come previsto, indipendentemente dalla versione di HTML.
+    \item \textbf{Errori di Visualizzazione}: senza un \texttt{<!DOCTYPE>} corretto, i browser potrebbero visualizzare la pagina in modo errato.
+    \item \textbf{Standardizzazione}: favorisce la coerenza e la standardizzazione tra diverse pagine web e browser.
+\end{itemize}
+
+Per HTML5, la dichiarazione \texttt{<!DOCTYPE html>} è sufficiente e deve essere posizionata prima di qualsiasi altro tag nella pagina.
+
+\subsection{Tag html}
+
+\texttt{<html>} è la radice di un documento HTML, e contiene tutti gli altri elementi del documento, divisi in \texttt{<head>} e \texttt{<body>}.
+
+\textbf{Struttura}:
+\begin{itemize}
+    \item \texttt{<head>}: contiene meta-informazioni, link a fogli di stile, e altri dati non visibili all'utente.
+    \item \texttt{<body>}: contiene tutto il contenuto visibile della pagina, come testi, immagini, link, ecc.
+\end{itemize}
+
+\textbf{Attributi}:
+\begin{itemize}
+    \item \texttt{lang}: definisce la lingua del documento, ad es.\ \texttt{lang="it"} per l'italiano. È importante per l'accessibilità e la SEO.
+\end{itemize}
+
+\subsection{Tag head}
+
+\texttt{<head>} è l'elemento di HTML che contiene meta-informazioni sulla pagina web, come titolo del documento, link ai CSS, e definizioni di caratteri e icone.
+
+\textbf{Componenti Principali}:
+\begin{itemize}
+    \item \texttt{<title>}: definisce il titolo del documento, visualizzato sulla scheda del browser.
+    \item \texttt{<meta>}: fornisce meta-informazioni come la codifica dei caratteri e la descrizione della pagina.
+    \item \texttt{<link>}: collega risorse esterne come fogli di stile CSS e favicon.
+    \item \texttt{<style>}: contiene stili CSS interni.
+    \item \texttt{<script>}: può contenere codice JavaScript.
+\end{itemize}
+
+\textbf{Importanza}:
+\begin{itemize}
+    \item \textbf{Organizzazione}: aiuta a mantenere organizzate le informazioni di configurazione e stile della pagina.
+    \item \textbf{SEO}: gli elementi come \texttt{<title>} e \texttt{<meta>} sono cruciali per l'ottimizzazione dei motori di ricerca.
+    \item \textbf{Personalizzazione e Stile}: permette di collegare fogli di stile CSS e definire stili interni per personalizzare l'aspetto della pagina.
+\end{itemize}
+
+\subsection{Tag body}
+
+\texttt{<body>} è l'elemento di HTML che contiene tutto il contenuto visibile di una pagina web, come testo, immagini, link, tabelle, liste, ecc.
+
+\textbf{Caratteristiche}:
+\begin{itemize}
+    \item È l'elemento che contiene tutto ciò che è visualizzato nel browser.
+    \item Va dopo il tag \texttt{<head>} e dentro il tag \texttt{<html>}.
+\end{itemize}
+
+È possibile definire degli attributi di stile (\texttt{bgcolor}, \texttt{background}, ecc.), ma non è una buona pratica.
+
+\section{Elementi di testo}
+
+\subsection{Intestazioni}
+
+I tag \texttt{<h1>}--\texttt{<h6>} sono utilizzati per definire le intestazioni in HTML. \texttt{<h1>} è l'intestazione di livello più alto e più importante, mentre \texttt{<h6>} è quella di livello più basso e meno importante.
+
+\textbf{Utilizzo}:
+\begin{itemize}
+    \item Utilizzati per strutturare il contenuto della pagina, dando importanza e gerarchia ai vari pezzi di testo.
+    \item Permettono ai motori di ricerca di comprendere la struttura del contenuto della pagina web.
+\end{itemize}
+
+\subsection{Enfatizzazione del testo}
+
+\begin{itemize}
+    \item \texttt{<b>} e \texttt{<i>}: utilizzati per cambiare visivamente il peso e lo stile del testo, rispettivamente in grassetto e corsivo. Non aggiungono significato semantico.
+    \item \texttt{<strong>} e \texttt{<em>}: aggiungono enfasi al testo, rendendolo rispettivamente grassetto e corsivo, e danno un significato semantico di maggiore importanza ed enfasi.
+\end{itemize}
+
+\textbf{Importanza Semantica}: l'utilizzo di tag semantici come \texttt{<strong>} e \texttt{<em>} può migliorare l'accessibilità del sito web e può avere un impatto sul SEO, poiché i motori di ricerca possono usare questi tag per determinare l'importanza del testo enfatizzato.
+
+\subsection{Tag logici e tag fisici}
+
+\begin{itemize}
+    \item \textbf{Tag logici}: definiscono la struttura e il significato del contenuto, come \texttt{<main>}, \texttt{<article>}, \texttt{<em>} e \texttt{<strong>}.
+    \item \textbf{Tag fisici}: modificano l'aspetto del contenuto senza cambiare il suo significato, come \texttt{<b>} per il grassetto e \texttt{<i>} per il corsivo.
+\end{itemize}
+
+\textbf{Differenze}:
+\begin{itemize}
+    \item \textbf{Significato Semantico}: i tag logici aggiungono significato semantico al contenuto, i tag fisici no.
+    \item \textbf{Stile vs Struttura}: i tag fisici sono orientati allo stile, mentre i tag logici sono orientati alla struttura e al significato del contenuto.
+    \item \textbf{Accessibilità e SEO}: i tag logici migliorano l'accessibilità e possono influire positivamente sul SEO del sito.
+\end{itemize}
+
+\subsection{Preformattazione del testo}
+
+\begin{itemize}
+    \item \texttt{<pre>}: mantiene spaziature e linee vuote, rendendo il testo facilmente leggibile, utilizzato principalmente per codice sorgente o testo preformattato.
+    \item \texttt{<code>}: definisce una singola linea di codice. Usato per visualizzare un singolo pezzo di codice all'interno di un normale flusso di testo.
+\end{itemize}
+
+\subsection{Organizzazione del testo}
+
+\begin{itemize}
+    \item \texttt{<p>}: definisce un paragrafo di testo. È un elemento a blocco che separa il contenuto in sezioni.
+    \item \texttt{<div>}: un contenitore generico che racchiude altri elementi. È spesso usato con CSS per stilizzare o con JavaScript per manipolare diversi elementi contemporaneamente.
+    \item \texttt{<br>}: rappresenta una interruzione di linea, facendo sì che il contenuto successivo appaia su una nuova linea.
+\end{itemize}
+
+\subsection{Elementi inline e block}
+
+\begin{itemize}
+    \item \textbf{Elementi Block}: creano un ``blocco'' e iniziano su una nuova linea, estendendosi per tutta la larghezza disponibile. Esempi: \texttt{<div>}, \texttt{<p>}, \texttt{<h1>}--\texttt{<h6>}.
+    \item \textbf{Elementi Inline}: non iniziano su una nuova linea e occupano solo tanto spazio quanto necessario. Esempi: \texttt{<span>}, \texttt{<a>}, \texttt{<img>}.
+\end{itemize}
+
+\textbf{Flusso del Documento}: gli elementi block influenzano il flusso del documento creando nuove linee, mentre gli elementi inline rimangono nel flusso del testo esistente.
+
+\textbf{Dimensionamento}: gli elementi block possono avere larghezza e altezza definite, ma gli elementi inline ignorano queste proprietà.
+
+\subsection{Linee di separazione}
+
+\texttt{<hr>}: tag che rappresenta una regola orizzontale. È utilizzato per separare visivamente il contenuto, come differenti sezioni di testo o articoli.
+
+\textbf{Caratteristiche}:
+\begin{itemize}
+    \item \textbf{Presentazione predefinita}: di solito, si presenta come una linea orizzontale che attraversa la pagina.
+    \item \textbf{Stilizzazione}: con CSS, può essere stilizzato per cambiare colore, altezza, larghezza, ecc.
+    \item \textbf{Usi comuni}: separare paragrafi, cambi di argomento, divisione tra intestazioni e corpo del testo.
+\end{itemize}
+
+\section{Liste}
+
+\subsection{Liste puntate}
+
+\texttt{<ul>}: tag che definisce una lista non ordinata (Unordered List). Utilizzato per elencare punti o elementi senza un ordine specifico.
+
+\texttt{<li>}: tag che rappresenta un elemento di lista (List Item) e va sempre annidato all'interno di \texttt{<ul>} o \texttt{<ol>}.
+
+\begin{lstlisting}[language=HTML5, caption=Esempio di lista non ordinata]
+<ul>
+    <li>Primo elemento</li>
+    <li>Secondo elemento</li>
+    <li>Terzo elemento</li>
+</ul>
+\end{lstlisting}
+
+\subsection{Liste numerate}
+
+\texttt{<ol>}: tag che definisce una lista ordinata (Ordered List). Utilizzato per elencare punti o elementi in un ordine specifico.
+
+\begin{lstlisting}[language=HTML5, caption=Esempio di lista ordinata]
+<ol>
+    <li>Primo passo</li>
+    <li>Secondo passo</li>
+    <li>Terzo passo</li>
+</ol>
+\end{lstlisting}
+
+È possibile cambiare lo stile dei punti o della numerazione con l'attributo \texttt{type}, ma non è una buona pratica; meglio usare CSS.
+
+\section{Link}
+
+\texttt{<a name="valore">}: usato per creare un ancoraggio nella pagina, permettendo agli utenti di saltare a punti specifici del documento. È una pratica obsoleta e superata dall'uso dell'attributo \texttt{id}.
+
+Oggi, si usa prevalentemente l'attributo \texttt{id} con altri elementi HTML, come \texttt{<div>}, \texttt{<section>}, ecc., per creare ancoraggi.
+
+\begin{lstlisting}[language=HTML5, caption=Esempi di link]
+<a href="https://www.example.com">Link esterno</a>
+<a href="pagina.html">Link interno</a>
+<a href="#sezione1">Link a un'ancora</a>
+<div id="sezione1">Sezione 1</div>
+\end{lstlisting}
+
+\section{Immagini}
+
+\texttt{<img>}: tag che permette di incorporare immagini nel documento HTML. È un tag vuoto, il che significa che non ha un tag di chiusura.
+
+\textbf{Attributi Principali}:
+\begin{itemize}
+    \item \texttt{src}: specifica l'URL dell'immagine.
+    \item \texttt{alt}: fornisce un testo alternativo che verrà visualizzato se l'immagine non può essere caricata, ed è essenziale per l'accessibilità.
+    \item \texttt{width} e \texttt{height}: definiscono, rispettivamente, la larghezza e l'altezza dell'immagine.
+\end{itemize}
+
+L'attributo \texttt{alt} del tag \texttt{<img>} è fondamentale per l'accessibilità web, poiché fornisce una descrizione testuale delle immagini che può essere letta dai lettori di schermo utilizzati da persone non vedenti o ipovedenti. Migliora inoltre la SEO, aiutando i motori di ricerca a comprendere il contenuto delle immagini.
+
+\section{Mappe cliccabili}
+
+\begin{itemize}
+    \item \texttt{<map>}: usato per definire una mappa di immagine cliccabile.
+    \item \texttt{<area>}: definisce le aree cliccabili all'interno della mappa di immagine.
+    \item \texttt{<img>}: mostra l'immagine mappata con l'attributo \texttt{usemap}.
+\end{itemize}
+
+\textbf{Attributi Principali di} \texttt{<area>}:
+\begin{itemize}
+    \item \texttt{shape}: definisce la forma dell'area cliccabile (\texttt{rect}, \texttt{circle}, \texttt{poly}).
+    \item \texttt{coords}: specifica le coordinate dell'area cliccabile.
+    \item \texttt{href}: l'URL a cui l'utente viene reindirizzato al clic.
+\end{itemize}
+
+\section{Simboli speciali}
+
+\textbf{Simboli Speciali}: caratteri non alfanumerici come \&, <, >, ", ecc., che hanno un significato specifico in HTML.
+
+\textbf{Entità HTML}: sequenze di caratteri che rappresentano un simbolo speciale in HTML.
+
+\textbf{Perché usare le entità HTML}:
+\begin{itemize}
+    \item Per rappresentare simboli che hanno un significato specifico in HTML (es.\ < e \&).
+    \item Per inserire caratteri non facilmente accessibili da tastiera.
+\end{itemize}
+
+\textbf{Esempi comuni}:
+\begin{itemize}
+    \item \texttt{\&lt;} rappresenta ``<''
+    \item \texttt{\&gt;} rappresenta ``>''
+    \item \texttt{\&amp;} rappresenta ``\&''
+    \item \texttt{\&quot;} rappresenta \texttt{"}
+    \item \texttt{\&nbsp;} rappresenta uno spazio non interrompibile
+\end{itemize}
+
+\section{Tabelle}
+
+\begin{itemize}
+    \item \texttt{<table>}: usato per creare una tabella.
+    \item \texttt{<tr>}: definisce una riga della tabella.
+    \item \texttt{<th>}: rappresenta un'intestazione di colonna.
+    \item \texttt{<td>}: rappresenta una cella di dati.
+    \item \texttt{<caption>}: elemento utilizzato per fornire un titolo o una descrizione a una tabella. Posizionato immediatamente dopo il tag \texttt{<table>}.
+    \item \texttt{<thead>}: raggruppa l'intestazione di una tabella.
+    \item \texttt{<tfoot>}: raggruppa il piè di pagina di una tabella.
+\end{itemize}
+
+\textbf{Attributi comuni}:
+\begin{itemize}
+    \item \texttt{colspan}: permette a una cella di estendersi su più colonne.
+    \item \texttt{rowspan}: permette a una cella di estendersi su più righe.
+    \item \texttt{border}: specifica il bordo attorno alla tabella e alle celle.
+\end{itemize}
+
+\begin{lstlisting}[language=HTML5, caption=Esempio di tabella]
+<table>
+    <caption>Prodotti</caption>
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Prezzo</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Articolo 1</td>
+            <td>10 EUR</td>
+        </tr>
+    </tbody>
+</table>
+\end{lstlisting}
+
+\section{Frame (iframe)}
+
+\texttt{<iframe>}: tag che permette di incorporare un documento HTML all'interno di un altro documento HTML.
+
+\textbf{Attributi Principali}:
+\begin{itemize}
+    \item \texttt{src}: URL del documento da incorporare.
+    \item \texttt{width} e \texttt{height}: dimensioni dell'\texttt{<iframe>}.
+    \item \texttt{title}: fornisce un nome descrittivo all'\texttt{<iframe>} per motivi di accessibilità.
+\end{itemize}
+
+\textbf{Usi comuni}:
+\begin{itemize}
+    \item Incorporare mappe.
+    \item Incorporare video da piattaforme come YouTube.
+    \item Visualizzare documenti PDF.
+\end{itemize}
+
+\textbf{Attributi di Sicurezza}:
+\begin{itemize}
+    \item \texttt{sandbox}: restringe ciò che il contenuto dell'\texttt{<iframe>} può fare.
+    \item \texttt{srcdoc}: permette di definire il contenuto HTML direttamente nel tag \texttt{<iframe>}, senza usare l'attributo \texttt{src}.
+\end{itemize}
+
+\section{Form}
+
+Un \textbf{form} è uno strumento interattivo che raccoglie informazioni dall'utente, come dati di accesso, informazioni di contatto, commenti, ecc.
+
+\textbf{Attributi di form}:
+\begin{itemize}
+    \item \texttt{action}: URL a cui i dati del form saranno inviati.
+    \item \texttt{method}: metodo HTTP utilizzato per inviare i dati (es.\ GET, POST).
+\end{itemize}
+
+\textbf{Elementi principali}:
+\begin{itemize}
+    \item \texttt{<input>}: campo di input dove gli utenti possono inserire informazioni.
+    \item \texttt{<label>}: etichetta descrittiva per ogni campo di input.
+    \item \texttt{<textarea>}: area di testo per inserire commenti o messaggi.
+    \item \texttt{<select>} e \texttt{<option>}: creano un menu a tendina.
+    \item \texttt{<button>}: pulsante che può svolgere diverse funzioni, come inviare i dati.
+\end{itemize}
+
+\textbf{Attributi importanti}:
+\begin{itemize}
+    \item \texttt{required}: rende obbligatorio un campo di input.
+    \item \texttt{placeholder}: mostra un suggerimento nel campo di input.
+    \item \texttt{value}: stabilisce il valore predefinito di un campo di input.
+\end{itemize}
+
+\subsection{Tag input}
+
+Il tag \texttt{<input>} è utilizzato per creare controlli interattivi per form web che ricevono dati dall'utente. Fa parte degli elementi di form in HTML utilizzati per raccogliere dati dagli utenti.
+
+\textbf{Attributi Principali}:
+\begin{itemize}
+    \item \texttt{type}: definisce il tipo di input (es.\ \texttt{text}, \texttt{password}, \texttt{checkbox}).
+    \item \texttt{value}: definisce il valore predefinito.
+    \item \texttt{placeholder}: mostra un testo suggerimento nel campo di input.
+    \item \texttt{name}: utilizzato per identificare il controllo.
+    \item \texttt{required}: specifica se un campo deve essere compilato prima di inviare un form.
+\end{itemize}
+
+\textbf{Tipi di Input}: Text, Password, Radio, Checkbox, Submit, Reset, e molti altri.
+
+\begin{lstlisting}[language=HTML5, caption=Esempio di form]
+<form action="/submit" method="POST">
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" name="nome" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="messaggio">Messaggio:</label>
+    <textarea id="messaggio" name="messaggio"></textarea>
+
+    <button type="submit">Invia</button>
+</form>
+\end{lstlisting}
+
+\section{HTML5}
+
+HTML5 è la quinta e attuale versione di HTML. È stato sviluppato dal WHATWG (Web Hypertext Application Technology Working Group) e successivamente dal W3C, ed è stato pubblicato come W3C Recommendation nel 2014.
+
+\textbf{Obiettivi}:
+\begin{itemize}
+    \item Migliorare il linguaggio con il supporto per l'ultima multimedialità.
+    \item Mantenere la retrocompatibilità con le versioni precedenti.
+    \item Offrire un linguaggio di markup più consistente e semplice.
+\end{itemize}
+
+\textbf{Caratteristiche Chiave}:
+\begin{itemize}
+    \item Elementi semantici come \texttt{<article>}, \texttt{<section>}, \texttt{<nav>}, e \texttt{<header>}.
+    \item Supporto per grafica vettoriale con SVG e Canvas.
+    \item API JavaScript come geolocation e drag-and-drop.
+    \item Supporto per audio e video incorporati.
+\end{itemize}
+
+\subsection{Microdati}
+
+I microdati sono un insieme di convenzioni e regole in HTML5 utilizzate per nidificare metadati all'interno di documenti web. Forniscono un modo per etichettare contenuti con nomi di proprietà specifici per un vocabolario definito.
+
+\textbf{Utilità}:
+\begin{itemize}
+    \item Aiutano i motori di ricerca e altre applicazioni a comprendere meglio il contenuto delle pagine.
+    \item Migliorano il SEO e la visibilità del sito web.
+\end{itemize}
+
+\subsection{Modifica del contenuto}
+
+\begin{itemize}
+    \item \texttt{contenteditable}: permette agli utenti di modificare il contenuto di un elemento della pagina.
+    \item \texttt{spellcheck}: controlla l'ortografia del testo modificabile.
+    \item \texttt{hidden}: nasconde elementi dalla vista dell'utente.
+\end{itemize}
+
+\textbf{Utilità}: rendono le pagine web più interattive e user-friendly, permettendo agli sviluppatori di creare interfacce utente più dinamiche e reattive.
+
+\subsection{Web Storage API}
+
+Il Web Storage fornisce meccanismi per memorizzare dati lato client. Include:
+\begin{itemize}
+    \item \texttt{localStorage} per la memorizzazione persistente;
+    \item \texttt{sessionStorage} per la memorizzazione per la sessione di navigazione.
+\end{itemize}
+
+\textbf{Vantaggi}:
+\begin{itemize}
+    \item \textbf{Persistenza}: i dati in \texttt{localStorage} persistono tra le sessioni di navigazione.
+    \item \textbf{Capacità}: maggiore capacità di memorizzazione dei dati rispetto ai cookie.
+    \item \textbf{Sicurezza}: riduzione del rischio di attacchi XSS rispetto ai cookie.
+\end{itemize}
+
+\subsection{Canvas}
+
+\texttt{<canvas>} è un elemento di HTML5 usato per disegnare grafiche via scripting (solitamente JavaScript). Può essere utilizzato per creare grafici, giochi, manipolazioni di immagini e animazioni.
+
+\textbf{Proprietà Principali}:
+\begin{itemize}
+    \item \texttt{width} e \texttt{height}: definiscono le dimensioni del canvas.
+    \item \texttt{context}: rappresenta l'area di disegno e fornisce metodi e proprietà per il rendering.
+\end{itemize}
+
+\subsection{Geolocation API}
+
+La Geolocation API permette agli utenti di condividere la loro posizione con applicazioni web. Può essere utilizzata per fornire servizi basati sulla localizzazione come mappe interattive, check-in di localizzazione e contenuti localizzati.
+
+\textbf{Metodi principali}:
+\begin{itemize}
+    \item \texttt{getCurrentPosition()}: ottiene la posizione corrente dell'utente. Restituisce un oggetto \texttt{Position} con le coordinate e altre informazioni sulla posizione. È un metodo asincrono.
+    \item \texttt{watchPosition()}: monitora i cambiamenti di posizione dell'utente. Restituisce un ID intero che rappresenta il watch e può essere usato con \texttt{clearWatch()} per fermare il monitoraggio.
+    \item \texttt{clearWatch()}: interrompe il monitoraggio della posizione iniziato con \texttt{watchPosition()}. Prende come parametro l'ID del watch da interrompere.
+\end{itemize}
+
+\subsection{Contenuti multimediali}
+
+\begin{itemize}
+    \item \texttt{<audio>}: permette di incorporare file audio come musica o altri suoni.
+    \item \texttt{<video>}: permette di incorporare video per riprodurli direttamente nelle pagine web.
+\end{itemize}
+
+\textbf{Attributi Principali}:
+\begin{itemize}
+    \item \texttt{src}: URL del file multimediale.
+    \item \texttt{controls}: aggiunge controlli di riproduzione come play, pause e volume.
+    \item \texttt{autoplay}: avvia automaticamente la riproduzione al caricamento della pagina.
+    \item \texttt{loop}: ripete il contenuto multimediale all'infinito.
+\end{itemize}
+
+\subsection{Validazione dati}
+
+HTML5 introduce validazione lato client tramite attributi specifici:
+\begin{itemize}
+    \item \texttt{required}: specifica che un campo di input deve essere compilato prima di inviare il form.
+    \item \texttt{pattern}: definisce un pattern che il valore dell'input deve seguire, utilizzando espressioni regolari.
+    \item \texttt{min} e \texttt{max}: stabiliscono il valore minimo e massimo per input numerici.
+    \item \texttt{maxlength}: imposta la lunghezza massima di un valore di input testuale.
+    \item \texttt{type}: può essere utilizzato per specificare il tipo di dati accettato, come \texttt{email}, \texttt{number}, \texttt{date}, ecc.
+\end{itemize}
+
+\subsection{Datalist}
+
+Il tag \texttt{<datalist>} contiene un insieme di tag \texttt{<option>} che rappresentano le opzioni disponibili per gli altri controlli di input. Viene utilizzato in combinazione con l'attributo \texttt{list} di un elemento \texttt{<input>} per collegare la lista di opzioni all'input specifico.
+
+Fornisce un elenco a discesa di suggerimenti agli utenti quando iniziano a digitare nell'input associato. Migliora l'usabilità del form, riduce gli errori di input e guida gli utenti attraverso i form, specialmente quando le opzioni di input sono limitate o prevedibili.

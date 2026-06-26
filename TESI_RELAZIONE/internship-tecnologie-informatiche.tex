@@ -1,0 +1,37 @@
+\documentclass[a4paper, 12pt]{report}
+\usepackage[english,italian]{babel}
+
+%% DO NOT modify this define variables
+\newcommand{\doclanguage}{Italiano}
+\newcommand{\course}{Laurea Triennale in Informatica L31}
+\newcommand{\curriculum}{Curriculum: Tecnologie Informatiche}
+
+%% modify this define variables
+\newcommand{\candidate}{Sandi Russo}
+\newcommand{\hostinstitutesupervisor}{Prof. Antonio Celesti}
+\newcommand{\academictutor}{Prof. Lorenzo Carnevale}
+\newcommand{\accademicyear}{2025/2026}
+\newcommand{\internshiptitle}{TITOLO TESI}
+
+\usepackage{thesis}
+
+\begin{document}
+
+    \input{front/frontespice-internship-bachelors}
+    \input{front/index}
+    \input{front/indexfigures}
+    \input{front/indextables}
+    \input{front/indexcode}
+    \input{front/abstract}
+    \input{front/acknowledgement}
+
+    \input{body/introduction}
+    \input{body/sota}
+    \input{body/methods}
+    \input{body/results}
+    \input{body/conclusion}
+    
+    \bibliographystyle{unsrt}
+    \bibliography{blibliography}
+
+\end{document}

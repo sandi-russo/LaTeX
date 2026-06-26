@@ -1,0 +1,247 @@
+\chapter{CSS - Cascading Style Sheets}
+
+\section{Introduzione ai CSS}
+
+I \textbf{CSS} (Cascading Style Sheets) sono fogli di stile utilizzati per definire l'aspetto e la formattazione di documenti scritti in HTML. Permettono di separare il contenuto (HTML) dalla presentazione (CSS).
+
+\subsection{Breve storia}
+
+\begin{itemize}
+    \item \textbf{1994}: Håkon Wium Lie propone i CSS.
+    \item \textbf{1996}: il World Wide Web Consortium (W3C) rilascia la prima specifica ufficiale di CSS, CSS1.
+    \item \textbf{1997}: viene introdotto CSS2 con molte nuove funzionalità.
+    \item \textbf{Anni 2000}: evoluzione di CSS 2.1 e inizio dei lavori su CSS3, che viene suddiviso in ``moduli'' per facilitare l'aggiornamento.
+    \item \textbf{Dal 2010 ad oggi}: continua lo sviluppo di nuovi moduli e funzionalità CSS, come flexbox, grid e variabili CSS.
+\end{itemize}
+
+\section{Tipi di CSS}
+
+\subsection{Inline CSS}
+
+\textbf{Definizione}: stili applicati direttamente all'elemento HTML utilizzando l'attributo \texttt{style}.
+
+\textbf{Esempio}:
+\begin{lstlisting}[language=HTML5]
+<p style="color: blue;">Questo è un testo blu.</p>
+\end{lstlisting}
+
+\textbf{Uso}: adatto per stili unici e specifici; tuttavia, non è raccomandato per stili complessi o ripetuti.
+
+\subsection{Internal (o Embedded) CSS}
+
+\textbf{Definizione}: stili definiti all'interno dell'elemento \texttt{<style>} nel \texttt{<head>} di un documento HTML.
+
+\textbf{Uso}: utile per stili specifici di una singola pagina. Offre una separazione tra contenuto e presentazione senza la necessità di file esterni.
+
+\begin{lstlisting}[language=HTML5, caption=CSS interni]
+<head>
+    <style>
+        p { color: blue; }
+        h1 { font-size: 24px; }
+    </style>
+</head>
+\end{lstlisting}
+
+\subsection{External CSS}
+
+\textbf{Definizione}: stili definiti in un file esterno (tipicamente con estensione \texttt{.css}) e collegato al documento HTML.
+
+\textbf{Uso}: ideale per stili che devono essere applicati a molte pagine. Favorisce la manutenibilità e la coerenza del design.
+
+\begin{lstlisting}[language=HTML5, caption=Collegamento a CSS esterno]
+<head>
+    <link rel="stylesheet" href="styles.css">
+</head>
+\end{lstlisting}
+
+\section{Il tag style}
+
+Il tag \texttt{<style>} è tipicamente collocato all'interno dell'elemento \texttt{<head>} di un documento HTML, anche se tecnicamente può apparire in qualsiasi parte del documento. Tuttavia, per garantire che gli stili vengano applicati correttamente e in modo prevedibile, è consigliato inserirlo nel \texttt{<head>}.
+
+\textbf{Attributi}:
+\begin{itemize}
+    \item \texttt{type}: un tempo era comune vedere l'attributo \texttt{type} con il valore \texttt{"text/css"} per specificare che il contenuto era CSS. Tuttavia, in HTML5, \texttt{text/css} è il valore predefinito, quindi l'attributo \texttt{type} non è più necessario.
+\end{itemize}
+
+\textbf{Uso}: il tag \texttt{<style>} è utilizzato per definire stili ``interni'' o ``incorporati'' per una specifica pagina. Se si desidera utilizzare lo stesso stile su molte pagine, è più efficiente utilizzare un foglio di stile esterno con il tag \texttt{<link>} piuttosto che ripetere le stesse regole CSS in ogni pagina.
+
+\section{Vantaggi dei CSS esterni}
+
+\begin{itemize}
+    \item \textbf{Separazione tra contenuto e presentazione}: permette di mantenere il codice HTML pulito, focalizzandosi solo sul contenuto, mentre la presentazione è gestita dal file CSS.
+    \item \textbf{Manutenibilità}: modifiche allo stile possono essere fatte in un unico file, che si rifletteranno su tutte le pagine collegate a quel file CSS.
+    \item \textbf{Caching}: i browser possono memorizzare nella cache i file CSS esterni, il che può migliorare le prestazioni di caricamento delle pagine in visite successive.
+    \item \textbf{Coerenza}: garantisce che tutte le pagine web abbiano lo stesso aspetto e comportamento se utilizzano lo stesso file CSS.
+\end{itemize}
+
+\section{Precedenza degli stili}
+
+Gli stili definiti in un file CSS esterno hanno una precedenza inferiore rispetto agli stili incorporati (definiti nel tag \texttt{<style>}) e agli stili inline (definiti direttamente sugli elementi HTML). Tuttavia, la specificità del selettore e l'uso della proprietà \texttt{!important} possono influenzare questa precedenza.
+
+\section{Proprietà per il testo}
+
+\begin{itemize}
+    \item \texttt{color}: definisce il colore del testo. Esempio: \texttt{color: red;}
+    \item \texttt{font-family}: specifica la famiglia di font da utilizzare. Esempio: \texttt{font-family: Arial, sans-serif;}
+    \item \texttt{font-size}: imposta la dimensione del testo. Esempio: \texttt{font-size: 16px;}
+    \item \texttt{font-weight}: imposta lo spessore del testo (ad es.\ normale, grassetto). Esempio: \texttt{font-weight: bold;}
+    \item \texttt{font-style}: imposta lo stile del testo (ad es.\ normale, corsivo). Esempio: \texttt{font-style: italic;}
+    \item \texttt{text-align}: allinea il testo orizzontalmente (ad es.\ sinistra, centro, destra). Esempio: \texttt{text-align: center;}
+    \item \texttt{text-decoration}: aggiunge decorazione al testo (ad es.\ sottolineato, barrato). Esempio: \texttt{text-decoration: underline;}
+    \item \texttt{line-height}: imposta l'altezza della linea di testo. Esempio: \texttt{line-height: 1.5;}
+\end{itemize}
+
+\section{Selettori CSS}
+
+\subsection{Selettore universale}
+
+Seleziona tutti gli elementi sulla pagina.
+
+\begin{lstlisting}[caption=Selettore universale]
+* { margin: 0; padding: 0; }
+\end{lstlisting}
+
+\subsection{Selettori di tipo (o elemento)}
+
+Seleziona elementi basati sul nome del tag.
+
+\begin{lstlisting}[caption=Selettore di tipo]
+p { color: blue; }
+\end{lstlisting}
+
+\subsection{Selettori di classe}
+
+Seleziona elementi basati sull'attributo \texttt{class}. Preceduti da un punto (\texttt{.}).
+
+\begin{lstlisting}[caption=Selettore di classe]
+.highlight { background-color: yellow; }
+\end{lstlisting}
+
+\subsection{Selettori ID}
+
+Seleziona un elemento basato sull'attributo \texttt{id}. L'ID dovrebbe essere unico per pagina. Preceduti dal cancelletto (\texttt{\#}).
+
+\begin{lstlisting}[caption=Selettore ID]
+#header { background-color: grey; }
+\end{lstlisting}
+
+\subsection{Selettori discendenti}
+
+Selezionano un elemento basato sulla sua relazione di discendenza con un altro elemento.
+
+\begin{lstlisting}[caption=Selettore discendente]
+article p { font-size: 18px; }
+\end{lstlisting}
+
+\subsection{Selettori di attributo}
+
+Selezionano elementi basati su un attributo e il suo valore.
+
+\begin{lstlisting}[caption=Selettore di attributo]
+input[type="text"] { border: 1px solid black; }
+\end{lstlisting}
+
+\subsection{Pseudo-classi}
+
+Selezionano elementi basati su uno stato specifico, come \texttt{:hover} o \texttt{:first-child}.
+
+\begin{lstlisting}[caption=Pseudo-classe]
+a:hover { color: red; }
+\end{lstlisting}
+
+\subsection{Pseudo-elementi}
+
+Selezionano parti specifiche di un elemento, come \texttt{::before} o \texttt{::after}.
+
+\begin{lstlisting}[caption=Pseudo-elemento]
+p::first-line { font-weight: bold; }
+\end{lstlisting}
+
+\section{Box Model}
+
+Nel web design, ogni elemento HTML è considerato come una scatola rettangolare. Questa scatola è composta da margini, bordi, padding e il contenuto effettivo.
+
+\subsection{Componenti del Box Model}
+
+\begin{itemize}
+    \item \textbf{Content}: l'area effettiva dove testo, immagini e altri contenuti sono visibili.
+    \item \textbf{Padding}: lo spazio tra il contenuto e il bordo. Può avere valori diversi per ciascun lato (\texttt{top}, \texttt{right}, \texttt{bottom}, \texttt{left}).
+    \item \textbf{Border}: la linea che avvolge il padding e il contenuto.
+    \item \textbf{Margin}: lo spazio esterno al bordo. Determina la distanza tra l'elemento e gli elementi adiacenti.
+\end{itemize}
+
+\subsection{Proprietà chiave}
+
+\begin{itemize}
+    \item \texttt{width} e \texttt{height}: definiscono le dimensioni del contenuto.
+    \item \texttt{padding}: definisce lo spazio tra il contenuto e il bordo.
+    \item \texttt{border}: stabilisce lo stile, la larghezza e il colore del bordo.
+    \item \texttt{margin}: imposta lo spazio esterno al bordo.
+\end{itemize}
+
+\subsection{Box Sizing}
+
+La proprietà \texttt{box-sizing} determina come vengono calcolate le dimensioni totali dell'elemento.
+
+\begin{itemize}
+    \item \texttt{content-box} (default): \texttt{width} e \texttt{height} si applicano solo al contenuto, escludendo padding e bordo.
+    \item \texttt{border-box}: \texttt{width} e \texttt{height} includono il contenuto, padding e bordo.
+\end{itemize}
+
+\begin{lstlisting}[caption=Esempio di Box Model]
+.box {
+    width: 200px;
+    height: 100px;
+    padding: 10px;
+    border: 2px solid black;
+    margin: 20px;
+    box-sizing: border-box;
+}
+\end{lstlisting}
+
+\section{Posizionamento dei blocchi}
+
+\subsection{Static (predefinito)}
+
+Gli elementi sono posizionati nell'ordine normale del flusso del documento. Le proprietà \texttt{top}, \texttt{right}, \texttt{bottom} e \texttt{left} non hanno effetto.
+
+\subsection{Relative}
+
+L'elemento è posizionato in base alla sua posizione normale, senza rimuoverlo dal flusso. Le proprietà \texttt{top}, \texttt{right}, \texttt{bottom} e \texttt{left} determinano lo spostamento dall'originale.
+
+\subsection{Absolute}
+
+L'elemento è rimosso dal flusso normale e posizionato in relazione al suo antenato posizionato più vicino. Se non ci sono antenati posizionati, si riferisce al documento. Le proprietà \texttt{top}, \texttt{right}, \texttt{bottom} e \texttt{left} determinano la posizione rispetto all'antenato.
+
+\subsection{Fixed}
+
+L'elemento è rimosso dal flusso normale e posizionato rispetto alla finestra del browser. Rimane fisso anche durante lo scrolling.
+
+\subsection{Sticky}
+
+Una combinazione tra \texttt{relative} e \texttt{fixed}. L'elemento ``aderisce'' quando raggiunge una certa posizione durante lo scrolling. Ad esempio, un'intestazione che diventa fissa dopo uno scorrimento.
+
+\section{CSS Grid}
+
+CSS Grid è un sistema di layout bidimensionale che permette di creare layout complessi in modo semplice, organizzando il contenuto in righe e colonne.
+
+\begin{lstlisting}[caption=Esempio di CSS Grid]
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-gap: 10px;
+}
+\end{lstlisting}
+
+\section{Media Query}
+
+Le \textbf{media query} permettono di applicare stili diversi a seconda delle caratteristiche del dispositivo, come la larghezza dello schermo. Sono fondamentali per la progettazione responsive.
+
+\begin{lstlisting}[caption=Esempio di media query]
+@media (max-width: 600px) {
+    body {
+        background-color: lightblue;
+        font-size: 14px;
+    }
+}
+\end{lstlisting}

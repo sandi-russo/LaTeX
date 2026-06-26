@@ -1,0 +1,58 @@
+\ifthenelse{\equal{\doclanguage}{English}}
+{\chapter{Conclusions}}
+{\chapter{Conclusioni}}
+\label{sec:conclusion}
+
+\section{Sintesi del lavoro}
+
+Questo lavoro ha affrontato due problemi distinti ma complementari: la valutazione comparativa di tre algoritmi di Graph Machine Learning su un knowledge graph biomedico di grandi dimensioni, e la misurazione dell'impatto della scalabilità orizzontale di un cluster Neo4j Enterprise sui tempi di estrazione dati verso una pipeline di Machine Learning.
+
+Il dataset scelto — PharMeBiNet V3, con circa 8 milioni di nodi e 53 milioni di relazioni — ha costituito un banco di prova realistico e sfidante, grazie alla sua forte eterogeneità strutturale e semantica. Il task sperimentale, la link prediction tra nodi \textit{Chemical} e \textit{Disease}, è biologicamente rilevante nel contesto del drug repurposing: identificare relazioni terapeutiche non ancora documentate tra farmaci esistenti e malattie note.
+
+L'infrastruttura sperimentale — un cluster Neo4j Enterprise distribuito su quattro macchine virtuali Azure, completamente automatizzato tramite Ansible e Docker — ha permesso di condurre esperimenti riproducibili e controllati, con una pipeline end-to-end che va dall'estrazione dei dati dal database fino alla valutazione finale dei modelli.
+
+\section{Risposte alle domande di ricerca}
+
+\subsection{Quale algoritmo per la link prediction su grafi biomedici eterogenei?}
+
+I risultati mostrano che \textbf{GraphSAGE} ottiene la precisione più alta con AUC-ROC medio di 0.9934, contrariamente all'ipotesi iniziale che assegnava questo primato a HashGNN. La spiegazione è architetturale: la fusione degli spazi di embedding in un unico tensore omogeneo semplifica il compito del decoder MLP, che deve valutare la compatibilità tra coppie di nodi di tipo diverso. Su questo specifico task, l'omofilia biologica del sottografo Chemical$\to$Disease è sufficientemente forte da essere catturata da un modello omogeneo.
+
+\textbf{HashGNN} segue con AUC-ROC medio di 0.9923 — una differenza di soli 0.0011 punti, statisticamente trascurabile — ma con tempi di training circa 1.4 volte superiori a GraphSAGE. La sua robustezza su grafi eterogenei è confermata, ma il vantaggio teorico non si traduce in un vantaggio pratico su questo sottografo.
+
+\textbf{TransE} si posiziona terzo in termini di accuratezza (AUC-ROC 0.9839) ma primo in efficienza, con tempi di training circa tre volte inferiori a GraphSAGE. Su scenari industriali con grafi di scala maggiore, questo trade-off può essere preferibile.
+
+\subsection{Come scala il cluster Neo4j su pipeline di estrazione batch?}
+
+Il benchmark infrastrutturale mostra che i tempi di estrazione sono sostanzialmente costanti tra la configurazione a 1, 2 e 4 nodi, con una variazione massima di circa 1.7 secondi. Il bottleneck è l'I/O sequenziale della query sul dataset, non la disponibilità di nodi computazionali. La scalabilità orizzontale di Neo4j produce vantaggi misurabili su carichi paralleli e query analitiche distribuite, non su pipeline di estrazione batch sequenziali.
+
+Il cluster dimostra invece il suo valore in termini di \textbf{fault tolerance}: con la topologia 1 primary e 3 secondary, il servizio rimane operativo anche in caso di guasto di un nodo, e il routing automatico Neo4j garantisce la continuità delle letture senza intervento manuale.
+
+\section{Contributi}
+
+Il lavoro produce tre contributi principali.
+
+Il primo è un confronto empirico rigoroso di GraphSAGE, TransE e HashGNN su un task di link prediction biomedico reale, con 5 run indipendenti per ciascun modello e valutazione su test set nascosto tramite \texttt{RandomLinkSplit}. I risultati forniscono linee guida pratiche per la scelta dell'algoritmo in scenari analoghi.
+
+Il secondo è la costruzione e l'automazione completa di un cluster Neo4j Enterprise distribuito su quattro macchine virtuali Azure, con playbook Ansible per deploy, stop, reset e setup, e una pipeline end-to-end riproducibile tramite un singolo script.
+
+Il terzo è la misurazione empirica dell'impatto della scalabilità orizzontale di Neo4j su pipeline di data engineering per Graph ML, con una quantificazione chiara del limite della scalabilità su carichi sequenziali.
+
+\section{Limitazioni}
+
+Il lavoro presenta alcune limitazioni che è opportuno riconoscere esplicitamente.
+
+Il sottografo estratto per gli esperimenti — Chemical$\to$Disease — rappresenta una piccola frazione del grafo completo di PharMeBiNet. I risultati potrebbero differire su task che coinvolgono l'intero grafo eterogeneo, dove il vantaggio teorico di HashGNN e TransE nel gestire la diversità dei tipi di relazione potrebbe emergere più chiaramente.
+
+Il benchmark infrastrutturale misura solo l'estrazione batch sequenziale. Un benchmark con query parallele o con carichi analitici distribuiti produrrebbe risultati diversi, potenzialmente più favorevoli al cluster.
+
+Infine, il training è stato eseguito su CPU. L'utilizzo di GPU accelererebbe significativamente GraphSAGE e HashGNN, potenzialmente alterando il confronto con TransE in termini di efficienza.
+
+\section{Sviluppi futuri}
+
+Diversi sviluppi potrebbero estendere e approfondire questo lavoro.
+
+Sul fronte degli algoritmi, sarebbe interessante estendere il confronto al task di \textbf{node classification} su nodi Disease, valutando se i risultati relativi tra i tre modelli si mantengono o si invertono su un task diverso. Un'analisi più approfondita di HashGNN con un numero maggiore di epoche — nell'ordine di 300-500 come suggerito dalla letteratura — potrebbe verificare se il modello converge a prestazioni superiori a GraphSAGE sulle lunghe distanze.
+
+Sul fronte infrastrutturale, un benchmark con \textbf{query parallele} — più client che estraggono sottografi diversi simultaneamente — mostrerebbe lo scenario in cui il cluster Neo4j esprime il suo reale vantaggio computazionale. L'integrazione con Neo4j GDS per il calcolo distribuito degli embedding direttamente nel database, senza estrazione verso PyTorch Geometric, rappresenta un'architettura alternativa da esplorare.
+
+Infine, l'applicazione della pipeline a \textbf{drug repurposing reale} — identificare coppie Chemical$\to$Disease con score elevato non presenti nel grafo — costituisce la naturale estensione applicativa di questo lavoro, con potenziale impatto diretto sulla ricerca farmacologica.

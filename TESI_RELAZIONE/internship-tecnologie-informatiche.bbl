@@ -1,0 +1,19 @@
+\begin{thebibliography}{1}
+
+\bibitem{statista2024data}
+{Statista}.
+\newblock Volume of data/information created, captured, copied, and consumed worldwide from 2010 to 2013, with forecasts from 2024 to 2027.
+\newblock \url{https://www.statista.com/statistics/871513/worldwide-data-created/}, 2024.
+\newblock Accesso: Giugno 2026.
+
+\bibitem{atzeni2018basi}
+Paolo Atzeni, Stefano Ceri, Stefano Paraboschi, and Riccardo Torlone.
+\newblock {\em Basi di Dati}.
+\newblock McGraw-Hill Education, 5 edition, 2018.
+
+\bibitem{fowler2015nosql}
+Adam Fowler.
+\newblock {\em NoSQL For Dummies}.
+\newblock John Wiley \& Sons, 2015.
+
+\end{thebibliography}

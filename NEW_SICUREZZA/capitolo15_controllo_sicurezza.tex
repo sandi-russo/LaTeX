@@ -1,0 +1,64 @@
+\chapter{Controlli di Sicurezza}
+
+\section{Classificazione dei Controlli di Sicurezza}
+\begin{defbox}[Controllo di Sicurezza]
+Un \textbf{Controllo di Sicurezza} (o contromisura) è un'azione, un dispositivo o una procedura implementata per mitigare un rischio, riducendo la probabilità che si verifichi una violazione della sicurezza o minimizzandone l'impatto qualora dovesse avvenire.
+\end{defbox}
+\begin{exbox}[Categorie Strutturali dei Controlli]
+\begin{enumerate}
+    \item \textbf{Controlli di Gestione (\textit{Management Controls}):} Sono di natura direttiva, strategica e amministrativa. Riguardano l'emanazione di \textit{policy} aziendali, la pianificazione, l'esecuzione del \textit{Risk Assessment} e l'autorizzazione formale all'esercizio dei sistemi.
+    \item \textbf{Controlli Operativi (\textit{Operational Controls}):} Eseguiti prevalentemente dal personale o tramite procedure aziendali quotidiane. Includono la formazione del personale (\textit{Security Awareness}), la sicurezza fisica degli edifici, la gestione sicura del personale e la risposta procedurale agli incidenti.
+    \item \textbf{Controlli Tecnici (\textit{Technical Controls}):} Implementati a livello \textit{hardware} e \textit{software} direttamente dal sistema informatico. Includono il Controllo Logico degli Accessi (es. Active Directory), la crittografia, i protocolli di autenticazione e i meccanismi automatizzati di \textit{audit} e \textit{logging}.
+\end{enumerate}
+\end{exbox}
+
+\subsection{Classificazione Funzionale}
+Dal punto di vista puramente funzionale o temporale, i controlli agiscono in diverse fasi del ciclo di vita di un attacco:
+
+\begin{center}
+\begin{tikzpicture}[
+    box/.style={draw, rectangle, minimum height=1.2cm, minimum width=3.5cm, align=center},
+    arrow/.style={->, thick, >=Stealth}
+]
+
+\node[box, fill=blue!20] (prev) {\textbf{Preventivi}\\(es. Firewall, MFA)};
+\node[box, fill=yellow!20, right=1cm of prev] (det) {\textbf{Rilevativi}\\(es. IDS, Log SIEM)};
+\node[box, fill=green!20, right=1cm of det] (corr) {\textbf{Correttivi}\\(es. Backup, Patching)};
+
+\draw[arrow] (prev) -- (det);
+\draw[arrow] (det) -- (corr);
+
+\node[above=0.2cm of prev, font=\footnotesize\bfseries, color=blue!70!black] {Prima dell'Incidente};
+\node[above=0.2cm of det, font=\footnotesize\bfseries, color=yellow!70!black] {Durante l'Incidente};
+\node[above=0.2cm of corr, font=\footnotesize\bfseries, color=green!70!black] {Dopo l'Incidente};
+
+\end{tikzpicture}
+\end{center}
+
+\begin{itemize}
+    \item \textbf{Preventivi:} Mirano a bloccare la minaccia alla fonte prima che possa causare danni (es. \textit{firewall}, controllo accessi fisico).
+    \item \textbf{Rilevativi:} Non impediscono l'attacco, ma segnalano un'intrusione o un'anomalia in corso (es. Sistemi di Rilevamento delle Intrusioni - IDS, telecamere di sicurezza).
+    \item \textbf{Correttivi o di Ripristino:} Intervengono per contenere i danni e ripristinare lo stato sicuro post-incidente (es. procedure di \textit{Disaster Recovery}, ripristino di \textit{backup}, applicazione di \textit{patch} d'emergenza).
+\end{itemize}
+
+\section{Selezione e Analisi Costi-Benefici}
+La selezione dei controlli avviene sempre a valle della fase di \textit{Risk Assessment}. L'organizzazione adotta generalmente un approccio ibrido per ottimizzare le risorse: implementa una \textbf{Baseline} di controlli standard e trasversali per tutti i sistemi (es. password sicure per tutti), e aggiunge controlli stringenti \textbf{Basati sul Rischio} esclusivamente per gli \textit{asset} e i database ritenuti critici per il \textit{business}.
+
+\begin{notebox}[Analisi Costi-Benefici (CBA)]
+La selezione finale dei controlli è una decisione di \textit{management} governata da una rigorosa \textbf{Analisi Costi-Benefici}. Un controllo tecnico o operativo è ritenuto fattibile e conveniente solo se il suo costo (in termini puramente finanziari di acquisizione e di onere operativo/manutentivo) è strettamente inferiore al valore della riduzione del rischio (il danno atteso evitato) che esso garantisce.
+\end{notebox}
+
+I controlli selezionati vengono poi formalizzati in un documento vincolante, l'\textbf{IT Security Plan}. Questo piano agisce da \textit{roadmap}, assegnando le risorse finanziarie, le responsabilità al personale e le scadenze temporali precise per la loro implementazione.
+
+\section{Monitoraggio e Gestione dei Cambiamenti}
+Le fasi di verifica e mantenimento sono cruciali per prevenire l'obsolescenza difensiva del perimetro di sicurezza, dal momento che il panorama delle minacce è in costante evoluzione.
+
+\begin{warnbox}[Deriva delle Configurazioni (\textit{Configuration Drift})]
+Senza controlli continui, i sistemi tendono naturalmente a perdere la loro postura di sicurezza nel tempo. Modifiche ad-hoc, \textit{patch} temporanee o disattivazioni non documentate di \textit{firewall} causano la \textbf{Configuration Drift}. 
+\end{warnbox}
+
+Per contrastare questo fenomeno, si implementano:
+\begin{itemize}
+    \item \textbf{Security Compliance e Audit:} Verifiche periodiche, manuali o automatizzate, per accertare che i controlli previsti siano effettivamente presenti, attivi e utilizzati correttamente, garantendo che le configurazioni siano conformi alle \textit{policy} aziendali o agli standard normativi.
+    \item \textbf{Change Management (Gestione dei Cambiamenti):} Un processo formale per la valutazione rigorosa dell'impatto sulla sicurezza di qualsiasi modifica architetturale, aggiornamento \textit{software} o inserimento di nuovi dispositivi prima della loro messa in produzione.
+\end{itemize}

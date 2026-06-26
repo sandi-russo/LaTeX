@@ -1,0 +1,907 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[italian]{babel}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{mdframed}
+\usepackage{lmodern}
+\usepackage{amsmath}
+
+\geometry{
+    top=2.5cm,
+    bottom=2.5cm,
+    left=3cm,
+    right=2.5cm
+}
+
+\setstretch{1.4}
+
+\definecolor{accent}{HTML}{185FA5}
+\definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{DEE2E6}
+\definecolor{green}{HTML}{166534}
+\definecolor{red}{HTML}{991B1B}
+\definecolor{gray}{HTML}{6B7280}
+
+\hypersetup{
+    colorlinks = true,
+    linkcolor  = accent,
+    urlcolor   = accent,
+    citecolor  = accent,
+    pdftitle   = {Relazione ParkShare},
+    pdfauthor  = {[NOME STUDENTE]},
+}
+
+\lstdefinestyle{codestyle}{
+    backgroundcolor  = \color{codebg},
+    frame            = single,
+    rulecolor        = \color{codeframe},
+    basicstyle       = \ttfamily\small,
+    keywordstyle     = \color{accent}\bfseries,
+    commentstyle     = \color{gray}\itshape,
+    stringstyle      = \color{green},
+    numbers          = left,
+    numberstyle      = \tiny\color{gray},
+    numbersep        = 8pt,
+    breaklines       = true,
+    breakatwhitespace= true,
+    tabsize          = 4,
+    showstringspaces = false,
+    captionpos       = b,
+}
+\lstset{style=codestyle}
+
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, continue, debugger, default, delete,
+    do, else, false, finally, for, function, if, in, instanceof,
+    new, null, return, switch, this, throw, true, try, typeof,
+    var, void, while, with, let, const, async, await, class,
+    import, export, from, of},
+  keywordstyle=\color{accent}\bfseries,
+  ndkeywords={},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]",
+  morestring=[b]`
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{gray}{ParkShare — Relazione di Progetto}}
+\fancyhead[R]{\small\textcolor{gray}{\leftmark}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\section}
+  {\large\bfseries\color{accent}}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}
+  {\normalsize\bfseries\color{accent!80!black}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{gray}}{\thesubsubsection}{1em}{}
+
+\newmdenv[
+    linecolor=accent,
+    backgroundcolor=accent!5,
+    linewidth=1.5pt,
+    leftline=true,
+    rightline=false,
+    topline=false,
+    bottomline=false,
+    innerleftmargin=10pt,
+    innerrightmargin=10pt,
+    innertopmargin=8pt,
+    innerbottommargin=8pt,
+]{infobox}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+
+\vspace*{2cm}
+
+{\LARGE\bfseries\color{accent} Università degli Studi\par}
+{\large Dipartimento di Informatica\par}
+{\large Corso di Programmazione Web\par}
+
+\vspace{2cm}
+
+\rule{\linewidth}{1.5pt}\par
+\vspace{0.5cm}
+{\Huge\bfseries ParkShare\par}
+\vspace{0.3cm}
+{\Large\color{gray} Una piattaforma web open-source\\ per la condivisione di parcheggi privati\par}
+\vspace{0.5cm}
+\rule{\linewidth}{1.5pt}\par
+
+\vspace{2.5cm}
+
+\begin{tabular}{rl}
+    \textbf{Studente:}    & Sandi Russo \\[4pt]
+    \textbf{Matricola:}   & 553675 \\[4pt]
+    \textbf{Docente:}     & Andrea Nucita \\[4pt]
+    \textbf{A.A.:}        & 2025/2026 \\
+\end{tabular}
+
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introduzione}
+
+\subsection{Contesto e motivazione}
+
+Nelle città moderne, il parcheggio rappresenta uno dei problemi logistici più ricorrenti per i
+guidatori: la ricerca di un posto libero genera traffico, perdita di tempo e frustrazione, con
+effetti negativi sia sull'esperienza dell'utente sia sull'ambiente. Parallelamente, molti
+proprietari di abitazioni o attività commerciali dispongono di posti auto privati che rimangono
+inutilizzati per la maggior parte della giornata.
+
+L'idea alla base di \textbf{ParkShare} nasce proprio da questa asimmetria: collegare chi cerca
+un parcheggio con chi ne possiede uno disponibile, creando un \emph{marketplace} di parcheggi
+privati accessibile via browser, senza installazione di applicazioni, senza costi di accesso per
+gli utenti e senza dipendenza da servizi commerciali a pagamento.
+
+\subsection{Obiettivi del progetto}
+
+Il progetto si propone di raggiungere i seguenti obiettivi:
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+    \item \textbf{Funzionalità complete end-to-end}: registrazione utente, pubblicazione
+    annunci, prenotazione con validazione oraria, sistema di recensioni, generazione di
+    ricevute PDF.
+
+    \item \textbf{Indipendenza da API proprietarie}: tutta la componente cartografica è
+    basata su tecnologie open-source (\textbf{Leaflet.js} + \textbf{OpenStreetMap}), senza
+    richiedere chiavi API, senza costi di utilizzo e senza inviare dati degli utenti a
+    terze parti.
+
+    \item \textbf{Accessibilità universale}: l'interfaccia supporta modalità chiara e scura
+    (con persistenza della scelta), è completamente responsiva per dispositivi mobili,
+    rispetta le linee guida WCAG per l'accessibilità (attributi ARIA, navigazione da
+    tastiera) e onora la preferenza \texttt{prefers-reduced-motion} per gli utenti con
+    sensibilità alle animazioni.
+
+    \item \textbf{Sicurezza applicativa}: gestione sicura delle credenziali tramite file
+    \texttt{.env}, password cifrate con \texttt{bcrypt}, query parametrizzate contro
+    SQL injection, rate limiting sul login.
+
+    \item \textbf{Qualità del codice}: architettura a strati con pattern Repository,
+    separazione netta tra logica di business, accesso ai dati e presentazione.
+\end{enumerate}
+
+
+\section{Stato dell'Arte}
+\label{sec:sota}
+
+\subsection{Il problema del parcheggio urbano}
+
+Il problema della sosta urbana è ampiamente documentato in letteratura. Studi condotti in
+diverse città europee stimano che una quota compresa tra il 20\% e il 30\% del traffico
+cittadino sia generato da veicoli alla ricerca di parcheggio. In Italia, la
+situazione è aggravata dall'elevata densità veicolare nei centri storici, dalla scarsità di
+parcheggi pubblici e dalla presenza di numerosi posti auto privati non sfruttati in orari di
+punta.
+
+\subsection{Soluzioni commerciali esistenti}
+
+Negli ultimi anni sono emersi diversi servizi digitali per la gestione della sosta. I più noti
+a livello internazionale sono:
+
+\begin{description}[leftmargin=0pt]
+    \item[\textbf{JustPark} (UK)] Piattaforma peer-to-peer per affitto di posti auto privati.
+    Utilizza Google Maps API per la visualizzazione cartografica e addebita una commissione
+    del 15\% su ogni transazione.
+
+    \item[\textbf{SpotHero / ParkWhiz} (USA)] Aggregatori di parcheggi prevalentemente
+    commerciali. Richiedono integrazione con sistemi di pagamento proprietari e sono
+    geograficamente limitati al mercato nordamericano.
+
+    \item[\textbf{EasyPark}] Applicazione diffusa anche in Italia per il pagamento della
+    sosta su strisce blu. Non gestisce parcheggi privati e richiede un account a pagamento
+    per i gestori.
+
+    \item[\textbf{ParkU}] Piattaforma italiana di parking sharing, acquisita nel 2016
+    da EasyPark. Non più disponibile come servizio indipendente.
+\end{description}
+
+\subsubsection{Limitazioni delle soluzioni esistenti}
+
+Tutte le soluzioni commerciali sopra citate presentano una o più delle seguenti criticità:
+
+\begin{itemize}
+    \item \textbf{Dipendenza da API proprietarie a pagamento}: la quasi totalità utilizza
+    Google Maps Platform, il cui piano gratuito è limitato a \$200/mese di credito.
+
+    \item \textbf{Trasmissione di dati a terze parti}: l'utilizzo di Google Maps o Here Maps
+    implica che le coordinate geografiche degli utenti vengano elaborate da server di
+    proprietà di grandi aziende tecnologiche, con implicazioni per la privacy non sempre
+    accettabili.
+
+    \item \textbf{Lock-in tecnologico}: costruire un'applicazione su API commerciali
+    significa legarsi a politiche di pricing che possono cambiare unilateralmente, come
+    dimostrato dall'aumento dei prezzi di Google Maps nel 2018, che costrinse molti
+    sviluppatori a migrare con urgenza.
+
+    \item \textbf{Accessibilità limitata}: poche piattaforme supportano nativamente
+    la modalità scura, la navigazione da tastiera o rispettano le preferenze di sistema
+    per la riduzione del movimento.
+\end{itemize}
+
+\subsection{Tecnologie cartografiche open-source}
+
+Di fronte alle limitazioni sopra descritte, il panorama open-source offre alternative
+mature e affidabili.
+
+\textbf{OpenStreetMap} (OSM) è un progetto collaborativo avviato nel 2004 che mette a
+disposizione dati geografici liberamente utilizzabili sotto licenza ODbL. Con oltre
+10 milioni di utenti contributori nel mondo, rappresenta il dataset geografico aperto
+più completo disponibile.
+
+\textbf{Leaflet.js} è una libreria JavaScript open-source (licenza BSD-2) specializzata
+nella visualizzazione di mappe interattive. Con soli \textasciitilde 42~KB è significativamente più leggera delle controparti commerciali (Google Maps JS API supera
+i 300~KB), garantisce prestazioni elevate su dispositivi mobili e non richiede
+alcuna chiave API.
+
+\textbf{Nominatim} è il servizio di geocoding (indirizzo $\to$ coordinate e viceversa)
+ufficiale di OpenStreetMap, utilizzato in ParkShare per la funzione di rilevamento
+automatico dell'indirizzo dal segnale GPS. Come Leaflet, è completamente gratuito
+e non trasmette dati identificativi a servizi terzi.
+
+\subsection{Servizi web: REST vs SOAP}
+
+La scelta tra le due principali architetture per i servizi web è caduta su
+\textbf{REST} (Representational State Transfer) per le seguenti ragioni:
+
+\begin{itemize}
+    \item \textbf{Semplicità}: REST utilizza i metodi HTTP standard
+    (\texttt{GET}, \texttt{POST}, \texttt{PUT}, \texttt{DELETE}) in modo semanticamente
+    coerente con l'operazione da compiere, senza richiedere un livello di overhead
+    aggiuntivo come l'envelope SOAP.
+
+    \item \textbf{Formato dei dati}: JSON è notevolmente più compatto di XML e nativamene
+    supportato da JavaScript, eliminando la necessità di parser dedicati.
+\end{itemize}
+
+\section{Materiali e Metodi}
+\label{sec:metodi}
+
+\subsection{Architettura del sistema}
+
+ParkShare segue un'architettura \textbf{client-server a tre livelli} (three-tier):
+
+\begin{enumerate}
+    \item \textbf{Presentation tier} (client): browser web con HTML5, CSS3 e JavaScript
+    vanilla, responsabile del rendering dell'interfaccia e della comunicazione con il tier
+    successivo tramite chiamate \texttt{fetch} asincrone.
+
+    \item \textbf{Application tier} (server): PHP 8 che espone endpoint RESTful, esegue
+    la logica di business, valida gli input e gestisce la sessione utente.
+
+    \item \textbf{Data tier}: database MySQL con schema relazionale, accessibile
+    esclusivamente tramite lo strato applicativo.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{mdframed}[linecolor=codeframe, linewidth=1pt]
+\begin{center}
+\texttt{[Browser]} $\xrightarrow{\text{HTTP/JSON}}$ \texttt{[PHP API]} $\xrightarrow{\text{SQL}}$ \texttt{[MySQL]}
+\end{center}
+\vspace{0.3cm}
+\small
+\textbf{Client}: HTML, CSS, JS (Leaflet, fetch API)\\
+\textbf{Server}: PHP 8, OOP, pattern Repository\\
+\textbf{Database}: MySQL, prepared statements
+\end{mdframed}
+\caption{Schema dell'architettura a tre livelli di ParkShare.}
+\end{figure}
+
+La struttura delle directory riflette questa separazione:
+
+\begin{lstlisting}[language=bash, caption={Struttura del progetto ParkShare.}]
+PROGRAMMAZIONE_WEB/
+|- api/
+|- classes/
+|- config/
+|- includes/
+|- pages/
+|- assets/
+|  |- css/
+|  \- js/
+|- .env
+\- .env.example
+\end{lstlisting}
+
+\subsection{Scelte tecnologiche lato client}
+
+\subsubsection{JavaScript Vanilla senza framework}
+
+Una scelta progettuale deliberata è stata quella di \textbf{non adottare framework
+JavaScript} come React, Vue o Angular. Le motivazioni sono molteplici:
+
+\begin{itemize}
+    \item \textbf{Comprensione dei fondamentali}: un progetto universitario ha lo scopo
+    primario di dimostrare la padronanza delle tecnologie di base. Delegare la gestione
+    del DOM, degli eventi e delle chiamate asincrone a un framework nasconde i meccanismi
+    sottostanti.
+
+    \item \textbf{Zero dipendenze da npm}: nessun \texttt{node\_modules}, nessun
+    bundler (webpack, Vite), nessun processo di build. Il progetto si esegue servendo
+    i file statici da un qualsiasi server PHP, senza configurazioni aggiuntive.
+
+    \item \textbf{Longevità}: il codice scritto con API Web native (Fetch API, DOM API,
+    ES2020+) non diventa obsoleto con i cicli di rilascio dei framework.
+\end{itemize}
+
+\subsubsection{Gestione asincrona con Fetch API}
+
+Tutta la comunicazione con il server avviene tramite la \textbf{Fetch API} con la
+sintassi \texttt{async/await}, che rende il flusso asincrono leggibile quanto del
+codice sincrono. Le funzioni helper \texttt{postJSON}, \texttt{putJSON} e
+\texttt{deleteJSON} centralizzano la gestione degli errori di rete:
+
+\begin{lstlisting}[language=JavaScript, caption={Funzione helper per richieste POST in JSON.}]
+async function postJSON(url, body) {
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        return await res.json();
+    } catch {
+        return { success: false,
+                 error: 'Errore di rete. Controlla la connessione.' };
+    }
+}
+\end{lstlisting}
+
+\subsection{Scelte tecnologiche lato server}
+
+\subsubsection{PHP senza framework}
+
+Analogamente al lato client, si è scelto di non adottare framework PHP come Laravel o
+Symfony. Questo permette di:
+
+\begin{itemize}
+    \item Dimostrare la comprensione diretta di PHP: routing manuale, gestione delle
+    sessioni, preparazione delle query, upload di file.
+    \item Mantenere un'installazione minimale: l'unica dipendenza esterna è
+    \textbf{dompdf} (via Composer) per la generazione dei PDF.
+    \item Controllare ogni aspetto della sicurezza senza fare affidamento
+    ``cieco'' sulle protezioni automatiche di un framework.
+\end{itemize}
+
+\subsubsection{Pattern Repository}
+
+La logica di accesso al database è incapsulata nel pattern \textbf{Repository},
+implementato tramite una classe astratta base:
+
+\begin{lstlisting}[language=PHP, caption={Classe Repository — metodi di accesso generici al DB.}]
+abstract class Repository {
+    protected static function fetchOne(
+        string $sql, string $types, mixed ...$params
+    ): ?array { ... }
+
+    protected static function fetchAll(
+        string $sql, string $types, mixed ...$params
+    ): array { ... }
+}
+\end{lstlisting}
+
+Le classi di dominio (\texttt{User}, \texttt{Parcheggio}, \texttt{Prenotazione},
+\texttt{Recensione}) estendono \texttt{Repository} e implementano la logica
+specifica. Questo garantisce che ogni query al database passi obbligatoriamente
+per i prepared statements, eliminando alla radice il rischio di SQL injection.
+
+\subsubsection{Singleton per la connessione al database}
+
+La classe \texttt{Database} implementa il pattern \textbf{Singleton} per garantire
+che esista una sola connessione MySQLi per richiesta HTTP, evitando lo spreco di
+risorse derivante dall'apertura di connessioni multiple:
+
+\begin{lstlisting}[language=PHP, caption={Pattern Singleton per la connessione al database.}]
+class Database {
+    private static ?Database $instance = null;
+    private mysqli $connection;
+
+    private function __construct() {
+        $this->connection = new mysqli(
+            DB_HOST, DB_USER, DB_PASS, DB_NAME
+        );
+    }
+
+    public static function getInstance(): Database {
+        if (self::$instance === null) {
+            self::$instance = new Database();
+        }
+        return self::$instance;
+    }
+}
+\end{lstlisting}
+
+\subsection{Il servizio web RESTful}
+
+\subsubsection{Principi di progettazione}
+
+L'API di ParkShare rispetta i principi REST di Roy Fielding: risorse identificate da
+URI, operazioni espresse tramite metodi HTTP semantici, comunicazione stateless,
+risposte in formato JSON.
+
+\begin{table}[H]
+\centering
+\caption{Endpoint principali dell'API RESTful di ParkShare.}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{llll}
+\toprule
+\textbf{Metodo} & \textbf{Endpoint} & \textbf{Azione} & \textbf{Auth?} \\
+\midrule
+POST & \texttt{/api/auth.php} (login)     & Autenticazione utente      & No  \\
+POST & \texttt{/api/auth.php} (register)  & Registrazione utente       & No  \\
+POST & \texttt{/api/auth.php} (logout)    & Terminazione sessione       & Sì  \\
+GET  & \texttt{/api/parcheggi.php?id=N}   & Dettaglio parcheggio       & No  \\
+GET  & \texttt{/api/parcheggi.php?pagina=N}& Lista paginata             & No  \\
+GET  & \texttt{/api/parcheggi.php?lat=\&lon=}& Ricerca per posizione   & No  \\
+POST & \texttt{/api/parcheggi.php}        & Crea parcheggio            & Sì  \\
+PUT  & \texttt{/api/parcheggi.php}        & Modifica parcheggio        & Sì  \\
+DELETE & \texttt{/api/parcheggi.php}      & Elimina parcheggio         & Sì  \\
+POST & \texttt{/api/prenotazioni.php}     & Crea prenotazione          & Sì  \\
+PUT  & \texttt{/api/prenotazioni.php}     & Aggiorna stato prenotazione& Sì  \\
+GET  & \texttt{/api/recensioni.php}       & Recensioni di un parcheggio& No  \\
+POST & \texttt{/api/recensioni.php}       & Crea recensione            & Sì  \\
+DELETE & \texttt{/api/recensioni.php}     & Elimina recensione         & Sì  \\
+POST & \texttt{/api/utenti.php}           & Aggiorna profilo utente    & Sì  \\
+GET  & \texttt{/api/ricevuta.php?id=N}    & Genera ricevuta PDF        & Sì  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Formato delle risposte}
+
+Tutte le risposte adottano una struttura JSON uniforme:
+
+\begin{lstlisting}[language=bash, caption={Struttura delle risposte API — successo ed errore.}]
+// Risposta di successo
+{ "success": true, "data": { ... } }
+
+// Risposta di errore
+{ "error": "Messaggio di errore leggibile dall'utente" }
+
+// Risposta paginata (endpoint /api/parcheggi.php?pagina=N)
+{
+  "success": true,
+  "data": [ ... ],
+  "totale": 45,
+  "pagina": 2,
+  "perPagina": 12,
+  "hasMore": true
+}
+\end{lstlisting}
+
+\subsection{Database relazionale}
+
+\subsubsection{Schema Entità-Relazione}
+
+Il database è composto da cinque tabelle principali, con relazioni che garantiscono
+l'integrità referenziale:
+
+\begin{itemize}
+    \item \textbf{UTENTE}: \texttt{ID\_UTENTE}, \texttt{NOME}, \texttt{COGNOME},
+    \texttt{EMAIL} (unique), \texttt{PASSWORD\_HASH}.
+
+    \item \textbf{PARCHEGGIO}: \texttt{ID\_PARCHEGGIO}, \texttt{ID\_PROPRIETARIO}
+    (FK $\to$ UTENTE), \texttt{TITOLO}, \texttt{DESCRIZIONE}, \texttt{INDIRIZZO},
+    \texttt{LAT}, \texttt{LON}, \texttt{COSTO\_ORARIO}, \texttt{ORA\_APERTURA},
+    \texttt{ORA\_CHIUSURA}, \texttt{FOTO}.
+
+    \item \textbf{DISPONIBILITA}: \texttt{ID\_PARCHEGGIO} (FK), \texttt{GIORNO}
+    (0=Lun \ldots 6=Dom). Relazione N:M tra parcheggio e giorni della settimana.
+
+    \item \textbf{PRENOTAZIONE}: \texttt{ID\_PRENOTAZIONE}, \texttt{ID\_UTENTE} (FK),
+    \texttt{ID\_PARCHEGGIO} (FK), \texttt{DATA}, \texttt{ORA\_INIZIO},
+    \texttt{ORA\_FINE}, \texttt{IMPORTO\_TOTALE}, \texttt{STATO}
+    (\texttt{in\_attesa}~$|$~\texttt{confermata}~$|$~\texttt{cancellata}~$|$~\texttt{completata}).
+
+    \item \textbf{RECENSIONE}: \texttt{ID\_RECENSIONE}, \texttt{ID\_UTENTE} (FK),
+    \texttt{ID\_PARCHEGGIO} (FK), \texttt{ID\_PRENOTAZIONE} (FK, unique — una
+    sola recensione per prenotazione), \texttt{VOTO} (1--5), \texttt{COMMENTO},
+    \texttt{DATA}.
+\end{itemize}
+
+\subsubsection{Ricerca geografica con la formula di Haversine}
+
+La funzionalità ``cerca vicino a me'' utilizza la \textbf{formula di Haversine}
+direttamente in una query MySQL per calcolare la distanza in chilometri tra le
+coordinate GPS dell'utente e quelle di ogni parcheggio:
+
+\begin{lstlisting}[language=SQL, caption={Ricerca geografica con Haversine e bounding box.}]
+SELECT *,
+  (6371 * ACOS(
+    COS(RADIANS(?)) * COS(RADIANS(LAT)) *
+    COS(RADIANS(LON) - RADIANS(?)) +
+    SIN(RADIANS(?)) * SIN(RADIANS(LAT))
+  )) AS distanza
+FROM PARCHEGGIO
+WHERE LAT BETWEEN ? AND ?
+  AND LON BETWEEN ? AND ?
+HAVING distanza <= ?
+ORDER BY distanza ASC
+\end{lstlisting}
+
+Il bounding box approssimativo riduce il numero di righe su cui calcolare la funzione
+trigonometrica, migliorando le prestazioni al crescere del numero di parcheggi.
+
+\subsection{Componente cartografica: Leaflet.js e OpenStreetMap}
+
+\subsubsection{Motivazioni della scelta}
+
+La decisione di non utilizzare Google Maps API e di affidarsi invece a
+\textbf{Leaflet.js} con tile di \textbf{OpenStreetMap} è stata motivata da tre
+ragioni fondamentali:
+
+\begin{enumerate}
+    \item \textbf{Costo zero e nessuna chiave API}: il progetto funziona
+    immediatamente senza registrazioni, senza limiti di utilizzo mensile e senza
+    rischi di blocco per superamento della quota gratuita.
+
+    \item \textbf{Privacy degli utenti}: le richieste di tile vengono inviate ai
+    server OSM (o a mirror della community come \texttt{tile.openstreetmap.org}),
+    non ai server di Google. Nessun dato di navigazione viene trasmesso a terze
+    parti commerciali.
+
+    \item \textbf{Leggerezza}: Leaflet pesa $\sim$42~KB gzippati contro i
+    $>$300~KB di Google Maps JS API v3, con impatto diretto sui tempi di
+    caricamento su connessioni lente.
+\end{enumerate}
+
+\subsubsection{Reverse geocoding con Nominatim}
+
+Per la compilazione automatica dell'indirizzo durante l'aggiunta di un parcheggio,
+si utilizza il servizio \textbf{Nominatim} di OpenStreetMap, che converte le
+coordinate GPS in un indirizzo leggibile:
+
+\begin{lstlisting}[language=JavaScript, caption={Chiamata a Nominatim per il reverse geocoding.}]
+const res = await fetch(
+    `https://nominatim.openstreetmap.org/reverse` +
+    `?lat=${lat}&lon=${lon}&format=json`,
+    { headers: { 'Accept-Language': 'it' } }
+);
+const dati = await res.json();
+const indirizzo = `${dati.address.road}, ${dati.address.city}`;
+\end{lstlisting}
+
+\subsection{Accessibilità e usabilità}
+
+\subsubsection{Tema chiaro e scuro con persistenza}
+
+ParkShare supporta nativamente tre modalità di visualizzazione:
+
+\begin{enumerate}
+    \item \textbf{Automatica}: rileva la preferenza di sistema tramite la media
+    query CSS \texttt{prefers-color-scheme} e imposta il tema corrispondente.
+    \item \textbf{Scura manuale}: l'utente attiva il tema scuro tramite il bottone in navbar; la scelta viene salvata in \texttt{localStorage} e persiste
+    tra sessioni diverse.
+    \item \textbf{Chiara manuale}: forza il tema chiaro anche su sistemi con
+    preferenza di sistema impostata su scuro.
+\end{enumerate}
+
+L'implementazione sfrutta variabili CSS custom (\texttt{--bg}, \texttt{--surface},
+\texttt{--text}, ecc.) e l'attributo \texttt{data-theme} sull'elemento
+\texttt{<html>}, evitando la duplicazione di stili e rendendo i cambi di tema
+istantanei senza ricaricare la pagina.
+
+\subsubsection{Accessibilità WCAG}
+
+L'interfaccia è progettata per essere utilizzabile da tutti:
+
+\begin{itemize}
+    \item \textbf{Attributi ARIA}: i dialog (modal login, modal recensione) usano
+    \texttt{role="dialog"}, \texttt{aria-modal="true"} e \texttt{aria-labelledby}
+    per una corretta lettura da parte degli screen reader.
+
+    \item \textbf{Navigazione da tastiera}: le stelle di valutazione hanno
+    \texttt{role="button"}, \texttt{tabindex="0"} e gestiscono
+    \texttt{keydown} (Enter/Spazio), permettendo il voto senza mouse.
+
+    \item \textbf{Skip-to-content}: un link nascosto ``Salta al contenuto''
+    consente agli utenti di tastiera di bypassare la navbar. Utilizza
+    \texttt{:focus-visible} invece di \texttt{:focus} per non apparire
+    al tocco su dispositivi mobili.
+
+    \item \textbf{Riduzione del movimento}: la media query
+    \texttt{prefers-reduced-motion: reduce} disabilita tutte le animazioni
+    CSS e JavaScript per gli utenti che ne fanno richiesta.
+
+    \item \textbf{Stili di stampa}: la media query \texttt{@media print}
+    nasconde navbar, bottoni e filtri, producendo ricevute stampabili pulite.
+\end{itemize}
+
+\subsubsection{Responsività mobile-first}
+
+Il CSS è scritto con approccio \textbf{mobile-first}: gli stili base sono
+ottimizzati per schermi piccoli, con override progressivi al crescere della
+risoluzione. Su mobile compare una bottom navigation bar fissa con link
+rapidi a Home, Aggiungi parcheggio e Profilo. Le griglie di card utilizzano
+\texttt{CSS Grid} con \texttt{auto-fit} e \texttt{minmax()} per adattarsi
+fluidamente a qualsiasi larghezza senza breakpoint rigidi.
+
+\subsection{Sicurezza}
+
+\subsubsection{Gestione delle credenziali}
+
+Le credenziali del database non sono mai presenti nel codice sorgente. Un
+parser leggero incluso in \texttt{config.php} legge le variabili da un
+file \texttt{.env} escluso dal controllo di versione tramite \texttt{.gitignore}:
+
+\begin{lstlisting}[language=PHP, caption={Caricamento sicuro delle variabili d'ambiente.}]
+$envFile = dirname(__DIR__) . '/.env';
+if (file_exists($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES) as $line) {
+        if (str_starts_with(trim($line), '#')) continue;
+        [$k, $v] = array_map('trim', explode('=', $line, 2));
+        if (!empty($k)) putenv("$k=$v");
+    }
+}
+define('DB_PASS', getenv('DB_PASS') ?: '');
+\end{lstlisting}
+
+\subsubsection{Protezione contro attacchi comuni}
+
+\begin{itemize}
+    \item \textbf{SQL Injection}: ogni query al database utilizza prepared
+    statements MySQLi con \texttt{bind\_param}, rendendo impossibile
+    l'iniezione di codice SQL attraverso gli input utente.
+
+    \item \textbf{Password sicure}: le password vengono cifrate con
+    \texttt{password\_hash()} (algoritmo bcrypt, fattore di costo 12)
+    e verificate con \texttt{password\_verify()}.
+
+    \item \textbf{Rate limiting}: l'endpoint di login traccia i tentativi
+    falliti nella sessione PHP e blocca ulteriori tentativi per 5 minuti
+    dopo 5 errori consecutivi.
+
+    \item \textbf{Validazione upload}: i file immagine caricati vengono
+    verificati tramite la classe \texttt{finfo} (rilevamento MIME reale,
+    non basato sull'estensione del file) e limitati a 5~MB.
+
+    \item \textbf{XSS}: tutti i dati provenienti dal database vengono
+    passati attraverso \texttt{htmlspecialchars()} prima di essere
+    inseriti nel DOM lato PHP; lato JavaScript si usano le proprietà
+    \texttt{textContent} per i valori dinamici.
+\end{itemize}
+
+\subsection{Generazione PDF}
+
+Le ricevute di prenotazione vengono generate lato server con la libreria
+open-source \textbf{dompdf}, che converte HTML/CSS in PDF senza dipendere
+da servizi cloud. La ricevuta include: dati del cliente, dati del
+proprietario del parcheggio, dettagli della prenotazione (data, orario,
+importo totale) e badge dello stato. La funzione
+\texttt{date\_default\_timezone\_set('Europe/Rome')} in \texttt{config.php}
+garantisce che il timestamp di generazione rifletta il fuso orario italiano
+indipendentemente dalla configurazione del server.
+
+\section{Risultati}
+\label{sec:risultati}
+
+\subsection{Funzionalità implementate}
+
+L'applicazione implementa un ciclo completo di utilizzo, dal primo accesso
+alla generazione della ricevuta:
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+    \item \textbf{Registrazione e autenticazione}: form di registrazione con
+    validazione lato client (formato email, lunghezza password minima 8 caratteri)
+    e lato server (unicità email, cifratura bcrypt). Il login è protetto da
+    rate limiting (max 5 tentativi per 5 minuti).
+
+    \item \textbf{Home con filtri avanzati}: griglia di parcheggi con filtri
+    combinabili in tempo reale (testo libero, prezzo massimo, valutazione minima,
+    solo aperti oggi, ordinamento). I filtri operano sul DOM senza chiamate
+    server aggiuntive. Il pulsante ``Carica altri'' carica i parcheggi
+    successivi tramite AJAX mantenendo i filtri attivi.
+
+    \item \textbf{Ricerca geografica}: il pulsante ``Cerca vicino a me'' ottiene
+    le coordinate GPS tramite \texttt{navigator.geolocation} e interroga l'API
+    con la formula di Haversine, restituendo i parcheggi entro un raggio
+    configurabile (default 5~km).
+
+    \item \textbf{Dettaglio parcheggio}: pagina con mappa interattiva Leaflet,
+    orari, disponibilità per giorno della settimana, form di prenotazione con
+    calcolo automatico dell'importo, sezione recensioni con media e voti.
+
+    \item \textbf{Prenotazione}: validazione del giorno selezionato rispetto
+    alla disponibilità del parcheggio sia lato client che server; controllo
+    della disponibilità oraria (nessuna sovrapposizione con prenotazioni
+    esistenti); transizione automatica di stato
+    \texttt{in\_attesa} $\to$ \texttt{confermata} $\to$ \texttt{completata}
+    (quest'ultima attivata al primo accesso al profilo dopo la data di scadenza).
+
+    \item \textbf{Recensioni}: gli utenti possono lasciare una recensione
+    (1--5 stelle + commento opzionale) per ogni prenotazione completata,
+    sia dalla pagina del proprio profilo sia direttamente dalla pagina
+    del parcheggio. È consentita una sola recensione per prenotazione
+    (vincolo unico in database).
+
+    \item \textbf{Profilo utente}: riepilogo prenotazioni con badge di stato,
+    azioni per cancellare una prenotazione attiva, download della ricevuta PDF,
+    gestione dei propri parcheggi pubblicati con possibilità di eliminazione.
+
+    \item \textbf{Aggiunta parcheggio}: form con compilazione automatica
+    dell'indirizzo via GPS (Nominatim), selezione dei giorni disponibili,
+    orari di apertura/chiusura, upload foto con validazione MIME e
+    dimensione massima (5~MB).
+
+    \item \textbf{Ricevuta PDF}: documento generato lato server con dompdf
+    contenente dati del cliente, dati del proprietario, dettaglio della
+    prenotazione e importo totale. Include stili di stampa ottimizzati
+    \texttt{(@media print)}.
+\end{enumerate}
+
+\subsection{Interfacce utente}
+
+\subsubsection{Pagina Home}
+
+La home presenta la griglia di parcheggi con:
+\begin{itemize}
+    \item Barra di ricerca testuale in navbar (funziona su tutte le pagine con
+    redirect automatico alla home se non già presenti).
+    \item Pannello filtri avanzati (collassabile, con pulsante toggle e attributo
+    \texttt{aria-expanded} aggiornato dinamicamente).
+    \item Badge ``Aperto oggi'' calcolato in PHP sulla base del giorno corrente.
+    \item Contatore ``Mostrati X di Y parcheggi'' aggiornato dopo ogni ``Carica altri''.
+\end{itemize}
+
+\subsubsection{Tema chiaro e scuro}
+
+\begin{table}[H]
+\centering
+\caption{Variabili CSS principali nei due temi.}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lll}
+\toprule
+\textbf{Variabile} & \textbf{Tema chiaro} & \textbf{Tema scuro} \\
+\midrule
+\texttt{-{}-bg}      & \texttt{\#ffffff} & \texttt{\#0f172a} \\
+\texttt{-{}-surface} & \texttt{\#f7f7f7} & \texttt{\#1e293b} \\
+\texttt{-{}-accent}  & \texttt{\#185FA5} & \texttt{\#3b82f6} \\
+\texttt{-{}-text}    & \texttt{\#1a1a1a} & \texttt{\#f1f5f9} \\
+\texttt{-{}-muted}   & \texttt{\#6b6b6b} & \texttt{\#94a3b8} \\
+\texttt{-{}-border}  & \texttt{rgba(0,0,0,.1)} & \texttt{rgba(255,255,255,.1)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Metriche del progetto}
+
+\begin{table}[H]
+\centering
+\caption{Dimensione dei componenti principali del progetto.}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lrr}
+\toprule
+\textbf{File} & \textbf{Righe} & \textbf{Note} \\
+\midrule
+\texttt{assets/js/main.js}    & $\sim$780 & JS client-side (no dipendenze) \\
+\texttt{assets/css/style.css} & $\sim$1{,}450 & CSS con variabili, dark mode, print \\
+\texttt{classes/*.php}        & $\sim$800 & 6 classi PHP con PHPDoc \\
+\texttt{api/*.php}            & $\sim$450 & 6 endpoint RESTful \\
+\texttt{pages/*.php}          & $\sim$500 & 5 viste PHP \\
+\midrule
+\textbf{Totale}               & $\sim$3{,}980 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Conclusioni}
+\label{sec:conclusioni}
+
+\subsection{Obiettivi raggiunti}
+
+Il progetto ParkShare ha raggiunto tutti gli obiettivi prefissati:
+
+\begin{itemize}
+    \item È stata realizzata un'applicazione web completa che copre l'intero
+    ciclo di utilizzo: dalla scoperta di un parcheggio alla prenotazione,
+    dalla recensione alla ricevuta PDF.
+
+    \item L'architettura RESTful è implementata con rispetto dei principi
+    fondamentali (metodi HTTP semantici, statelessness, formato JSON uniforme).
+
+    \item La componente cartografica è completamente open-source e gratuita,
+    senza dipendenza da Google Maps o altri servizi commerciali.
+
+    \item L'interfaccia è accessibile, responsiva e usabile su qualsiasi
+    dispositivo e con qualsiasi preferenza di sistema (tema chiaro/scuro,
+    riduzione del movimento).
+
+    \item Il codice adotta pratiche di sicurezza consolidate:
+    prepared statements, bcrypt, rate limiting, gestione sicura delle
+    credenziali tramite \texttt{.env}.
+\end{itemize}
+
+\subsection{Considerazioni critiche}
+
+Alcune limitazioni del progetto attuale meritano di essere riconosciute:
+
+\begin{itemize}
+    \item \textbf{Pagamenti}: il sistema attuale non integra un gateway di
+    pagamento reale. Le prenotazioni vengono confermate automaticamente
+    senza transazione economica, il che nella realtà richiederebbe
+    l'integrazione con un servizio come Stripe o PayPal.
+
+    \item \textbf{CSRF}: la protezione contro il Cross-Site Request Forgery
+    non è stata implementata nella versione corrente. In produzione,
+    ogni endpoint che modifica dati dovrebbe validare un token CSRF.
+
+    \item \textbf{Notifiche}: non è previsto un sistema di notifica
+    (email o push) per eventi come la conferma di una prenotazione o
+    la ricezione di una recensione.
+\end{itemize}
+
+\subsection{Sviluppi futuri}
+
+Gli sviluppi più interessanti per una versione futura del progetto sarebbero:
+
+\begin{enumerate}
+    \item \textbf{Integrazione pagamenti}: connessione con Stripe Checkout
+    per gestire transazioni reali, con ricevuta fiscale automatica.
+
+    \item \textbf{Notifiche email}: invio di email transazionali (conferma
+    prenotazione, promemoria) tramite SMTP, senza dipendere da servizi
+    a pagamento grazie a librerie come PHPMailer con server SMTP gratuiti.
+
+    \item \textbf{Progressive Web App (PWA)}: aggiunta di un Service Worker
+    per permettere l'installazione dell'applicazione come app nativa e
+    il funzionamento offline di base.
+
+    \item \textbf{Pannello statistiche proprietario}: dashboard per i
+    proprietari dei parcheggi con grafici di prenotazioni, guadagni e
+    valutazioni nel tempo.
+
+    \item \textbf{CSRF protection}: implementazione di token sincronizzati
+    per la protezione completa contro attacchi Cross-Site Request Forgery.
+\end{enumerate}
+
+\subsection{Riflessioni finali}
+
+Lo sviluppo di ParkShare ha rappresentato un'occasione per applicare
+concretamente le tecnologie studiate nel corso, affrontando problemi
+reali: come bilanciare usabilità e prestazioni, come strutturare
+un'API RESTful coerente, come proteggere un'applicazione dagli attacchi
+più comuni, come garantire l'accessibilità senza sacrificare l'estetica.
+
+La scelta consapevole di evitare framework e librerie pesanti — sia lato
+client che lato server — ha reso il progetto più didatticamente
+significativo: ogni meccanismo è implementato in modo esplicito e comprensibile,
+senza ``magia nera'' nascosta nelle dipendenze.
+
+L'adozione di tecnologie open-source per la componente cartografica
+(Leaflet + OpenStreetMap) dimostra come sia possibile realizzare
+applicazioni professionali senza costi di licensing e senza compromettere
+la privacy degli utenti — un principio che diventa sempre più rilevante
+nel panorama digitale contemporaneo.
+
+\end{document}

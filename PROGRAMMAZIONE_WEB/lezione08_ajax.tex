@@ -1,0 +1,366 @@
+\chapter{AJAX e Web 2.0}
+
+\section{Lo scenario: Web 2.0}
+
+\textbf{Web 2.0} è un termine introdotto per la prima volta nel 2004 come titolo di una conferenza promossa dalla casa editrice O'Reilly: l'idea era che ci si stesse avviando verso una nuova concezione del Web (``versione'' 2.0), in contrapposizione con la ``vecchia'' concezione (``versione'' 1.0).
+
+È il Web come lo conosciamo oggi. È stato (ed in parte continua ad essere) un concetto confuso e sfaccettato; generalmente si indicano una serie di concetti che caratterizzano questa evoluzione.
+
+\subsection{Caratteristiche (rispetto al Web 1.0)}
+
+\begin{enumerate}
+    \item \textbf{Aumento dell'interattività}: non ci si limita più a ``navigare'', ma si ``fanno cose'' (si compra, si gioca, si discute, ecc.), attraverso un'esperienza interattiva complessa.
+    \item \textbf{Le applicazioni web si sostituiscono a quelle installate sul proprio computer} (es.\ word-processors, strumenti di gestione, ecc.). I programmi (software) non sono più ``prodotti'', ma diventano \textit{servizi} (sono erogati e pagati come tali), cioè sono resi disponibili su un Web Server e possono essere utilizzati attraverso un normale Web Browser. Il principale strumento tecnologico è AJAX.
+    \item \textbf{Le applicazioni web sono spesso costruite aggregando contenuti e servizi offerti da terze parti}:
+    \begin{itemize}
+        \item aggregazione di contenuti (es.\ RSS e Atom);
+        \item aggregazione di servizi (\textit{mashup}): Open API, servizi RESTful, SOAP Web Services.
+    \end{itemize}
+\end{enumerate}
+
+\section{Tecnologie per applicazioni web}
+
+\subsection{Client-side}
+
+\begin{itemize}
+    \item JavaScript (e jQuery)
+\end{itemize}
+
+\subsection{Server-side}
+
+\begin{itemize}
+    \item PHP
+    \item JSP e Java Servlet
+    \item ASP.NET
+    \item Ruby, Python e Perl
+\end{itemize}
+
+\subsection{Approcci ibridi}
+
+\begin{itemize}
+    \item AJAX (JavaScript e jQuery)
+\end{itemize}
+
+Alcune soluzioni sono tecnologie \textit{client-side} (il codice è elaborato sul client, dal browser), altre sono \textit{server-side} (il codice è elaborato sul server), altre sono miste.
+
+\section{AJAX}
+
+AJAX permette di rendere la user experience esperita nell'interazione con le applicazioni web simile a quella esperita nell'interazione con applicazioni ``desktop'' (stand-alone).
+
+\textbf{AJAX} = \textit{Asynchronous JavaScript and XML}, termine coniato nel febbraio del 2005 da Jesse James Garrett, per descrivere un modo di utilizzare congiuntamente diverse tecnologie esistenti:
+
+\begin{itemize}
+    \item HTML (e CSS) --- client-side
+    \item JavaScript + DOM --- client-side
+    \item \texttt{XMLHttpRequest} (oggetto JavaScript) --- client-side
+    \item Programmi (o script) server-side (PHP, Servlet, \dots)
+\end{itemize}
+
+AJAX è una nuova etichetta per riassumere l'utilizzo congiunto di tecnologie preesistenti.
+
+\subsection{Sincrono vs asincrono}
+
+\textbf{Applicazioni Web tradizionali} (con tecnologie server-side) --- funzionamento sincrono:
+\begin{itemize}
+    \item per ogni interazione con l'utente (per es.\ click su un link) inviano al server una richiesta (HTTP request) per una nuova pagina;
+    \item il client aspetta la risposta del server (e l'utente anche!);
+    \item la risposta del server (HTTP response) contiene l'intera nuova pagina;
+    \item ciò comporta uno spreco di banda e un'interfaccia utente molto più lenta di quanto potrebbe essere.
+\end{itemize}
+
+\textbf{Applicazioni AJAX} --- funzionamento asincrono:
+\begin{itemize}
+    \item sono in grado di inviare al Web Server richieste asincrone (mentre l'utente può continuare ad interagire con la pagina) e parziali (relative solo ai dati necessari);
+    \item di conseguenza consentono un'interazione più veloce (la quantità di dati che è necessario inviare al/ricevere dal server è minore) e in modalità asincrona (senza attesa).
+\end{itemize}
+
+\section{Funzionamento tipico di un'applicazione AJAX}
+
+\begin{enumerate}
+    \item Si carica nel browser una pagina web (\texttt{.html}) che contiene degli script client-side (JavaScript) che intercettano eventi relativi a parti della pagina (mediante il DOM).
+    \item In risposta ad un qualche evento (es.\ click), JavaScript chiede all'oggetto \texttt{XMLHttpRequest} di inviare al server una richiesta (HTTP request), con l'indicazione di una risorsa server-side (es.\ PHP).
+    \item Sul server, un programma (o uno script) server-side elabora la risposta e la invia all'oggetto \texttt{XMLHttpRequest}, da cui lo script client-side la preleva e modifica di conseguenza una parte di pagina (mediante il DOM).
+\end{enumerate}
+
+In altre parole, è l'oggetto \texttt{XMLHttpRequest} che agisce da Client HTTP nei confronti del Web Server, cioè:
+\begin{itemize}
+    \item invia la richiesta (HTTP request) al Web Server;
+    \item riceve la risposta (HTTP response) del Web Server.
+\end{itemize}
+
+\textbf{Nota 1}: il Web Server ``non si accorge di niente''. Riceve infatti una ``normale'' HTTP request da parte di un HTTP Client (rappresentato dall'oggetto \texttt{XMLHttpRequest}).
+
+\textbf{Nota 2}: AJAX non è una via di mezzo tra client-side e server-side (la computazione non può mai avvenire \dots ``a metà strada''), ma l'\textit{uso congiunto} di tecnologie client-side e server-side.
+
+\section{Esempi di AJAX}
+
+\subsection{Esempio 1: autocompletamento CAP}
+
+L'utente digita città, via e numero. Il sistema scrive automaticamente il CAP.
+
+\textbf{Script JavaScript}:
+
+\begin{lstlisting}[language=JavaScript]
+function callServerCity(c) {
+    var innominato = new XMLHttpRequest();
+    innominato.onreadystatechange = function () {
+        if (innominato.readyState == 4) {
+            document.getElementById("cap").value =
+                innominato.responseText;
+        }
+    };
+    innominato.open("GET", "getCap.php?city=" + c, true);
+    innominato.send(null);
+}
+\end{lstlisting}
+
+\textbf{Codice HTML}:
+
+\begin{lstlisting}[language=HTML5]
+<FORM ...>
+    ...
+    <INPUT TYPE="text" ID="citta"
+        onChange="callServerCity(this.value);">
+    <INPUT TYPE="text" ID="cap">
+    ...
+</FORM>
+\end{lstlisting}
+
+\subsection{Esempio 2: menu dinamici}
+
+Inizialmente un menu è vuoto. L'utente seleziona un argomento e il sistema popola automaticamente il secondo menu. In un'applicazione tradizionale questo sarebbe impossibile (o quasi); con AJAX invece uno script JavaScript intercetta l'evento e invia una richiesta asincrona per ottenere l'elenco degli esami associati a quell'argomento.
+
+\subsection{Esempio 3: carrello}
+
+Quando l'utente clicca su ``acquista'', uno script JavaScript intercetta l'evento e invia una richiesta asincrona al server nella quale si chiede di aggiornare i dati del carrello. Il contenuto del carrello viene inviato all'oggetto \texttt{XMLHttpRequest} e inserito nella pagina, senza ricaricarla.
+
+\subsection{Esempio 4: Single Page Application}
+
+È ormai molto usato costruire applicazioni web \textbf{single page}: si costruisce un'unica pagina HTML e si gestiscono tutte le interazioni con il server attraverso chiamate AJAX, non ricaricando mai l'intera pagina.
+
+\textbf{Attenzione}: l'approccio single page non è privo di problemi (es.\ performance, SEO, \dots).
+
+\section{Formati di risposta}
+
+La risposta del server può essere codificata in diversi formati:
+
+\subsection{Testo semplice}
+
+\begin{lstlisting}
+10100
+\end{lstlisting}
+
+\subsection{JSON}
+
+\begin{lstlisting}
+{
+    "city": "Torino",
+    "cap": 10100,
+    "districts": ["Aurora", "Cenisia", "Vanchiglia", ...]
+}
+\end{lstlisting}
+
+\subsection{XML}
+
+\begin{lstlisting}[language=XML]
+<?xml version="1.0" encoding="UTF-8"?>
+<city>
+    <name>Torino</name>
+    <cap>10100</cap>
+    <districts>
+        <d circ="7">Aurora</d>
+        <d circ="3">Cenisia</d>
+        <d circ="7">Vanchiglia</d>
+    </districts>
+</city>
+\end{lstlisting}
+
+\subsection{JSON e XML}
+
+\textbf{JSON} (JavaScript Object Notation) è un formato testuale molto usato per lo scambio di dati in applicazioni client-server. È basato su due strutture: insiemi di coppie nome-valore e liste ordinate di valori.
+
+\textbf{XML} (eXtensible Markup Language) è un formato testuale standard, definito dal W3C e utilizzato per la rappresentazione di dati e di contenuti strutturati. È un \textit{meta-linguaggio}, in quanto consente la definizione di nuovi tag, attributi, ecc., cioè la definizione di nuovi linguaggi di mark-up (vedremo vari esempi: RSS, Atom, WSDL, SOAP).
+
+\section{AJAX e jQuery}
+
+jQuery (\texttt{jquery.com}) è una libreria JavaScript che nasconde la complessità dell'interazione diretta con il DOM e con \texttt{XMLHttpRequest} (AJAX). Con jQuery è possibile:
+\begin{itemize}
+    \item interagire con il DOM;
+    \item inviare richieste (e ricevere risposte) asincrone e parziali (d)al Web Server, secondo il modello AJAX.
+\end{itemize}
+
+\subsection{Esempio con jQuery}
+
+\begin{lstlisting}[language=JavaScript]
+$("input#citta").change(function() {
+    var c = $("#citta").val();
+    $.ajax({
+        type: "GET",
+        dataType: "html",
+        url: "getCap.php",
+        data: "city=" + c,
+        success: function(cap) {
+            $("#cap").val(cap);
+        }
+    });
+});
+\end{lstlisting}
+
+\begin{lstlisting}[language=HTML5]
+<FORM ...>
+    ...
+    <INPUT TYPE="text" ID="citta">
+    <INPUT TYPE="text" ID="cap">
+    ...
+</FORM>
+\end{lstlisting}
+
+\section{Aggregare contenuti: RSS e Atom}
+
+\subsection{RSS}
+
+\textbf{RSS} può significare \textit{RDF Site Summary} oppure \textit{Really Simple Syndication}.
+
+\textbf{Syndication}: diffusione di notizie tramite un'agenzia di stampa.
+
+\textbf{Web syndication}: diffusione di contenuti (tipicamente news) tramite i canali Web.
+
+RSS è un formato (linguaggio di markup) standard, basato su XML, utilizzato per la distribuzione di contenuti sul Web. Definisce la struttura di una ``notizia'' (contenuto informativo), articolandola in vari campi (es.\ autore, titolo, categoria, data di pubblicazione, \dots).
+
+Un sito può pubblicare i propri contenuti in formato RSS e altri siti/applicazioni possono leggerli automaticamente. La pubblicazione di contenuti in formato RSS su Web si chiama \textbf{RSS feed}.
+
+Un RSS feed può essere letto da:
+\begin{itemize}
+    \item un \textbf{RSS reader} o \textbf{feed reader}: applicazioni client alle quali vengono fornite le indicazioni su quali feed ``sottoscrivere'' e che periodicamente scaricano tali feed e li visualizzano;
+    \item siti Web che aggregano notizie (scaricate da altri siti che pubblicano feed) e le visualizzano (eventualmente riorganizzando il contenuto). Questi sono casi di aggregazione (\textit{mashup}) di contenuti.
+\end{itemize}
+
+\subsection{Esempio di lettura di feed RSS con PHP}
+
+\begin{lstlisting}[language=PHP]
+<?php
+$xmldom = new DOMDocument();
+$xmldom->load("http://www.yourSite.it/blog/feed.xml");
+$nodo = $xmldom->getElementsByTagName("item");
+for ($i = 0; $i <= $nodo->length - 1; $i++) {
+    $titolo = $nodo->item($i)->getElementsByTagName("title")...;
+    $des = $nodo->item($i)->getElementsByTagName("description")...;
+    ?>
+    <h1><?= $titolo ?></h1>
+    <p><?= $des ?></p>
+<?php } ?>
+\end{lstlisting}
+
+\subsection{Esempio di feed RSS}
+
+\begin{lstlisting}[language=XML]
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+    <title>Repubblica.it &gt; Politica</title>
+    <link>http://www.repubblica.it/politica</link>
+    <description>
+        <![CDATA[Repubblica.it: articoli dalla sezione Politica]]>
+    </description>
+    <language>it-IT</language>
+    <copyright>Copyright 2012 - Gruppo Ed. l'Espresso</copyright>
+    <pubDate>Thu, 22 Mar 2012 20:54:26 +0100</pubDate>
+    <item>
+        <title><![CDATA[Articolo 18...]]></title>
+        <author><![CDATA[redaz@repubblica.it]]></author>
+        <category domain="http://www.repubblica.it">
+            <![CDATA[politica]]>
+        </category>
+        <pubDate>Thu, 22 Mar 2012 09:35:00 +0100</pubDate>
+        <description>
+            Domani la riforma arriva al Cdm...
+        </description>
+    </item>
+</channel>
+</rss>
+\end{lstlisting}
+
+È un esempio di markup ``semantico'': i tag caratterizzano il ``contenuto'', specificando il ``significato'' delle varie porzioni di informazione.
+
+\subsection{Atom}
+
+Un formato alternativo per i feed, più recente di RSS, è \textbf{Atom}.
+
+\textbf{Atom Syndication Format}: formato (linguaggio di markup) standard, basato su XML, utilizzato per la distribuzione di contenuti sul Web (Atom feed).
+
+\textbf{W3C Feed Validation Service}: servizio online gratuito del W3C che controlla la validità (sintattica) di feed RSS e Atom: \texttt{validator.w3.org/feed}.
+
+\begin{lstlisting}[language=XML, caption=Esempio di Atom feed]
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>Feed di esempio</title>
+    <subtitle>Testo del sotto-titolo qui</subtitle>
+    <link href="http://example.org/"/>
+    <updated>2003-12-13T18:30:02Z</updated>
+    <author>
+        <name>jonny doe</name>
+        <email>jonny@mail.com</email>
+    </author>
+    <id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id>
+    <entry>
+        <title>I robots Atom usano Amok</title>
+        <link href="http://example.org/2003/12/13/atom03"/>
+        <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id>
+        <updated>2003-12-13T18:30:02Z</updated>
+        <summary>Testo del sommario.</summary>
+    </entry>
+</feed>
+\end{lstlisting}
+
+\section{Aggregare servizi: mashup}
+
+Un \textbf{mashup} (``rimescolamento'') è un'applicazione web che riutilizza funzionalità offerte in rete da altri per creare servizi nuovi.
+
+\textit{Da Wikipedia}: in informatica un mash-up è un sito o un'applicazione web di tipo ibrido, cioè tale da includere dinamicamente informazioni o contenuti provenienti da più fonti. Un esempio potrebbe essere un programma che, acquisendo da un sito web una lista di appartamenti, ne mostra l'ubicazione utilizzando il servizio Google Maps per evidenziare il luogo in cui gli stessi appartamenti sono localizzati.
+
+Il contenuto dei mash-up è normalmente preso da terzi via API, tramite feed (es.\ RSS e Atom) o JavaScript.
+
+\section{Aggregare servizi: Open API}
+
+\textbf{API} = Application Programming Interface (Interfaccia di Programmazione di un'Applicazione) = strumento (``insieme di istruzioni'') per rendere disponibile ad altri programmatori le funzionalità di un programma.
+
+\textbf{Open} = ``aperte'', disponibili a tutti.
+
+Un'applicazione web, oltre ad avere una User Interface, può offrire delle Open API, cioè delle API disponibili sul Web (che sfruttano le tecnologie del Web, per es.\ i protocolli come HTTP). Un programmatore può includere nel suo programma funzionalità offerte da altri programmi (applicazioni web) invocando API in remoto (cioè via Web/HTTP).
+
+\subsection{Esempio: Google Maps API}
+
+\begin{lstlisting}[language=HTML5]
+<div id="map"></div>
+<script>
+map = new google.maps.Map(
+    document.getElementById("map"),
+    options
+);
+</script>
+\end{lstlisting}
+
+La variabile che contiene le proprietà della nuova mappa è un oggetto JSON:
+
+\begin{lstlisting}[language=JavaScript]
+options = {
+    zoom: 14,
+    center: new google.maps.LatLng(45.06, 7.68),
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+};
+\end{lstlisting}
+
+\subsection{Open API vs Open Source}
+
+Benché condividano la filosofia di fondo (``apertura''), sono due concetti diversi:
+
+\begin{itemize}
+    \item \textbf{Open API}: non si scarica nulla, ma si possono solo usare (``invocare'') le funzioni disponibili. Es.\ le Open API di Google Maps mettono a disposizione una funzione per centrare una mappa su un punto geografico, ma non si ha accesso al codice sorgente.
+    \item \textbf{Open Source}: si scarica il programma (codice sorgente) e lo si può modificare.
+\end{itemize}
+
+\section{Web Services: REST e SOAP/WSDL}
+
+I servizi che mettono a disposizione Open API dipendono da uno specifico linguaggio di programmazione (per es., per utilizzare GMaps API, occorre usare JavaScript).
+
+L'idea alla base dei \textbf{Web Services} che utilizzano interfacce basate su REST o su SOAP/WSDL è di offrire la possibilità di interagire con il servizio \textbf{indipendentemente dal linguaggio di programmazione} utilizzato per implementare quel servizio, permettendo di far interagire in modo ``trasparente'' applicazioni sviluppate con linguaggi di programmazione eterogenei (e che girano su piattaforme o sistemi operativi diversi).

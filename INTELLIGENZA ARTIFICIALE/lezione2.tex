@@ -1,0 +1,619 @@
+\chapter{Agenti Intelligenti}
+\begin{flushright}\small\textit{Lezione 2 -- 03/03/2026 -- Russell \& Norvig, Cap.\ 2 (\S2.1--2.4)}\end{flushright}
+
+L'idea di \textbf{agente razionale} è il filo conduttore di tutto il libro di Russell \& Norvig: invece di chiederci se una macchina ``pensa``, ci chiediamo se \emph{agisce nel modo migliore possibile} per raggiungere i propri obiettivi, data l'evidenza disponibile.
+
+
+\section{Agenti e interazione con l'ambiente}
+\begin{defbox}[Agente]
+Un \textbf{agente} è qualsiasi entità che \emph{percepisce} il proprio ambiente tramite \textbf{sensori} e \emph{agisce} su di esso tramite \textbf{attuatori}.
+\end{defbox}
+
+\begin{center}
+\begin{tikzpicture}[font=\small, >=Stealth]
+    % Agente
+    \node[rectangle, draw=blue, fill=blue!5, very thick, rounded corners,
+          minimum width=4.0cm, minimum height=5.0cm, align=center] (agent)
+          {\bfseries Agente\\[3.6cm]};
+    
+    % Ambiente
+    \node[rectangle, draw=OliveGreen, fill=green!5, very thick, rounded corners,
+          minimum width=4.0cm, minimum height=5.0cm, align=center, right=5.0cm of agent] (env)
+          {\bfseries Ambiente};
+    
+    % Sensori (dentro Agente, in alto)
+    \node[rectangle, draw=gray, fill=gray!10, very thick, rounded corners,
+          minimum width=3.0cm, minimum height=0.8cm, align=center, 
+          at=(agent.north), anchor=north, yshift=-0.8cm] (sensors)
+          {\bfseries Sensori};
+    
+    % Attuatori (dentro Agente, in basso)
+    \node[rectangle, draw=gray, fill=gray!10, very thick, rounded corners,
+          minimum width=3.0cm, minimum height=0.8cm, align=center,
+          at=(agent.south), anchor=south, yshift=0.8cm] (actuators)
+          {\bfseries Attuatori};
+    
+    % Punto interrogativo al centro dell'Agente
+    \node[font=\Large\bfseries, inner sep=4pt] (question) at (agent.center) {?};
+    
+    % Freccia Sensori -> ? (dentro Agente)
+    \draw[-{Stealth[length=3mm]}, thick, black]
+        (sensors.south) -- (question.north);
+    
+    % Freccia ? -> Attuatori (dentro Agente)
+    \draw[-{Stealth[length=3mm]}, thick, black]
+        (question.south) -- (actuators.north);
+    
+    % Freccia Ambiente -> Sensori (Percepts)
+    \draw[-{Stealth[length=3mm]}, very thick, blue]
+        (env.north west) to[bend right=15]
+        node[above, font=\small\bfseries] {Percepts} (sensors.north east);
+    
+    % Freccia Attuatori -> Ambiente (Actions)
+    \draw[-{Stealth[length=3mm]}, very thick, red]
+        (actuators.south east) to[bend right=15]
+        node[below, font=\small\bfseries] {Actions} (env.south west);
+        
+\end{tikzpicture}
+\end{center}
+
+Esempi di agenti:
+\begin{itemize}
+    \item \textbf{Agente umano}: sensori $=$ vista, udito, tatto, olfatto; attuatori $=$ mani, piedi, voce.
+    \item \textbf{Agente robotico}: sensori $=$ telecamere, infrarossi, sonar, accelerometri; attuatori $=$ motori, pistoni, altoparlanti.
+    \item \textbf{Agente software} (\emph{softbot}): riceve input da file, rete, tastiera, API; agisce scrivendo file, inviando pacchetti di rete, visualizzando informazioni.
+\end{itemize}
+
+\begin{exbox}[Esempi pratici]
+\textbf{Agricoltura intelligente}: un sensore di acidità del terreno percepisce i dati per regolare fertilizzanti e irrigazione (attuatori).\\[4pt]
+\textbf{Domotica}: un sensore di illuminazione naturale attiva l'abbassamento/alzamento delle tapparelle o l'accensione del riscaldamento.
+\end{exbox}
+
+
+\subsection{Percetti, sequenza percettiva e funzione agente}
+\begin{itemize}
+    \item \textbf{Percetto}: il contenuto percepito dai sensori in un dato istante.
+    \item \textbf{Sequenza percettiva}: la storia completa di tutto ciò che l'agente ha mai percepito.
+\end{itemize}
+
+La scelta dell'azione può dipendere dalla conoscenza pregressa e dall'intera sequenza percettiva, ma \emph{non} da ciò che l'agente non ha percepito.
+
+\begin{defbox}[Funzione agente e Programma agente]
+La \textbf{funzione agente} $f : \mathcal{P}^* \to \mathcal{A}$ è la descrizione matematica (astratta) che mappa ogni possibile sequenza percettiva in un'azione.
+
+Il \textbf{programma agente} è la sua implementazione concreta, eseguita su un'\textbf{architettura} fisica (hardware con sensori e attuatori).
+\[
+\boxed{\text{Agente} = \text{Architettura} + \text{Programma}}
+\]
+\end{defbox}
+
+\subsection{Il mondo dell'aspirapolvere}
+\begin{exbox}[Esempio canonico: il mondo dell'aspirapolvere (Russell \& Norvig)]
+Due caselle ($A$ e $B$), ciascuna pulita o sporca. Percetti: posizione + stato della casella. Azioni: \texttt{Aspira}, \texttt{Sinistra}, \texttt{Destra}.
+
+Funzione agente semplice (agente reflex):
+\begin{enumerate}
+    \item Se la casella corrente è sporca $\to$ \texttt{Aspira}.
+    \item Se la casella è pulita e l'agente è in $A$ $\to$ \texttt{Destra}.
+    \item Se la casella è pulita e l'agente è in $B$ $\to$ \texttt{Sinistra}.
+\end{enumerate}
+
+\textbf{Misura di prestazione corretta}: un punto per ogni casella pulita ad ogni passo temporale, con penalità per spostamenti ed energia consumata -- \emph{non} ``quantità di sporco rimossa'' (altrimenti l'agente potrebbe spargere sporco per ripulirlo!).
+\end{exbox}
+
+\begin{notebox}[Algoritmo del serpente]
+In ambienti più grandi (es.\ griglia 10$\times$10), un agente reflex di base può implementare l'\textbf{algoritmo del serpente}: percorre ogni riga da sinistra a destra, poi scende di una riga e torna da destra a sinistra, e così via. È il metodo usato nei sistemi automatici di raccolta ordini nei magazzini. Non è però ottimale in ambienti dinamici dove la sporcizia riappare.
+\end{notebox}
+
+
+\section{Razionalità e misure di prestazione}
+\begin{defbox}[Agente razionale]
+Per ogni possibile sequenza percettiva, un \textbf{agente razionale} deve selezionare l'azione che ci si aspetta \emph{massimizzi} la sua \textbf{misura di prestazione}, sulla base dell'evidenza fornita dalla sequenza percettiva e dalla propria conoscenza pregressa.
+\end{defbox}
+
+È meglio progettare le misure di prestazione in base a \emph{ciò che si vuole davvero ottenere nell'ambiente}, non in base a come si pensa che l'agente dovrebbe comportarsi.
+
+
+\subsection{I 4 pilastri della razionalità}
+La razionalità dipende da quattro fattori concomitanti:
+
+\begin{enumerate}
+    \item \textbf{La misura di prestazione}: il criterio di successo (es.\ pulizia media nel tempo; valutazione dell'aspirapolvere in base alla pulizia raggiunta rispetto alla sporcizia totale; la qualit\`a \`e data anche dalla quantit\`a di spostamenti necessari per pulire l'ambiente).
+    \item \textbf{La conoscenza pregressa}: ciò che l'agente conosce già dell'ambiente prima di agire.
+    \item \textbf{Le azioni eseguibili}: il repertorio di operazioni permesse dagli attuatori.
+    \item \textbf{La sequenza percettiva}: la storia completa di tutto ciò che l'agente ha percepito.
+\end{enumerate}
+
+
+\subsection{Razionalità vs.\ onniscienza e autonomia}
+La razionalità \textbf{non} è perfezione né onniscienza.
+
+\begin{itemize}
+    \item Un agente \textbf{onnisciente} conosce l'esito reale delle azioni -- ma l'onniscienza è impossibile nella realtà.
+    \item La \textbf{razionalità} massimizza la prestazione \emph{attesa}; la \textbf{perfezione} massimizza la prestazione \emph{effettiva}.
+\end{itemize}
+
+Un agente dovrebbe scegliere un'azione che fornisca le migliori prestazioni sulla base del percepito e della conoscenza che ha (es.\ sa quali sono le dimensioni del mondo in cui si trova?). La scelta razionale di una persona può sembrare irrazionale a un'altra, se questa non è a conoscenza del suo punto di vista: \emph{perché hai fatto così o non col\`a?}.
+
+Non basta raccogliere le informazioni, bisogna percepirle. Qui subentrano i \textbf{limiti della razionalità}:
+
+\begin{itemize}
+    \item \textbf{Filosofia e libero arbitrio}: La razionalità ha un limite che richiama interpretazioni filosofiche e teologiche sul libero arbitrio. L'uomo può scegliere, quindi è autonomo. Se non avesse possibilità di scelta, sarebbe un burattino nelle mani dell'onnisciente nella ricerca del bene.
+    
+    \begin{exbox}[Scelta vincolata vs.\ libera]
+        Il treno si muove vincolato sulle rotaie (nessuna scelta), l'auto si può muovere su diversi percorsi scelti.
+    \end{exbox}
+    
+    \item \textbf{Conoscenza incompleta}: L'agente non ha sempre la completa conoscenza dell'ambiente.
+    
+    \begin{exbox}[Auto a guida autonoma]
+        L'auto a guida autonoma e il bimbo che attraversa la strada all'improvviso. In questi casi, l'autonomia di giudizio completa la parziale conoscenza.
+    \end{exbox}
+    
+    \item \textbf{Onniscienza limitata}: Un agente onnisciente conosce l'esito delle sue azioni e sceglie quella per il miglior risultato.
+    
+    \begin{exbox}[Giochi a turni]
+        Nel gioco del tris o degli scacchi, l'onniscienza è per forza parziale/limitata perché non si ha la certezza della mossa successiva dell'avversario.
+    \end{exbox}
+\end{itemize}
+
+\begin{exbox}[Razionale ma sfortunato (R\&N)]
+Attraversi la strada dopo aver guardato in entrambe le direzioni. Un carico cade da un aereo di passaggio e ti colpisce. Hai agito \emph{razionalmente} (la tua scelta era ottima data l'evidenza disponibile), ma il risultato è stato pessimo. La razionalit\`a si giudica \emph{ex ante}, non ex post.
+\end{exbox}
+
+Un agente razionale deve anche:
+\begin{itemize}
+    \item \textbf{Raccogliere informazioni} (\emph{information gathering}): guardare prima di attraversare, esplorazione di ambienti ignoti.
+    \item \textbf{Apprendere} dall'esperienza per compensare conoscenza pregressa parziale o errata.
+    \item Essere \textbf{autonomo}: il comportamento deve essere determinato dalla propria esperienza, non solo dalla conoscenza pre-programmata dal progettista.
+\end{itemize}
+
+\begin{notebox}[Autonomia]
+Un agente che si affida solo alla conoscenza pre-programmata \emph{manca di autonomia}. Così come l'evoluzione fornisce agli animali riflessi innati per sopravvivere abbastanza a lungo da imparare, un agente artificiale può partire con una conoscenza iniziale ma deve acquisire autonomia attraverso l'apprendimento.
+\end{notebox}
+
+
+\section{La natura degli ambienti: PEAS}
+\begin{defbox}[PEAS -- Task Environment]
+Per progettare un agente, il primo passo è specificare il \textbf{task environment} nel modo più completo possibile. Si usa l'acronimo \textbf{PEAS}:
+\begin{itemize}
+    \item \textbf{P}erformance measure -- criterio di successo
+    \item \textbf{E}nvironment -- l'ambiente esterno
+    \item \textbf{A}ctuators -- gli attuatori disponibili
+    \item \textbf{S}ensors -- i sensori disponibili
+\end{itemize}
+\end{defbox}
+
+\begin{exbox}[PEAS per un taxi autonomo]
+\begin{itemize}
+    \item \textbf{P}: viaggio sicuro, veloce, legale, confortevole; massimizzare i profitti.
+    \item \textbf{E}: strade, altri veicoli, pedoni, segnali stradali, meteo, clienti.
+    \item \textbf{A}: sterzo, acceleratore, freni, frecce, clacson, display di bordo.
+    \item \textbf{S}: videocamere, lidar, sonar, GPS, tachimetro, accelerometri, microfono.
+\end{itemize}
+\end{exbox}
+
+
+\subsection{Dimensioni di classificazione degli ambienti}
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{} >{\bfseries}p{2.6cm} p{2.6cm} p{7.0cm} @{}}
+\toprule
+\textbf{Dimensione} & \textbf{Opzioni} & \textbf{Descrizione ed esempi} \\
+\midrule
+Osservabilità & Tot. osservabile & I sensori dell'agente gli consentono di accedere allo stato completo dell'ambiente in ogni momento (es. sensore di temperatura, scacchi) \\
+              & Parz. osservabile & I sensori dell'agente sono rumorosi o imprecisi (es. guida di un taxi) \\
+              & Inosservabile & L'agente non ha sensori \\
+\midrule
+Numero di agenti & Singolo & Agente unico (es. cruciverba) \\
+                 & Multi-agente & Più agenti interagiscono e i loro comportamenti si influenzano a vicenda (es. auto a guida autonoma) \\
+\midrule
+Determinismo & Deterministico & Stato successivo certo (es. l'aspirapolvere pulisce la cella sporca) \\
+             & Stocastico & Subentra la probabilità (es. sacchetto dell'aspirapolvere pieno) \\
+\midrule
+Episodicità & Episodico & L'azione è divisa in episodi atomici e indipendenti (es. passi di una ricetta) \\
+            & Sequenziale & Le azioni sono legate (es. parole crociate) \\
+\midrule
+Dinamicità & Dinamico & L'ambiente evolve nel tempo (es. cesta dei panni sporchi) \\
+           & Statico & L'ambiente non cambia mentre l'agente delibera (es. esame superato) \\
+           & Semi-dinamico & L'ambiente non cambia ma la prestazione nel tempo sì (es. scacchi) \\
+\midrule
+Discrezione & Discreto & Stati ben definiti (es. tiro di un dado, numeri al lotto) \\
+            & Continuo & Variabili continue nello spazio e nel tempo (es. guida di un taxi) \\
+\midrule
+Notorietà & Noto & Esiti conosciuti (es. lancio di un dado) \\
+          & Ignoto & Esiti sconosciuti (es. poker con bluff ma esito ignoto) \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+\begin{notebox}[L'ambiente più difficile]
+L'ambiente più complesso è: \emph{parzialmente osservabile, multi-agente, stocastico, sequenziale, dinamico, continuo, ignoto} -- il mondo reale. La guida del taxi è difficile su tutte queste dimensioni tranne che la conoscenza dell'ambiente (le leggi della fisica e del traffico sono note).
+\end{notebox}
+
+La tabella seguente riassume la classificazione di alcuni ambienti tipici:
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{} l c c c c c c @{}}
+\toprule
+\textbf{Task} & \textbf{Osservabile} & \textbf{Agenti} & \textbf{Determinismo} & \textbf{Episodico} & \textbf{Dinamistico} & \textbf{Discreto} \\
+\textbf{environment} & & & & & & \\
+\midrule
+Cruciverba & Totalmente & Singolo & Deterministico & Sequenziale & Statico & Discreto \\
+\parbox{2.2cm}{\centering Scacchi (con\\ orologio)} & Totalmente & Multi & Deterministico & Sequenziale & Semi-dinamico & Discreto \\
+Poker & Parzialmente & Multi & Stocastico & Sequenziale & Statico & Discreto \\
+Guida del taxi & Parzialmente & Multi & Stocastico & Sequenziale & Dinamico & Continuo \\
+Diagnosi medica & Parzialmente & Singolo & Stocastico & Sequenziale & Dinamico & Continuo \\
+Analisi immagini & Totalmente & Singolo & Deterministico & Episodico & Semi-dinamico & Continuo \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{center}
+
+
+\section{Struttura e tipologie degli agenti}
+Il \textbf{programma agente} implementa la funzione agente (la mappatura percetti $\to$ azioni). Esistono quattro architetture di base, in ordine crescente di complessità.
+
+
+\subsection{1. Agenti Reflex Semplici}
+Sono la tipologia più basilare di agente intelligente: selezionano le azioni basandosi esclusivamente sulla \textbf{percezione corrente}, ignorando completamente lo storico delle percezioni passate.
+
+Si basano su \textbf{regole condizione-azione} (\textit{condition-action rules}) espresse nella forma \texttt{if [condizione] then [azione]}. Il processo avviene in 3 fasi:
+\begin{enumerate}
+    \item \textbf{Percezione}: i sensori catturano i dati dall'ambiente.
+    \item \textbf{Elaborazione}: l'agente converte la percezione in una descrizione della situazione corrente.
+    \item \textbf{Corrispondenza}: quando la percezione soddisfa la ``condizione'' di una regola, viene attivata l'``azione'' associata.
+\end{enumerate}
+
+L'agente reflex è razionale \emph{solo} se l'ambiente è completamente osservabile. Il limite principale è la \textbf{parziale osservabilità}, che può provocare un \textbf{loop infinito} in cui l'agente oscilla tra gli ambienti e spreca energia. Un esempio è il robot aspirapolvere base che agisce solo alla presenza di sporco nella cella in cui si trova in quel preciso istante, senza ricordare le stanze già pulite.
+
+\begin{center}
+\begin{tikzpicture}[
+    font=\small,
+    >=Stealth,
+    node distance = 0.6cm and 1.5cm,
+    box/.style={draw=blue!70, thick, rounded corners, minimum width=3.2cm, minimum height=0.9cm, align=center, fill=blue!5},
+    nobox/.style={inner sep=2pt, align=center},
+    env/.style={draw=OliveGreen, thick, rounded corners, minimum width=1.2cm, minimum height=5.5cm, align=center, fill=green!5}
+]
+
+    % ===== COLONNA SINISTRA (Agente) =====
+    % Sensori (alto)
+    \node[nobox] (sensors) at (0,2.2) {\textbf{Sensori}};
+    
+    % What the world is like now
+    \node[box] (state) at (0,1.2) {\textbf{What the world is like now}};
+    
+    % Condition-action rules (a sinistra di What action I should do now)
+    \node[box] (rules) at (-6.2, -0.8) {\textbf{Condition-action rules}};
+    
+    % What action I should do now
+    \node[box] (action) at (0,-0.8) {\textbf{What action I should do now}};
+    
+    % Attuatori (basso)
+    \node[nobox] (actu) at (0,-1.8) {\textbf{Attuatori}};
+    
+    % ===== FRECCE VERTICALI =====
+    \draw[-{Stealth[length=2.5mm]}, thick] (sensors) -- (state);
+    \draw[-{Stealth[length=2.5mm]}, thick] (state) -- (action);
+    \draw[-{Stealth[length=2.5mm]}, thick] (rules) -- (action);
+    \draw[-{Stealth[length=2.5mm]}, thick] (action) -- (actu);
+    
+    % ===== AMBIENTE (a destra, stretto, con testo ruotato) =====
+    \node[env] (env) at (5.5, 0.2) {};
+    \node[rotate=90, font=\bfseries\Large, text=OliveGreen] at (5.5, -0.2) {\textbf{Ambiente}};
+    
+    % ===== FRECCE ESTERNE (senza scritte, allineate a sensor e actuator) =====
+    % Ambiente -> Sensori
+       \draw[-{Stealth[length=2.5mm]}, thick] (env.west |- sensors.east) -- (sensors.east);
+    
+    % Attuatori -> Ambiente
+    \draw[-{Stealth[length=2.5mm]}, thick] (actu.east) -- (env.west |- actu.east);
+    
+    % Etichetta Agente (sotto)
+    \node[font=\bfseries\large, text=blue] at (0,-3) {\textbf{Agente}};
+    
+    % Cornice per l'Agente
+    \draw[gray!50, very thick, rounded corners, dashed] 
+        (-8.8, -2.5) rectangle (3.0, 2.8);
+
+\end{tikzpicture}
+\end{center}
+
+Il flusso decisionale dell'agente reflex:
+\begin{enumerate}
+    \item I sensori ricevono una percezione dell'ambiente in un dato istante.
+    \item L'agente interpreta l'input sensoriale per definire la situazione corrente.
+    \item Applicazione delle regole condizione-azione.
+    \item Viene selezionata l'azione corrispondente alla percezione attuale.
+    \item L'azione viene inviata agli attuatori per essere eseguita.
+\end{enumerate}
+
+\begin{exbox}[Pseudocodice agente reflex aspirapolvere]
+\begin{verbatim}
+function REFLEX-VACUUM-AGENT([location, status]) returns an action
+    if status = Dirty then return Suck
+    else if location = A then return Right
+    else if location = B then return Left
+\end{verbatim}
+\end{exbox}
+
+\begin{itemize}
+    \item \textbf{Vantaggi}: estrema semplicità, basso costo computazionale, efficienza computazionale, semplicità di implementazione, basso consumo di risorse.
+    \item \textbf{Limiti}: funzionano \emph{solo} in ambienti completamente osservabili. In ambienti parzialmente osservabili, l'agente può cadere in \textbf{loop infiniti} (es.\ aspirapolvere senza sensore di posizione che oscilla tra $A$ e $B$). Inoltre, manca di \textbf{adattabilità}: non può imparare dai propri errori e fallisce in ambienti dinamici.
+    \item \textbf{Soluzione parziale}: lo spostamento casuale (\textit{random}) dell'agente in un altro ambiente permette di uscire dal loop senza dover memorizzare lo stato passato, ma non è ottimale.
+    \item \textbf{Nota}: l'agente reflex non mantiene alcuna memoria delle percezioni passate, quindi ogni decisione è basata esclusivamente sull'input sensoriale corrente.
+    \item \textbf{Applicazioni tipiche}: termostati, rilevatori di fumo, sistemi di controllo semplici dove l'ambiente è completamente osservabile e le regole sono ben definite.
+\end{itemize}
+
+
+\subsection{2. Agenti Reflex Basati su Modello}
+L'agente \textbf{model-based} è stato progettato per gestire la \textbf{parziale osservabilità} dell'ambiente mantenendo uno \textbf{stato interno} che tiene traccia della parte di mondo che l'agente non può vedere in quel momento. Questo stato dipende dalla storia delle percezioni e riflette gli aspetti inosservabili dello stato attuale.
+
+L'agente conosce:
+\begin{itemize}
+    \item Lo \textbf{stato} che rappresenta la memoria dell'agente.
+    \item \textbf{Modello di transizione}: la conoscenza di come il mondo evolve nel tempo in modo indipendente dall'agente, e di come le azioni dell'agente stesso modifichino l'ambiente (effetti delle azioni + evoluzione autonoma). Descrive come cambia l'ambiente e gli effetti delle azioni dell'agente sul mondo.
+    \item \textbf{Modello sensoriale}: come lo stato del mondo si riflette nelle percezioni dei sensori. Descrive come lo stato del mondo si rifletta nelle percezioni dell'agente.
+\end{itemize}
+
+\begin{exbox}[Robot aspirapolvere model-based]
+Il robot ricorda che dietro di sé c'è un muro, anche se i sensori frontali non lo vedono in questo momento. Lo stato interno conserva la mappa parziale dell'ambiente esplorato.
+\end{exbox}
+
+
+
+
+\begin{center}
+\begin{tikzpicture}[
+    font=\small,
+    >=Stealth,
+    box/.style={draw=blue!70, thick, rounded corners, minimum width=3.8cm, minimum height=1.1cm, align=center, fill=blue!5},
+    oval/.style={draw=gray, thick, rounded corners=12pt, minimum width=3.0cm, minimum height=0.8cm, align=center, fill=gray!10},
+    nobox/.style={inner sep=2pt, align=center},
+    env/.style={draw=OliveGreen, thick, rounded corners, minimum width=1.2cm, minimum height=7.5cm, align=center, fill=green!5}
+]
+
+    % Etichette sensori/attuatori
+    \node[nobox] (sensors) at (3.0, 3.8)  {\textbf{Sensori}};
+    \node[nobox] (actu)    at (3.0, -3.5) {\textbf{Attuatori}};
+
+    % Rettangoli centrali
+    \node[box] (worldnow)  at (3.0,  1.5) {\textbf{What the world}\\\textbf{is like now}};
+    \node[box] (actionnow) at (3.0, -1.8) {\textbf{What action I}\\\textbf{should do now}};
+
+    % Ovali sinistra
+    \node[oval] (state)   at (-3.0,  2.8) {\textbf{State}};
+    \node[oval] (evolves) at (-3.0,  1.5) {\textbf{How the world evolves}};
+    \node[oval] (actdo)   at (-3.0, 0.2) {\textbf{What my actions do}};
+    \node[oval] (rules)   at (-3.0, -1.8) {\textbf{Condition-action rules}};
+
+    % Frecce verticali
+    \draw[-{Stealth[length=2.5mm]}, thick] (sensors)   -- (worldnow);
+    \draw[-{Stealth[length=2.5mm]}, thick] (worldnow)  -- (actionnow);
+    \draw[-{Stealth[length=2.5mm]}, thick] (actionnow) -- (actu);
+
+    % Frecce orizzontali (ovali -> worldnow, con percorso a L)
+    % State: scende al livello del bordo superiore di worldnow, poi va a destra
+    \draw[-{Stealth[length=2.5mm]}, thick]
+        (state.east) -- ++(0.8,0) |- (worldnow.west|-{(0,1.9)});
+
+    % How the world evolves: dritta al centro
+    \draw[-{Stealth[length=2.5mm]}, thick]
+        (evolves.east) -- (worldnow.west);
+
+    % What my actions do: sale al livello del bordo inferiore di worldnow, poi va a destra
+    \draw[-{Stealth[length=2.5mm]}, thick]
+        (actdo.east) -- ++(0.8,0) |- (worldnow.west|-{(0,1.1)});
+
+    % Condition-action rules -> What action I should do now
+    \draw[-{Stealth[length=2.5mm]}, thick]
+        (rules.east) -- (actionnow.west);
+
+    % Freccia tratteggiata: What the world is like now -> State
+    \draw[-{Stealth[length=2.5mm]}, thick, dashed]
+        (worldnow.north west) -- ++(0, 2.0) -| (state.north);
+
+    % Ambiente
+    \node[env] (env) at (7.2, 0.2) {};
+    \node[rotate=90, font=\bfseries\Large, text=OliveGreen] at (7.2, 0.2) {\textbf{Ambiente}};
+
+    % Ambiente <-> Sensori / Attuatori
+    \draw[-{Stealth[length=2.5mm]}, thick] (env.west |- sensors.east) -- (sensors.east);
+    \draw[-{Stealth[length=2.5mm]}, thick] (actu.east) -- (env.west |- actu.east);
+
+    % Etichetta e cornice agente
+    \node[font=\bfseries\large, text=blue] at (0, -4.5) {\textbf{Agente}};
+    \draw[gray!50, very thick, rounded corners, dashed]
+        (-5.5, -4.0) rectangle (5.5, 4.5);
+
+\end{tikzpicture}
+\end{center}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Il flusso decisionale dell'agente model-based:
+\begin{enumerate}
+    \item \textbf{Percezione}: i sensori ricevono dati dall'ambiente.
+    \item \textbf{Aggiornamento dello stato}: l'agente determina com'è il mondo ora per colmare le parti non visibili, combinando lo stato precedente, l'ultima azione compiuta, la percezione attuale e i modelli di transizione e sensoriale.
+    \item \textbf{Applicazione delle regole} condizione-azione.
+    \item \textbf{Decisione}: scelta dell'azione che l'agente deve eseguire cercando una regola corrispondente allo stato attuale.
+    \item \textbf{Esecuzione}: l'azione viene inviata agli attuatori per influenzare l'ambiente.
+\end{enumerate}
+
+\begin{exbox}[Pseudocodice agente model-based]
+\begin{verbatim}
+function MODEL-BASED-REFLEX-AGENT(percept) returns an action
+    persistent: state, the agent's current conception of the world state
+                model, a description of how the next state depends 
+                      on current state and action
+                rules, a set of condition-action rules
+                action, the most recent action, initially none
+    
+    state ← UPDATE-STATE(state, action, percept, model)
+    rule ← RULE-MATCH(state, rules)
+    action ← rule.ACTION
+    return action
+\end{verbatim}
+\end{exbox}
+
+
+\subsection{3. Agenti Basati sull'Obiettivo}
+Oltre allo stato corrente, dispongono di \textbf{informazioni sull'obiettivo} (\emph{goal}): descrivono situazioni desiderabili (es.\ trovarsi alla destinazione del passeggero). Il programma combina il modello del mondo con il goal per scegliere azioni che lo raggiungano. Il vantaggio è la \textbf{flessibilità}: contrariamente agli agenti riflessi che hanno regole fisse, se l'obiettivo cambia, il comportamento dell'agente si adatta automaticamente per raggiungere il nuovo obiettivo.
+Un esempio è il robot aspirapolvere il cui obiettivo è “pulire tutta la scacchiera/casa e tornare alla base”.
+
+
+\begin{itemize}
+    \item Quando la selezione non è banale, si usano algoritmi di \textbf{ricerca} e \textbf{pianificazione}.
+    \item \textbf{Vantaggio}: la conoscenza è rappresentata \emph{esplicitamente} e può essere modificata. Per cambiare destinazione basta specificare un nuovo goal -- un agente reflex dovrebbe riscrivere tutte le sue regole.
+\end{itemize}
+
+
+\subsection{4. Agenti Basati sull'Utilità}
+I goal forniscono solo una distinzione binaria (``felice'' o ``infelice''). Spesso molte sequenze di azioni raggiungono l'obiettivo, ma alcune sono più rapide, sicure o economiche. Serve quindi uno strumento più preciso: la \textbf{funzione di utilità}.
+
+Quando ci sono obiettivi in conflitto o incertezza sul successo di un'azione, l'agente non può limitarsi a chiedersi ``raggiungo o non raggiungo il goal?''. Deve invece valutare quanto sia \emph{buono} un determinato stato. La funzione di utilità assegna a ogni stato un valore numerico che rappresenta il ``grado di soddisfazione'' dell'agente in quello stato.
+
+Un agente razionale basato sull'utilità sceglie l'azione che massimizza l'\textbf{utilità attesa}, cioè la media dei valori degli stati possibili, pesata per la probabilità che ciascuno si verifichi. In questo modo può gestire:
+\begin{itemize}
+    \item \textbf{Obiettivi in conflitto}: ad esempio, raggiungere la destinazione nel minor tempo possibile ma anche consumare poca benzina.
+    \item \textbf{Incertezza}: se un'azione può portare a esiti diversi con certe probabilità, l'agente sceglie quella con il miglior risultato atteso.
+\end{itemize}
+
+\begin{exbox}[Auto a guida autonoma]
+L'obiettivo è arrivare a destinazione, ma la funzione di utilità combina: sicurezza (peso elevato), tempo di percorrenza, consumo di carburante, rispetto del codice della strada, comfort dei passeggeri. L'agente sceglie velocità e traiettoria che massimizzano l'utilità attesa.
+\end{exbox}
+
+\subsection{5. Agenti che Apprendono}
+Qualsiasi tipo di agente (reflex, model-based, goal-based, utility-based) può essere dotato di \textbf{capacità di apprendimento}. L'apprendimento permette all'agente di operare in ambienti inizialmente ignoti e di migliorare le proprie prestazioni nel tempo.
+
+Un \textbf{learning agent} è strutturato in quattro componenti:
+
+
+
+\begin{center}
+\begin{tikzpicture}[
+    font=\small,
+    >=Stealth,
+    node distance = 0.8cm and 1.2cm,
+    box/.style={draw=blue!70, thick, rounded corners, minimum width=2.6cm, minimum height=1cm, align=center, fill=blue!5},
+    nobox/.style={inner sep=2pt, align=center}
+]
+
+    % Performance standard (sopra Critic, senza rettangolo)
+    \node[nobox] (perf_std) at (-3,3.2) {\textbf{Performance standard}};
+    
+    % ===== COLONNA SINISTRA =====
+    % Critic (alto sinistra)
+    \node[box] (critic) at (-3,1.5) {\textbf{Critic}};
+    
+    % Learning element (centro sinistra)
+    \node[box] (learn) at (-3,-0.5) {\textbf{Learning element}};
+    
+    % Problem generator (basso sinistra)
+    \node[box] (prob) at (-3,-2.5) {\textbf{Problem generator}};
+    
+    % ===== COLONNA DESTRA =====
+    % Sensori (alto destra, senza rettangolo)
+    \node[nobox] (sensors) at (3,1.5) {\textbf{Sensori}};
+    
+    % Performance element (centro destra)
+    \node[box] (perf) at (3,-0.5) {\textbf{Performance element}};
+    
+    % Attuatori (basso destra, senza rettangolo)
+    \node[nobox] (actu) at (3,-2.4) {\textbf{Attuatori}};
+    
+    % ===== FRECCE VERTICALI (colonna sinistra) =====
+    \draw[-{Stealth[length=2.5mm]}, thick] (perf_std) -- (critic.north);
+    
+    % Freccia Critic -> Learning (feedback)
+    \draw[-{Stealth[length=2.5mm]}, thick] (critic.south) -- (learn.north)
+        node[midway, left] {\textbf{feedback}};
+    
+    % Freccia Learning -> Problem (learning goal)
+    \draw[-{Stealth[length=2.5mm]}, thick] (learn.south) -- (prob.north)
+        node[midway, left] {\textbf{learning goal}};
+    
+    % ===== FRECCE ORIZZONTALI ====
+    
+    % Problem generator -> Performance element (azioni)
+    \draw[-{Stealth[length=2.5mm]}, thick] (prob.east) -- (perf);
+    \draw[-{Stealth[length=2.5mm]}, thick] (sensors.south) -- (perf.north);
+    \draw[-{Stealth[length=2.5mm]}, thick] (perf.south) -- (actu.north);
+    \draw[-{Stealth[length=2.5mm]}, thick] (sensors.west) -- (critic.east);
+    
+    \draw[-{Stealth[length=2.5mm]}, thick] (actu.east) -- (env.west |- actu.east);
+        % Ambiente -> Sensori (Percepts)
+    \draw[-{Stealth[length=2.5mm]}, thick] (env.west |- sensors.east) -- (sensors.east);
+
+
+    \draw[-{Stealth[length=2.5mm]}, thick] ([yshift=6pt] learn.east) -- ([yshift=6pt] perf.west)
+        node[midway, above=2pt] {\textbf{changes}};
+    
+    % Performance element -> Learning element (knowledge - freccia sotto)
+    \draw[-{Stealth[length=2.5mm]}, thick] ([yshift=-6pt] perf.west) -- ([yshift=-6pt] learn.east)
+        node[midway, below=2pt] {\textbf{knowledge}};
+    
+    % ===== AMBIENTE (stretto, con testo ruotato) =====
+    \node[draw=OliveGreen, thick, rounded corners, minimum width=1.2cm, minimum height=6cm, align=center, fill=green!5] (env)
+        at (7.2,-0.5) {};
+    
+    % Testo Ambiente ruotato di 90°
+    \node[rotate=90, font=\bfseries\Large, text=OliveGreen] at (7.2,-0.5) {\textbf{Ambiente}};
+        
+    % Etichetta Agente (sotto)
+    \node[font=\bfseries\large, text=blue] at (0,-4) {\textbf{Agente}};
+    
+    % Cornice per l'Agente
+    \draw[gray!50, very thick, rounded corners, dashed] 
+        (-5.6, -3.5) rectangle (5.6, 2.5);
+
+\end{tikzpicture}
+\end{center}
+
+\begin{itemize}
+    \item \textbf{Performance element}: l'agente vero e proprio -- percepisce e agisce in base a ciò che conosce.
+    \item \textbf{Critic}: valuta le prestazioni dell'agente rispetto a uno standard esterno fisso; passa il feedback al learning element.
+    \item \textbf{Learning element}: responsabile dei miglioramenti -- modifica la conoscenza del performance element.
+    \item \textbf{Problem generator}: suggerisce azioni esplorative che potrebbero portare a esperienze informative (anche subottimali nel breve termine, migliori nel lungo).
+\end{itemize}
+
+\begin{exbox}[Taxi che impara]
+Il performance element guida il taxi. Dopo una svolta brusca, il critic osserva la reazione degli altri guidatori (linguaggio colorito, frenate brusche) e passa il segnale negativo al learning element, che aggiunge la regola ``svolta brusca = cattiva azione''. Il problem generator potrebbe suggerire di testare i freni su asfalto bagnato per imparare la distanza di frenata.
+\end{exbox}
+
+
+\subsection{Rappresentazioni dello stato}
+I componenti dell'agente possono rappresentare l'ambiente con livelli crescenti di espressività:
+\begin{enumerate}
+    \item \textbf{Atomica}: ogni stato è indivisibile, senza struttura interna (es.\ nome di una città in un problema di percorso).
+    \item \textbf{Fattorizzata}: ogni stato è un vettore di variabili/attributi con valori (es.\ reti bayesiane, logica proposizionale).
+    \item \textbf{Strutturata}: oggetti con attributi e relazioni esplicite tra loro (es.\ logica del primo ordine, database relazionali).
+\end{enumerate}
+
+Rappresentazioni \textbf{localiste} (un concetto $=$ una locazione di memoria) vs.\ \textbf{distribuite} (un concetto $=$ pattern su molte unità, tipiche delle reti neurali artificiali -- più robuste al rumore).

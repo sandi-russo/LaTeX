@@ -1,0 +1,235 @@
+\chapter{Servizi SOAP/WSDL}
+
+\section{Introduzione}
+
+I servizi RPC (Remote Procedure Call) basati su SOAP/WSDL rappresentano un approccio più formale e strutturato alla definizione e implementazione di web service rispetto ai servizi RESTful. Si basano su un insieme di tecnologie standardizzate che permettono l'interoperabilità tra sistemi differenti.
+
+Le principali tecnologie usate sono:
+
+\begin{itemize}
+    \item \textbf{XML Schema}: per definire la struttura e i tipi di dato dei documenti XML scambiati.
+    \item \textbf{UDDI} (Universal Description, Discovery and Integration): per la pubblicazione e ricerca di web service.
+    \item \textbf{WSDL} (Web Services Description Language): per descrivere l'interfaccia del web service.
+    \item \textbf{SOAP} (Simple Object Access Protocol): il protocollo per lo scambio di messaggi.
+    \item \textbf{HTTP}: come protocollo di trasporto.
+\end{itemize}
+
+\section{XML Schema}
+
+\subsection{Cosa permette di fare XML Schema}
+
+XML Schema permette di:
+
+\begin{itemize}
+    \item Definire gli elementi (tag) che possono apparire in un documento.
+    \item Definire gli attributi che possono apparire in un elemento.
+    \item Definire quali elementi devono essere inseriti in altri elementi (chiamati \emph{child}).
+    \item Definire il numero degli elementi child.
+    \item Definire quando un elemento deve essere vuoto o può contenere testo, elementi, oppure entrambi.
+    \item Definire il tipo per ogni elemento e per gli attributi (intero, stringa, ecc., ma anche tipi personalizzati).
+    \item Definire i valori di default o fissi per elementi ed attributi.
+\end{itemize}
+
+\subsection{Esempio di documento XML}
+
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<libro>
+    <titolo>Al di la' del bene e del male</titolo>
+    <autore>Nietzsche</autore>
+    <numeroDiPagine>272</numeroDiPagine>
+</libro>
+\end{lstlisting}
+
+\subsection{Esempio di XML Schema}
+
+Il corrispondente XML Schema che definisce la struttura del documento precedente:
+
+\begin{lstlisting}[language=XML]
+<?xml version="1.0"?>
+<!-- iniziamo lo schema -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="localhost/wsdl"
+           xmlns="localhost/wsdle"
+           elementFormDefault="qualified">
+    <!-- definiamo l'elemento libro -->
+    <xs:element name="libro">
+        <xs:complexType>
+            <xs:all>
+                <!-- definiamo i vari elementi child di libro -->
+                <xs:element name="titolo" type="xs:string" />
+                <xs:element name="autore" type="xs:string" />
+                <xs:element name="numeroDiPagine" type="xs:integer" />
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
+\end{lstlisting}
+
+\subsection{Spiegazione degli attributi principali}
+
+\begin{itemize}
+    \item \texttt{xmlns:xs="..."}: stabilisce che gli elementi che iniziano con \texttt{xs} provengono dal namespace \url{http://www.w3.org/2001/XMLSchema}.
+    \item \texttt{targetNamespace="..."}: definisce a quale namespace appartengono gli elementi definiti con questo schema.
+    \item \texttt{xmlns="..."}: definisce il namespace di default (quello applicato se non ne esplicitiamo uno).
+    \item \texttt{elementFormDefault="qualified"}: indica che ogni elemento usato nel documento XML che utilizzerà questo schema dovrà essere qualificato.
+\end{itemize}
+
+\section{Elementi di un documento WSDL}
+
+Un documento WSDL ha la seguente struttura generale:
+
+\begin{lstlisting}[language=XML]
+<definitions>
+    <types>
+        <!-- definizione dei tipi di dato utilizzati -->
+    </types>
+    <message>
+        <!-- definizione di uno dei messaggi impiegati dal
+             web service per comunicare con l'applicazione client -->
+    </message>
+    <!-- naturalmente puo' esistere piu' di un elemento message
+         all'interno del documento -->
+    <portType>
+        <!-- definisce una "porta" e le operazioni che possono
+             essere eseguite dal web service.
+             Definisce inoltre i messaggi coinvolti nelle
+             operazioni elencate -->
+    </portType>
+    <binding>
+        <!-- definisce il formato del messaggio ed i
+             dettagli di protocollo per ogni porta -->
+    </binding>
+</definitions>
+\end{lstlisting}
+
+Analizziamo nel dettaglio ciascuno degli elementi.
+
+\subsection{Types (Tipi)}
+
+La sezione \texttt{<types>} definisce i tipi di dato utilizzati nei messaggi del web service, generalmente tramite uno XML Schema:
+
+\begin{lstlisting}[language=XML]
+<types>
+    <xs:schema targetNamespace="http://localhost/wsdl">
+        <xs:element name="email" type="xs:string"/>
+        <xs:element name="password" type="xs:string"/>
+        <xs:element name="respText" type="xs:string"/>
+        <xs:element name="utente">
+            <xs:complexType>
+                <xs:all>
+                    <xs:element name="email" type="xs:string"/>
+                    <xs:element name="password" type="xs:string"/>
+                </xs:all>
+            </xs:complexType>
+        </xs:element>
+    </xs:schema>
+</types>
+\end{lstlisting}
+
+\subsection{Messages (Messaggi)}
+
+La sezione \texttt{<message>} definisce i messaggi che il web service scambia con il client. Ogni operazione ha tipicamente un messaggio di \emph{request} (inviato al server) e uno di \emph{response} (restituito dal server):
+
+\begin{lstlisting}[language=XML]
+<message name="get_userRequest">
+    <part name="email" type="xs:string" />
+</message>
+<message name="get_userResponse">
+    <part name="utente" type="xs:utente" />
+</message>
+<message name="save_userRequest">
+    <part name="email" type="xs:string" />
+    <part name="password" type="xs:string" />
+</message>
+<message name="save_userResponse">
+    <part name="respText" type="xs:string" />
+</message>
+\end{lstlisting}
+
+\subsection{PortType}
+
+L'elemento \texttt{<portType>} definisce le operazioni che il web service può eseguire e i messaggi coinvolti in ciascuna operazione:
+
+\begin{lstlisting}[language=XML]
+<portType name="gestioneUtentiType">
+    <operation name="getUserByEmail">
+        <input message="tns:get_userRequest" />
+        <output message="tns:get_userResponse" />
+    </operation>
+    <operation name="saveUser">
+        <input message="tns:save_userRequest" />
+        <output message="tns:save_userResponse" />
+    </operation>
+</portType>
+\end{lstlisting}
+
+Ogni \texttt{<operation>} indica un messaggio di input (la richiesta) e uno di output (la risposta).
+
+\subsection{Binding}
+
+L'elemento \texttt{<binding>} definisce il formato del messaggio e i dettagli di protocollo per ogni porta. Collega il \texttt{portType} a un protocollo di trasporto concreto (tipicamente SOAP su HTTP):
+
+\begin{lstlisting}[language=XML]
+<binding name="gestioneUtentiBinding" type="tns:gestioneUtentiType">
+    <soap:binding style="rpc"
+        transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="getUserByEmail">
+        <soap:operation
+            soapAction="localhost/wsdl/service.php/getUserByEmail"
+            style="rpc"/>
+        <input>
+            <soap:body use="encoded"
+                namespace="localhost/wsdl"
+                encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+        </input>
+        <output>
+            <soap:body use="encoded"
+                namespace="localhost/wsdl"
+                encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+        </output>
+    </operation>
+    <operation name="saveUser">
+        <soap:operation
+            soapAction="localhost/wsdl/service.php/saveUser"
+            style="rpc"/>
+        <input>
+            <soap:body use="encoded"
+                namespace="localhost/wsdl"
+                encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+        </input>
+        <output>
+            <soap:body use="encoded"
+                namespace="localhost/wsdl"
+                encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+        </output>
+    </operation>
+</binding>
+\end{lstlisting}
+
+\subsection{Service}
+
+L'elemento \texttt{<service>} definisce l'endpoint del web service, cioè l'indirizzo al quale il servizio è raggiungibile:
+
+\begin{lstlisting}[language=XML]
+<service name="ServizioUtenti">
+    <port name="GestioneUtenti"
+          binding="tns:gestioneUtentiBinding">
+        <soap:address location="localhost/wsdl/service.php"/>
+    </port>
+</service>
+\end{lstlisting}
+
+\section{Considerazioni finali}
+
+Un documento WSDL completo fornisce tutte le informazioni necessarie perché un client possa invocare il web service:
+
+\begin{itemize}
+    \item Quali operazioni sono disponibili (\texttt{portType}).
+    \item Quali messaggi vengono scambiati in ogni operazione (\texttt{message}).
+    \item Come sono strutturati i dati nei messaggi (\texttt{types}).
+    \item Come devono essere trasmessi i messaggi sulla rete (\texttt{binding}).
+    \item Dove (a quale URL) si trova il servizio (\texttt{service}).
+\end{itemize}
+
+Rispetto ai servizi RESTful, i servizi SOAP/WSDL offrono maggiore formalità e rigore nella specifica dell'interfaccia, ma sono generalmente più complessi da progettare, implementare e utilizzare.

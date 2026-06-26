@@ -1,0 +1,123 @@
+\chapter{Pagine HTML dinamiche}
+
+\section{Introduzione}
+
+Una \textbf{pagina web dinamica} è una pagina web che cambia in risposta all'utente o in base ai dati, senza necessariamente essere ricaricata.
+
+\subsection{Perché sono importanti le pagine web dinamiche?}
+
+\begin{itemize}
+    \item Offrono un'esperienza utente migliorata e interattiva.
+    \item Permettono personalizzazioni basate su input dell'utente o profili utente.
+    \item Riducono la necessità di ricaricare la pagina, risparmiando tempo e risorse.
+\end{itemize}
+
+\section{Pagine HTML dinamiche Client-side}
+
+\textbf{Tecnologia Primaria}: JavaScript (con librerie/framework come jQuery, React, Angular, Vue.js).
+
+\textbf{Caratteristiche}:
+\begin{itemize}
+    \item Modifica del contenuto in tempo reale, anche senza interagire con il server.
+    \item Esegue script nel browser dell'utente.
+    \item Adatta per interazioni rapide, animazioni e manipolazione del DOM.
+\end{itemize}
+
+\textbf{Esempi}: validazione del modulo in tempo reale, animazioni, SPA (Single Page Applications).
+
+\section{Pagine HTML dinamiche Server-side}
+
+\textbf{Tecnologie Primarie}: PHP, Ruby on Rails, Python (Django, Flask), Node.js.
+
+\textbf{Caratteristiche}:
+\begin{itemize}
+    \item Genera contenuto basato su richieste al server, spesso interagendo con un database.
+    \item Adatta per operazioni che richiedono l'accesso a dati persistenti o protetti.
+\end{itemize}
+
+\textbf{Esempi}: visualizzazione di post da un blog, autenticazione utente, generazione di report personalizzati.
+
+\section{Flusso di elaborazione}
+
+\subsection{Client-side}
+
+\begin{enumerate}
+    \item Richiesta HTTP
+    \item Risposta HTTP
+    \item Elaborazione e rendering nel browser
+\end{enumerate}
+
+\subsection{Server-side}
+
+\begin{enumerate}
+    \item Richiesta HTTP
+    \item Elaborazione sul server
+    \item Risposta HTTP
+    \item Rendering nel browser
+\end{enumerate}
+
+\section{Confronto tra Client-side e Server-side}
+
+\subsection{Definizione}
+
+\begin{itemize}
+    \item \textbf{Client-side}: modifica il contenuto di una pagina direttamente nel browser dell'utente.
+    \item \textbf{Server-side}: genera o modifica il contenuto sul server prima di inviarlo al browser dell'utente.
+\end{itemize}
+
+\subsection{Tecnologie principali}
+
+\begin{itemize}
+    \item \textbf{Client-side}: JavaScript (es.\ React, Angular, Vue.js).
+    \item \textbf{Server-side}: PHP, Ruby on Rails, Python (Django, Flask), Node.js.
+\end{itemize}
+
+\subsection{Interazione con il database}
+
+\begin{itemize}
+    \item \textbf{Client-side}: generalmente mediante API o servizi web.
+    \item \textbf{Server-side}: diretta, utilizzando linguaggi come SQL.
+\end{itemize}
+
+\subsection{Tempi di risposta}
+
+\begin{itemize}
+    \item \textbf{Client-side}: spesso istantaneo, poiché non richiede una nuova richiesta al server.
+    \item \textbf{Server-side}: può richiedere più tempo, a seconda della richiesta al server e del tempo di elaborazione.
+\end{itemize}
+
+\subsection{Esempi di utilizzo}
+
+\begin{itemize}
+    \item \textbf{Client-side}: animazioni, validazione di form in tempo reale, SPA (Single Page Applications).
+    \item \textbf{Server-side}: generazione di pagine basate su contenuti di database, autenticazione utente, elaborazione di form lato server.
+\end{itemize}
+
+\subsection{Sicurezza}
+
+\begin{itemize}
+    \item \textbf{Client-side}: dati e logica sono esposti nel codice sorgente del browser.
+    \item \textbf{Server-side}: maggior controllo sulla sicurezza e sulla logica, poiché l'elaborazione avviene lato server.
+\end{itemize}
+
+\section{Casi d'uso}
+
+\subsection{Dinamica Lato Server}
+
+\begin{itemize}
+    \item \textbf{Autenticazione e autorizzazione}: gestione sicura delle credenziali degli utenti e controllo dell'accesso.
+    \item \textbf{Interazioni dirette con il database}: operazioni CRUD (Create, Read, Update, Delete) su dati persistenti.
+    \item \textbf{Elaborazione di dati sensibili}: operazioni che non dovrebbero essere esposte o accessibili dal lato client.
+\end{itemize}
+
+\textbf{Vantaggi}: maggiore controllo sulla sicurezza, logica nascosta dal client, gestione centralizzata.
+
+\subsection{Dinamica Lato Client}
+
+\begin{itemize}
+    \item \textbf{Interazioni e feedback in tempo reale}: animazioni, validazioni di form immediate, transizioni.
+    \item \textbf{SPA (Single Page Applications)}: applicazioni web che non richiedono ricariche complete della pagina.
+    \item \textbf{Caricamenti asincroni}: recupero e visualizzazione di dati senza ricaricare l'intera pagina (ad es.\ AJAX).
+\end{itemize}
+
+\textbf{Vantaggi}: esperienza utente fluida e reattiva, riduzione delle richieste al server, interattività avanzata.

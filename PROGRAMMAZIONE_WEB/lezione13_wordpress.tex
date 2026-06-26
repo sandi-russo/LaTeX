@@ -1,0 +1,229 @@
+\chapter{WordPress}
+
+\section{Introduzione}
+
+\textbf{WordPress} è un CMS (Content Management System) nato come strumento per il blogging, oggi esteso ad ogni tipo di utilizzo. È un software Open Source ed è una delle piattaforme più utilizzate al mondo per la creazione di siti web.
+
+\section{Caratteristiche principali}
+
+Le caratteristiche principali di WordPress sono:
+
+\begin{itemize}
+    \item \textbf{Temi}: controllano l'aspetto grafico e funzionale del sito.
+    \item \textbf{Plugin}: estendono le funzionalità di WordPress.
+    \item \textbf{Ottimizzato per i motori di ricerca} (SEO-friendly).
+    \item \textbf{Open source}: il codice sorgente è liberamente disponibile.
+\end{itemize}
+
+\section{Funzioni base}
+
+\subsection{Gestione utenti e ruoli}
+
+WordPress gestisce diversi ruoli utente, ciascuno con permessi specifici:
+
+\begin{itemize}
+    \item \textbf{Super Admin}: disponibile solo in WordPress Multisite.
+    \item \textbf{Administrator}: ha pieno controllo sul sito.
+    \item \textbf{Editor}: controllo completo sui contenuti (propri e di altri utenti).
+    \item \textbf{Author}: può creare, modificare e pubblicare i propri contenuti.
+    \item \textbf{Contributor}: può creare contenuti e modificare i propri, ma non può pubblicarli.
+    \item \textbf{Subscriber}: non può creare contenuti.
+\end{itemize}
+
+\subsection{Gestione documenti multimediali}
+
+WordPress include un sistema integrato per la gestione di documenti multimediali (immagini, video, audio, PDF, ecc.) tramite la \emph{Media Library}.
+
+\subsection{Sistema di commenti integrato}
+
+WordPress dispone di un sistema di commenti integrato che permette ai visitatori di interagire con i contenuti pubblicati.
+
+\section{Contenuti su WordPress}
+
+WordPress organizza i contenuti in diversi tipi:
+
+\begin{itemize}
+    \item \textbf{Post}: articoli del blog.
+    \item \textbf{Page}: pagine statiche.
+    \item \textbf{Attachment}: documenti multimediali allegati.
+    \item \textbf{Revision}: versioni precedenti dei post.
+    \item \textbf{Navigation menu}: menu di navigazione.
+    \item \textbf{Custom post}: tipi di contenuto personalizzati definiti dall'utente.
+\end{itemize}
+
+WordPress fornisce anche una \textbf{REST API} (\url{https://developer.wordpress.org/rest-api/}) che permette a sviluppatori esterni di interagire programmaticamente con il CMS.
+
+\section{Configurazioni: wp-config.php}
+
+Alcune configurazioni principali di WordPress si trovano nel file \texttt{wp-config.php}. Esempi:
+
+\begin{lstlisting}[language=PHP]
+define('WP_DEBUG', true);
+define('WP_CACHE', true);
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{WP\_DEBUG}: attiva la modalità di debug per lo sviluppo.
+    \item \texttt{WP\_CACHE}: abilita il sistema di caching.
+\end{itemize}
+
+\section{Bacheca di WordPress}
+
+La \textbf{bacheca} (o \emph{dashboard}) di WordPress è l'interfaccia di amministrazione del sito. Attraverso la bacheca è possibile gestire:
+
+\begin{itemize}
+    \item Post e pagine.
+    \item Media.
+    \item Commenti.
+    \item Temi e plugin.
+    \item Utenti.
+    \item Impostazioni generali del sito.
+\end{itemize}
+
+\section{Organizzazione dei contenuti}
+
+\subsection{I Post}
+
+I \textbf{Post} in WordPress hanno due accezioni:
+
+\begin{itemize}
+    \item Sono \textbf{articoli} pubblicati sul sito.
+    \item Dal punto di vista interno, sono \textbf{tutti i contenuti} memorizzati nella tabella \texttt{wp\_posts} del database. Il campo \texttt{post\_type} distingue:
+    \begin{itemize}
+        \item \textbf{Post}: articoli standard.
+        \item \textbf{Pagine}: contenuti statici.
+        \item \textbf{Post personalizzati}: ad esempio eventi di un calendario, schede dei prodotti, ecc.
+        \item \textbf{Revisioni}: versioni precedenti dei post (da salvataggi bozze).
+        \item \textbf{Elementi dei menu di navigazione} (link).
+    \end{itemize}
+\end{itemize}
+
+\subsection{Stato dei post}
+
+Ogni post può trovarsi in uno dei seguenti stati:
+
+\begin{center}
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Stato} & \textbf{Descrizione} \\
+\hline
+Publish & Post pubblicato e visibile pubblicamente. \\
+\hline
+Future & Post programmato (in attesa di pubblicazione). \\
+\hline
+Draft & Post in bozza e visibile da utenti con ruolo appropriato (autore e gli utenti Editor o superiori). \\
+\hline
+Pending & In attesa di revisione da parte di Editor o superiori. \\
+\hline
+Private & Visibile solo dagli Administrator. \\
+\hline
+Trash & Cestinato. \\
+\hline
+Auto-Draft & Salvataggio automatico (revisione). \\
+\hline
+Inherit & Post che ereditano lo stato da un post genitore (ad es.\ Attachment o Revision rispetto a un Post). \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Permessi sui post}
+
+I permessi variano in base al ruolo dell'utente:
+
+\begin{center}
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Ruolo} & \textbf{Capacità} \\
+\hline
+Subscriber & Non può creare contenuti. \\
+\hline
+Contributor & Può creare contenuti e modificare i propri, non può pubblicare. \\
+\hline
+Author & Può creare contenuti, modificare e pubblicare i propri. \\
+\hline
+Editor & Ha il controllo completo sui contenuti propri e di altri utenti; può pubblicare contenuti in attesa di revisione creati dai Contributor. \\
+\hline
+\end{tabular}
+\end{center}
+
+\section{Tassonomie}
+
+Una \textbf{tassonomia} è un insieme di termini legati da un'analogia semantica e/o gerarchica. Le tassonomie:
+
+\begin{itemize}
+    \item Permettono di assegnare ai contenuti \textbf{parole chiave con valore semantico}; tali termini consentono all'utente di comprendere immediatamente il contenuto di un articolo e di effettuare ricerche per argomenti (\emph{organizzazione semantica}).
+    \item Permettono di creare un \textbf{sistema di navigazione} facilmente comprensibile da parte dei visitatori (\emph{organizzazione gerarchica}).
+\end{itemize}
+
+\subsection{Categorie}
+
+Le \textbf{Categorie} consentono di raggruppare logicamente e gerarchicamente i contenuti del blog. Costituiscono una \emph{tassonomia gerarchica}.
+
+\subsection{Tag}
+
+I \textbf{Tag} etichettano i contenuti in modo tale che l'utente comprenda immediatamente quale sia l'argomento di un articolo. Costituiscono una \emph{tassonomia semantica}.
+
+\section{Pagine}
+
+Le \textbf{Pagine}:
+
+\begin{itemize}
+    \item Sono \textbf{contenuti statici} (non articoli del blog).
+    \item Possono avere una \textbf{struttura gerarchica}: può essere definito il genitore in caso di nuova pagina, creando relazioni padre-figlio.
+\end{itemize}
+
+Sono adatte per contenuti come ``Chi siamo'', ``Contatti'', ``Termini di servizio'', ecc.
+
+\section{Plugin}
+
+\subsection{Funzionalità core e Plugin}
+
+WordPress offre delle funzionalità \emph{core}, ma i \textbf{Plugin} permettono di aggiungere funzionalità ulteriori.
+
+Un plugin può essere costituito da:
+
+\begin{itemize}
+    \item Un solo file principale.
+    \item Una collezione di file \texttt{.php}, \texttt{.css}, \texttt{.js}, oltre a eventuali grafiche.
+\end{itemize}
+
+\subsection{Widget}
+
+I \textbf{Widget} sono blocchi di codice HTML che permettono di aggiungere contenuto o funzionalità alle \emph{sidebar} di WordPress. WordPress dispone di diversi widget predefiniti per:
+
+\begin{itemize}
+    \item Categorie.
+    \item Tag cloud.
+    \item Ricerca.
+    \item Calendario delle pubblicazioni.
+    \item Menu personalizzati.
+    \item Ecc.
+\end{itemize}
+
+\subsection{Shortcode}
+
+Gli \textbf{Shortcode} sono particolari tag che vengono inseriti all'interno dei contenuti del sito ed eseguono delle macro, producendo contenuto HTML.
+
+Esempio:
+
+\begin{verbatim}
+[gallery ids="123,124,125,126" size="medium"]
+\end{verbatim}
+
+Questo shortcode, inserito in un post o in una pagina, genera una galleria di immagini con gli ID specificati.
+
+\section{Temi}
+
+I \textbf{Temi} sono le estensioni di WordPress che controllano il modo in cui un sito si presenta ai visitatori e agli utenti.
+
+Non si tratta solo della definizione delle caratteristiche grafiche, ma del \textbf{controllo generale di tutti gli aspetti che riguardano la presentazione}, anche sotto il profilo funzionale.
+
+Un tema determina:
+
+\begin{itemize}
+    \item Il layout del sito.
+    \item La tipografia e i colori.
+    \item La struttura delle pagine e dei post.
+    \item Le aree widget disponibili.
+    \item I template per i vari tipi di contenuto.
+\end{itemize}
