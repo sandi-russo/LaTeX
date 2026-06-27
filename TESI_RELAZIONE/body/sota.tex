@@ -37,7 +37,6 @@ Il vantaggio computazionale più rilevante del modello LPG rispetto ai sistemi r
 
 
 \section{Neo4j Enterprise e GDS}
-
 Neo4j è un database a grafo \textbf{nativo}, il che significa che implementa il modello a grafo fino al livello di memorizzazione fisica. A differenza dei sistemi che emulano un grafo sopra una tecnologia preesistente, i dati in Neo4j vengono memorizzati esattamente nel modo in cui vengono modellati, senza strati di astrazione intermedi.
 
 Il meccanismo architetturale che rende possibile questa efficienza è l'\textbf{index-free adjacency}: ogni nodo memorizza fisicamente i puntatori diretti agli archi incidenti, i quali a loro volta contengono riferimenti immediati ai nodi sorgente e destinazione. Attraversare una relazione non richiede quindi la consultazione di strutture di indice globali, rendendo il costo di ogni singolo passo di traversata $O(1)$ rispetto alla dimensione complessiva del grafo.
@@ -58,18 +57,6 @@ In questa tesi, Neo4j Enterprise 2026.04.0 viene utilizzato come layer di storag
 
 \section{Graph Embeddings e Graph Neural Networks}
 I \textbf{graph embedding} sono funzioni che proiettano i nodi di un grafo in uno spazio vettoriale continuo a bassa dimensionalità, preservando proprietà strutturali e semantiche della rete originale. L'obiettivo è trasformare entità discrete — nodi identificati da un ID o da una stringa — in vettori numerici su cui applicare algoritmi di Machine Learning standard.
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 \begin{figure}[ht!]
@@ -166,109 +153,61 @@ I \textbf{graph embedding} sono funzioni che proiettano i nodi di un grafo in un
 \end{figure}
 
 
+Le \textbf{Graph Neural Networks} (GNN) rappresentano l'evoluzione naturale del deep learning applicato a domini non euclidei. A differenza dei modelli tradizionali, che assumono input strutturati su griglie fisse (come i pixel di un'immagine) o sequenze (come il testo), le GNN sono progettate per operare su topologie irregolari. Esse apprendono gli embedding direttamente dalla struttura del grafo, eliminando la necessità di complesse fasi di \textit{feature engineering} manuale. Il nucleo computazionale che accomuna gran parte di queste architetture è il paradigma del \textbf{message passing}: iterativamente, l'embedding di ciascun nodo viene aggiornato aggregando le rappresentazioni vettoriali dei suoi vicini diretti. Ripetendo questo processo per $k$ iterazioni (o layer), l'embedding di un nodo arriva a catturare le dipendenze strutturali e semantiche del suo intero vicinato fino a $k$ salti di distanza nella rete.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Le \textbf{Graph Neural Networks} (GNN) sono la famiglia di modelli che apprende questi embedding direttamente dalla struttura del grafo, senza richiedere feature ingegnerizzate manualmente. Il meccanismo comune a tutte le GNN è il \textbf{message passing}: per ogni nodo, l'embedding viene aggiornato iterativamente aggregando le rappresentazioni dei nodi vicini. Dopo $k$ iterazioni, l'embedding di un nodo cattura informazioni strutturali fino a $k$ salti di distanza nella rete.
-
-Formalmente, dato un nodo $v$ al layer $l$, l'aggiornamento segue lo schema:
+Formalmente, dato un nodo $v$ al layer $l$, la transizione di stato segue lo schema astratto:
 
 \begin{equation}
 \mathbf{h}_v^{(l)} = \text{UPDATE}\left(\mathbf{h}_v^{(l-1)},\ \text{AGGREGATE}\left(\left\{\mathbf{h}_u^{(l-1)} : u \in \mathcal{N}(v)\right\}\right)\right)
 \label{eq:message_passing}
 \end{equation}
 
-dove $\mathcal{N}(v)$ indica l'insieme dei vicini di $v$, e le funzioni \textsc{Aggregate} e \textsc{Update} variano a seconda dell'architettura specifica.
+dove $\mathcal{N}(v)$ indica l'insieme dei vicini di $v$. 
 
-I tre algoritmi analizzati in questa tesi rappresentano tre approcci distinti a questo problema, differenziandosi per strategia di aggregazione, gestione dell'eterogeneità del grafo e tipo di task per cui sono stati progettati. La tabella \ref{tab:algo_comparison} ne riassume le caratteristiche principali.
+Le funzioni \textsc{Aggregate} e \textsc{Update} definiscono l'identità dell'architettura: la prima deve essere strettamente invariante rispetto alle permutazioni (poiché l'ordine con cui si leggono i nodi vicini in un grafo non ha rilevanza), mentre la seconda si occupa di combinare l'informazione appena aggregata con lo stato precedente del nodo stesso tramite trasformazioni non lineari.
 
-\begin{table}[h!]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-\textbf{Algoritmo} & \textbf{Approccio} & \textbf{Eterogeneità} & \textbf{Task ideale} \\
-\midrule
-GraphSAGE & Aggregazione vicini & Omogeneo & Link prediction, node classification \\
-TransE    & Traslazione vettoriale & Relazioni tipizzate & Link prediction su KG \\
-HashGNN   & Hashing + proiezione & Eterogeneo nativo & Grafi multi-tipo \\
-\bottomrule
-\end{tabular}
-\caption{Confronto dei tre algoritmi analizzati.}
-\label{tab:algo_comparison}
-\end{table}
+I tre algoritmi analizzati in questa tesi esplorano lo spazio delle soluzioni predittive secondo filosofie profondamente diverse, offrendo un confronto strutturale completo. Mentre GraphSAGE incarna perfettamente lo schema del \textit{message passing} omogeneo puntando su scalabilità e inferenza induttiva, HashGNN estende tale logica per gestire nativamente la forte eterogeneità di un grafo biomedico. A questi si affianca TransE, che si discosta dal paradigma di aggregazione topologica per operare puramente come modello traslazionale nello spazio latente, fungendo da solida base di confronto (\textit{baseline}) nell'analisi dei Knowledge Graph.
 
 
 \section{GraphSAGE}
+GraphSAGE (\textit{Graph SAmple and aggreGatE}) è un framework per l'apprendimento di graph embedding induttivi, introdotto formalmente da Hamilton et al. nel 2017 \cite{hamilton2017inductive}. A differenza degli approcci trasduttivi classici (come DeepWalk o Node2Vec), che ottimizzano una matrice di embedding fissa esclusivamente per i nodi osservati durante la fase di training, GraphSAGE compie un cambio di paradigma: invece di memorizzare un vettore per ogni nodo, apprende una \textbf{funzione di aggregazione} topologica generalizzabile. Questo approccio permette di generare embedding \textit{on-the-fly} per nodi completamente invisibili durante l'addestramento, rendendo l'algoritmo intrinsecamente adatto a grafi dinamici, reti in continua evoluzione e dataset biomedici di grandi dimensioni.
 
-GraphSAGE (\textit{Graph SAmple and aggreGatE}) è un algoritmo di graph embedding induttivo proposto da Hamilton et al. nel 2017. A differenza degli approcci trasduttivi, che calcolano embedding solo per i nodi presenti durante il training, GraphSAGE apprende una \textbf{funzione di aggregazione} generalizzabile a nodi non visti, rendendolo adatto a grafi dinamici e a larga scala.
+La motivazione pratica è rilevante in contesti come PharMeBiNet, dove nuove evidenze farmacologiche vengono integrate continuamente da decine di banche dati. Un metodo trasduttivo richiederebbe di riaddestrare l'intero modello ad ogni aggiornamento del grafo. GraphSAGE, al contrario, può produrre embedding per un nuovo composto chimico semplicemente osservando il suo vicinato nel grafo aggiornato, senza alcun riaddestramente. Una volta completato il training, il modello addestrato può essere inserito direttamente in una pipeline di inferenza e applicato a nodi non visti, purché questi possiedano un vettore di feature della stessa dimensione e con lo stesso significato semantico usato durante l'addestramento, requisito fondamentale, poiché le operazioni di aggregazione (media, somma) vengono eseguite tra vettori che devono essere comparabili nello stesso spazio.
 
-\subsection{Meccanismo di funzionamento}
+Un limite importante da tenere presente è che GraphSAGE \textbf{non tiene conto delle label dei nodi né dei tipi di relazione}: aggrega i vicini indiscriminatamente, trattando il grafo come se fosse omogeneo. Questo lo rende meno adatto a catturare la ricchezza semantica di grafi fortemente eterogenei come PharMeBiNet, dove 410 tipi di relazione distinti descrivono interazioni biologicamente molto diverse tra loro.
 
-L'intuizione alla base di GraphSAGE è semplice: l'identità di un nodo è definita dal suo vicinato. Invece di apprendere un vettore per ogni nodo individualmente, l'algoritmo apprende come aggregare le feature dei vicini per produrre una rappresentazione del nodo stesso.
+\subsection{Meccanismo di funzionamento e Scalabilità}
+L'intuizione alla base di GraphSAGE è che l'identità semantica e strutturale di un nodo possa essere inferita dalla composizione del suo vicinato. In un knowledge graph biomedico, ad esempio, un composto chimico che interagisce con proteine coinvolte in patologie cardiovascolari acquisisce, attraverso il suo vicinato, una rappresentazione che ne riflette il profilo farmacologico. Invece di addestrare un vettore individuale per ciascuna entità, il modello apprende un set di matrici di peso che combinano le feature dei nodi adiacenti, permettendo di generalizzare a nodi mai visti durante il training.
 
-Il forward pass si articola in due fasi per ogni layer $l$:
+Per superare il noto problema dell'\textit{esplosione del vicinato} (neighborhood explosion), che affligge le tradizionali GNN quando applicate a grafi densi come PharMeBiNet, dove alcuni nodi raggiungono gradi nell'ordine delle decine di migliaia, il \textit{forward pass} di GraphSAGE introduce un meccanismo di campionamento stocastico.
+
+Per ogni layer $l$, l'elaborazione si articola in due fasi:
 
 \begin{enumerate}
-  \item \textbf{Campionamento}: per ogni nodo $v$, viene selezionato un sottoinsieme fisso $\mathcal{S}(v) \subseteq \mathcal{N}(v)$ di vicini. Il campionamento è necessario per controllare il costo computazionale su nodi ad alto grado.
-  \item \textbf{Aggregazione}: le rappresentazioni dei vicini campionati vengono aggregate e combinate con la rappresentazione corrente del nodo.
+  \item \textbf{Campionamento}: per ogni nodo $v$, viene selezionato uniformemente un sottoinsieme di dimensione fissa $\mathcal{S}(v) \subseteq \mathcal{N}(v)$ di vicini. La dimensione del campione è un iperparametro che controlla il trade-off tra qualità dell'aggregazione e costo computazionale. Questo vincolo rende il costo per singolo nodo costante e prevedibile, indipendentemente dalla densità locale della rete. In questo modo, anche in presenza di nodi con grado molto elevato, il modello evita l'esplosione del numero di vicini da considerare. Nel caso in cui un nodo sia isolato, ovvero privo di vicini, l'algoritmo recupera informazioni esclusivamente dallo stato corrente del nodo stesso durante lo step di aggregazione.
+  \item \textbf{Aggregazione}: le rappresentazioni dei nodi campionati vengono aggregate in un singolo vettore di contesto, il quale riassume l'informazione proveniente dal vicinato locale. Questo vettore viene poi fuso con la rappresentazione precedente del nodo target tramite concatenazione e trasformazione lineare, così da produrre un nuovo embedding che integra sia le informazioni strutturali sia quelle già codificate al layer precedente.
 \end{enumerate}
 
-Formalmente:
+Formalmente, le equazioni di aggiornamento al layer $l$ sono definite come:
+
 \begin{equation}
 \mathbf{h}_{\mathcal{N}(v)}^{(l)} = \text{AGGREGATE}_l\left(\left\{\mathbf{h}_u^{(l-1)} : u \in \mathcal{S}(v)\right\}\right)
 \end{equation}
+
 \begin{equation}
 \mathbf{h}_v^{(l)} = \sigma\left(\mathbf{W}^{(l)} \cdot \left[\mathbf{h}_v^{(l-1)} \,\|\, \mathbf{h}_{\mathcal{N}(v)}^{(l)}\right]\right)
 \end{equation}
 
-dove $\|$ indica la concatenazione, $\mathbf{W}^{(l)}$ è la matrice di pesi apprendibile al layer $l$ e $\sigma$ è una funzione di attivazione non lineare. Gli aggregatori supportati includono \textit{Mean} (media delle rappresentazioni dei vicini), \textit{Pool} (max-pooling dopo una trasformazione lineare) e \textit{LSTM} (aggregazione sequenziale su una permutazione casuale dei vicini).
+dove $\|$ indica l'operazione di concatenazione vettoriale, $\mathbf{W}^{(l)}$ rappresenta la matrice dei pesi ottimizzabile al layer $l$, e $\sigma$ denota una funzione di attivazione non lineare. La scelta della concatenazione rispetto alla semplice somma è cruciale: preserva la distinzione tra lo stato storico del nodo e l'informazione fresca derivante dal vicinato, una distinzione che la somma cancellerebbe collassando i due contributi in un unico vettore indistinguibile. Le funzioni di attivazione supportate includono ReLU, Leaky ReLU e Sigmoid, con ReLU come scelta standard per i layer intermedi.
 
-\begin{figure}[ht]
+Con $k$ layer impilati, ogni nodo aggrega informazioni strutturali fino a $k$ salti di distanza nel grafo. Con un solo layer, ogni nodo conosce solo i suoi vicini diretti. Con due layer, la configurazione adottata, ogni nodo integra informazioni sul vicinato del vicinato, catturando pattern strutturali locali di secondo ordine. Aumentare la profondità oltre 2-3 layer introduce il fenomeno dell'\textbf{over-smoothing}: le rappresentazioni dei nodi tendono a convergere verso valori simili, perdendo la specificità locale che rende gli embedding utili per task discriminativi. Va inoltre notato che la dimensione degli embedding è direttamente proporzionale alla quantità di informazione catturata: embedding di dimensione maggiore permettono di rappresentare pattern più complessi, ma a costo di un maggiore consumo di memoria.
+
+Affinché l'operazione sia matematicamente robusta, la funzione \textsc{Aggregate} deve garantire l'invarianza alle permutazioni. Le implementazioni standard includono l'aggregatore \textit{Mean} (media element-wise dei vettori dei vicini, computazionalmente efficiente), l'aggregatore \textit{Pool} (applicazione di una rete feed-forward a ciascun vicino seguita da max-pooling element-wise, computazionalmente più oneroso) e l'aggregatore \textit{LSTM}, adattato per gestire la natura non ordinata dei vicinati tramite permutazioni casuali.
+
+Nel contesto della \textit{link prediction} su knowledge graph eterogenei, l'applicazione di GraphSAGE richiede la proiezione iniziale di tutti i tipi di nodo in uno spazio vettoriale condiviso. Nel caso specifico di PharMeBiNet, dove i nodi Chemical e Disease non possiedono feature numeriche ma sono identificati solo da stringhe, questa proiezione viene realizzata tramite \textbf{embedding learnable}: tabelle di vettori inizializzati casualmente e ottimizzati durante il training. Questa omogeneizzazione forzata, unita all'efficienza computazionale del campionamento, facilita una convergenza rapida, permettendo al modello di sfruttare l'omofilia intrinseca delle reti biomediche già nelle prime epoche di addestramento.
+
+
+\begin{figure}[ht!]
 \centering
 \begin{tikzpicture}[
   mainnode/.style={circle, draw, fill=blue!15, minimum size=1cm, font=\small},
@@ -279,92 +218,155 @@ dove $\|$ indica la concatenazione, $\mathbf{W}^{(l)}$ è la matrice di pesi app
                  minimum width=2.5cm, minimum height=0.8cm, font=\footnotesize},
   arrow/.style={->, thick}
 ]
-  \node[neighnode] (n1) at (-3, 1.5)  {$u_1$};
-  \node[neighnode] (n2) at (-3, 0)    {$u_2$};
-  \node[neighnode] (n3) at (-3, -1.5) {$u_3$};
-  \node[mainnode]  (v)  at (0, 0)     {$v$};
+  \node[neighnode] (n1) at (-5, 1.5)  {$u_1$};
+  \node[neighnode] (n2) at (-5, 0)    {$u_2$};
+  \node[neighnode] (n3) at (-5, -1.5) {$u_3$};
+  \node[mainnode]  (v)  at (-3, 0)     {$v$};
 
   \draw[arrow] (n1) -- (v);
   \draw[arrow] (n2) -- (v);
   \draw[arrow] (n3) -- (v);
 
-  \node[aggbox] (agg) at (3, 0) {AGGREGATE};
+  \node[aggbox] (agg) at (1.5, 0) {AGGREGATE};
   \draw[arrow] (v) -- node[above, font=\footnotesize]{$\mathbf{h}_{u_1}, \mathbf{h}_{u_2}, \mathbf{h}_{u_3}$} (agg);
 
   \node[outbox] (out) at (6.5, 0) {$\mathbf{h}_v^{(l)}$};
   \draw[arrow] (agg) -- node[above, font=\footnotesize]{$\mathbf{W} \cdot [\mathbf{h}_v \| \mathbf{h}_\mathcal{N}]$} (out);
 
   \node[font=\footnotesize, gray] at (-3, -2.5) {Vicini campionati};
-  \node[font=\footnotesize, gray] at (0, -2.5)  {Nodo target};
+  \node[font=\footnotesize, gray] at (1.5, -2.5)  {Nodo target};
   \node[font=\footnotesize, gray] at (6.5, -2.5) {Nuovo embedding};
 \end{tikzpicture}
 \caption{Il meccanismo di aggregazione di GraphSAGE: i vicini campionati vengono aggregati e combinati con la rappresentazione del nodo target.}
 \label{fig:graphsage_aggregation}
 \end{figure}
 
+
 \subsection{Pipeline per la link prediction}
+La pipeline si articola in tre componenti distinti.
 
-Nel contesto di questa tesi, GraphSAGE viene impiegato per il task di link prediction tra nodi \textit{Chemical} e \textit{Disease}. La pipeline si articola in tre componenti distinti.
-
-\begin{figure}[ht]
-\centering
-\begin{tikzpicture}[
-  box/.style={rectangle, draw, rounded corners, minimum width=3.2cm,
-              minimum height=0.9cm, font=\small, align=center},
-  encoder/.style={box, fill=blue!12},
-  decoder/.style={box, fill=orange!15},
-  input/.style={box, fill=gray!10},
-  output/.style={box, fill=green!15},
-  arrow/.style={->, thick}
-]
-  \node[input]   (graph)   at (0, 6)    {Grafo PharMeBiNet\\{\footnotesize Chemical, Disease}};
-  \node[encoder] (emb)     at (0, 4.2)  {Embedding learnable\\{\footnotesize \texttt{nn.Embedding}}};
-  \node[encoder] (conv1)   at (0, 2.6)  {SAGEConv Layer 1\\{\footnotesize aggrega vicini a 1 salto}};
-  \node[encoder] (relu)    at (0, 1.0)  {ReLU};
-  \node[encoder] (conv2)   at (0, -0.6) {SAGEConv Layer 2\\{\footnotesize aggrega vicini a 2 salti}};
-  \node[decoder] (concat)  at (0, -2.2) {Concatenazione\\{\footnotesize $[\mathbf{z}_{chem} \| \mathbf{z}_{dis}]$}};
-  \node[decoder] (mlp)     at (0, -3.8) {MLP Decoder\\{\footnotesize Linear $\to$ ReLU $\to$ Linear}};
-  \node[output]  (sigmoid) at (0, -5.4) {Sigmoid\\{\footnotesize $p \in [0, 1]$}};
-
-  \draw[arrow] (graph)   -- (emb);
-  \draw[arrow] (emb)     -- (conv1);
-  \draw[arrow] (conv1)   -- (relu);
-  \draw[arrow] (relu)    -- (conv2);
-  \draw[arrow] (conv2)   -- node[right, font=\footnotesize]{encoder} (concat);
-  \draw[arrow] (concat)  -- (mlp);
-  \draw[arrow] (mlp)     -- (sigmoid);
-
-  \draw[dashed, thick, gray] 
-    (-2.5, 3.4) rectangle (2.5, -1.4);
-  \node[gray, font=\footnotesize, align=center] at (3.8, 1.0) {Encoder\\GraphSAGE};
-
-  \draw[dashed, thick, orange!60]
-    (-2.5, -1.4) rectangle (2.5, -6.2);
-  \node[orange!80!black, font=\footnotesize, align=center] at (3.8, -3.8) {Decoder\\MLP};
-
-\end{tikzpicture}
-\caption{Pipeline completa di GraphSAGE per la link prediction Chemical→Disease.}
-\label{fig:graphsage_pipeline}
-\end{figure}
-
-\textbf{Encoder}: poiché i nodi Chemical e Disease in PharMeBiNet non possiedono feature numeriche — sono identificati solo da stringhe come \texttt{DB00620} o \texttt{MONDO:0000004} — le feature iniziali sono embedding learnable, una tabella di vettori inizializzati casualmente e ottimizzati durante il training. Gli embedding di Chemical e Disease vengono fusi in un unico tensore omogeneo tramite concatenazione, e gli indici Disease vengono traslati di \texttt{num\_chemical} posizioni per evitare collisioni. Due layer SAGEConv propagano l'informazione strutturale del vicinato.
+\textbf{Encoder}: poiché i nodi Chemical e Disease in PharMeBiNet non possiedono feature numeriche, sono identificati solo da stringhe come \texttt{DB00620} o \texttt{MONDO:0000004}, le feature iniziali sono embedding learnable, una tabella di vettori inizializzati casualmente e ottimizzati durante il training. Gli embedding di Chemical e Disease vengono fusi in un unico tensore omogeneo tramite concatenazione, e gli indici Disease vengono traslati di \texttt{num\_chemical} posizioni per evitare collisioni. Due layer SAGEConv propagano l'informazione strutturale del vicinato.
 
 \textbf{Decoder}: dati gli embedding $\mathbf{z}_{chem}$ e $\mathbf{z}_{dis}$ di una coppia di nodi, il decoder li concatena e li passa attraverso un MLP (\textit{Multi-Layer Perceptron}) con attivazione finale sigmoid, producendo uno score $p \in [0, 1]$ che rappresenta la probabilità che il link esista.
 
 \textbf{Training}: il modello viene addestrato su link positivi (archi reali) e link negativi generati casualmente, minimizzando la \textit{binary cross-entropy loss}. Il 10\% degli archi viene tenuto nascosto per la valutazione finale tramite \texttt{RandomLinkSplit}.
 
-\subsection{Vantaggi e limitazioni}
+\begin{figure}[ht!]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+  box/.style={rectangle, draw, rounded corners, minimum width=3.4cm,
+              minimum height=1cm, font=\small, align=center},
+  encoder/.style={box, fill=blue!12},
+  decoder/.style={box, fill=orange!15},
+  input/.style={box, fill=gray!10},
+  extract/.style={box, fill=teal!15},
+  output/.style={box, fill=green!15},
+  arrow/.style={->, thick, >=stealth}
+]
 
+  % RIGA 1: Input & Base Embedding
+  \node[input]   (graph)   at (-3, 5)    {Grafo PharMeBiNet\\{\footnotesize Chemical, Disease}};
+  \node[encoder] (emb)     at (3, 5)     {Embedding learnable\\{\footnotesize \texttt{nn.Embedding}}};
+
+  % RIGA 2: GraphSAGE Encoder Pipeline
+  \node[encoder] (conv1)   at (-4.5, 2.5) {SAGEConv Layer 1\\{\footnotesize aggrega vicini a 1 salto}};
+  \node[encoder] (relu)    at (0, 2.5)    {ReLU\\{\footnotesize attivazione}};
+  \node[encoder] (conv2)   at (4.5, 2.5)  {SAGEConv Layer 2\\{\footnotesize aggrega vicini a 2 salti}};
+
+  % RIGA 3: Matrice Z unica, poi estrazione
+  \node[encoder] (Z)       at (0, 0.5)   {Matrice $\mathbf{Z}$\\{\footnotesize embedding di tutti i nodi}};
+  \node[extract] (emb_chem) at (-2.5, -1.5) {Embedding Chemical\\{\footnotesize $\mathbf{z}_{chem}$}};
+  \node[extract] (emb_dis)  at (2.5, -1.5)  {Embedding Disease\\{\footnotesize $\mathbf{z}_{dis}$}};
+
+  % RIGA 4: Decoder Pipeline
+  \node[decoder] (concat)  at (-4.5, -4) {Concatenazione\\{\footnotesize $[\mathbf{z}_{chem} \,\|\, \mathbf{z}_{dis}]$}};
+  \node[decoder] (mlp)     at (0, -4)    {MLP Decoder\\{\footnotesize Linear $\to$ ReLU $\to$ Linear}};
+  \node[output]  (sigmoid) at (4.5, -4)  {Sigmoid\\{\footnotesize $p \in [0, 1]$}};
+
+  % FRECCE
+  \draw[arrow] (graph) -- (emb);
+  \draw[arrow] (emb.south) -- ++(0, -0.5) -| (conv1.north);
+  \draw[arrow] (conv1) -- (relu);
+  \draw[arrow] (relu) -- (conv2);
+  \draw[arrow] (conv2.south) -- ++(0, -0.5) -| (Z.north);
+
+  % Da Z estrae Chemical e Disease
+  \draw[arrow] (Z.south) -- ++(0, -0.3) -| (emb_chem.north);
+  \draw[arrow] (Z.south) -- ++(0, -0.3) -| (emb_dis.north);
+
+  % Entrambi verso concat
+  \draw[arrow] (emb_chem.south) -- ++(0, -0.5) -| (concat.north);
+  \draw[arrow] (emb_dis.south)  -- ++(0, -0.8) -| (concat.north);
+
+  % Decoder
+  \draw[arrow] (concat) -- (mlp);
+  \draw[arrow] (mlp) -- (sigmoid);
+
+  % RIQUADRI
+  \draw[dashed, thick, gray] (-6.5, 3.5) rectangle (6.5, 1.5);
+  \node[gray, font=\footnotesize] at (4.8, 3.8) {Encoder GraphSAGE};
+
+  \draw[dashed, thick, orange!70] (-6.5, -3.0) rectangle (6.5, -5.0);
+  \node[orange!90!black, font=\footnotesize] at (4.6, -2.6) {Decoder Link Prediction};
+
+\end{tikzpicture}
+}
+\caption{Pipeline architetturale di GraphSAGE: estrazione vettoriale ed inferenza della probabilità di link.}
+\label{fig:graphsage_pipeline}
+\end{figure}
+
+\subsection{Vantaggi e limitazioni}
 GraphSAGE è induttivo, scalabile e converge rapidamente. Il suo principale limite su PharMeBiNet è che tratta il grafo come omogeneo: non distingue i 410 tipi di relazione presenti nel dataset, aggregando indiscriminatamente vicini di tipo diverso. Su nodi ad alto grado come le proteine (grado medio 232), il campionamento fisso introduce rumore informativo perdendo parte del contesto biologico.
 
 
-\section{TransE}
 
-TransE (\textit{Translating Embeddings}) è un modello di knowledge graph embedding proposto da Bordes et al. nel 2013. A differenza delle GNN che aggregano informazioni strutturali dai vicini, TransE apprende embedding per entità e relazioni modellando le relazioni come \textbf{traslazioni nello spazio vettoriale}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{TransE}
+TransE (\textit{Translating Embeddings}) è un modello di \textit{knowledge graph embedding} proposto da Bordes et al. nel 2013 \cite{bordes2013translating}. A differenza delle GNN, che aggregano informazione strutturale dai vicini tramite meccanismi di message passing, TransE apprende embedding per entità e relazioni modellando queste ultime come \textbf{traslazioni nello spazio vettoriale}. Si tratta quindi di un approccio fondamentalmente diverso da GraphSAGE: non vi è alcuna aggregazione di vicinato. Il grafo viene rappresentato come un insieme di triple $(h, r, t)$, testa, relazione e coda, e il modello impara a posizionare le entità nello spazio latente in modo che la relazione $r$ corrisponda, idealmente, a un vettore di spostamento da $h$ a $t$.
+
+Questo paradigma lo rende particolarmente adatto a knowledge graph con molti tipi di relazione semanticamente distinti, come PharMeBiNet, dove 410 tipi di arco descrivono interazioni biologicamente molto diverse, \textit{treats}, \textit{causes}, \textit{disrupts}, \textit{associates}, ciascuna con una semantica propria che GraphSAGE ignora completamente.
 
 \subsection{Meccanismo di funzionamento}
 
-L'intuizione di TransE è geometrica: data una tripla valida $(h, r, t)$ — dove $h$ è il nodo testa, $r$ la relazione e $t$ il nodo coda — il modello ottimizza gli embedding affinché $\mathbf{h} + \mathbf{r} \approx \mathbf{t}$.
+L'intuizione di TransE è geometrica: data una tripla valida $(h, r, t)$, dove $h$ è il nodo testa, $r$ la relazione e $t$ il nodo coda, il modello ottimizza gli embedding affinché $\mathbf{h} + \mathbf{r} \approx \mathbf{t}$. In altre parole, la relazione è un vettore che, sommato all'embedding della testa, deve avvicinarsi il più possibile all'embedding della coda.
 
 \begin{figure}[ht]
 \centering
@@ -378,10 +380,10 @@ L'intuizione di TransE è geometrica: data una tripla valida $(h, r, t)$ — dov
   \node[node] (h) at (1.5, 1.0) {$h$};
   \node[node] (t) at (5.5, 3.5) {$t$};
 
-  \draw[arrow, blue!70, very thick] (h) -- 
+  \draw[arrow, blue!70, very thick] (h) --
     node[above left, font=\small]{$\mathbf{r}$} (t);
 
-  \node[circle, draw, dashed, fill=orange!20, minimum size=1cm, font=\small] 
+  \node[circle, draw, dashed, fill=orange!20, minimum size=1cm, font=\small]
     (hpr) at (5.5, 3.5) {};
 
   \node[font=\footnotesize, gray] at (1.5, 0.2) {$\mathbf{h}$};
@@ -396,81 +398,190 @@ L'intuizione di TransE è geometrica: data una tripla valida $(h, r, t)$ — dov
 \end{figure}
 
 La funzione di scoring per una tripla $(h, r, t)$ è la distanza L2 tra $\mathbf{h} + \mathbf{r}$ e $\mathbf{t}$:
-
 \begin{equation}
 f(h, r, t) = \|\mathbf{h} + \mathbf{r} - \mathbf{t}\|_2
 \end{equation}
 
-Un valore basso indica una tripla plausibile, un valore alto indica una tripla falsa. Il training usa una \textbf{margin ranking loss}:
-
+Un valore basso indica una tripla plausibile, mentre un valore alto indica una tripla improbabile. Il training utilizza una \textbf{margin ranking loss}:
 \begin{equation}
 \mathcal{L} = \sum_{(h,r,t) \in S} \sum_{(h',r,t') \in S'} \max\left(0,\ \gamma + f(h,r,t) - f(h',r,t')\right)
 \end{equation}
 
-dove $S$ è l'insieme delle triple positive, $S'$ quello delle triple negative generate per corruzione, e $\gamma$ è il margine. La loss penalizza i casi in cui il punteggio della tripla negativa non supera quello della tripla positiva di almeno $\gamma$.
+dove $S$ è l'insieme delle triple positive, $S'$ quello delle triple negative generate per corruzione, e $\gamma$ è il margine. La loss penalizza i casi in cui la tripla negativa non risulta almeno di $\gamma$ peggiore della tripla positiva. Durante il training, gli embedding vengono inoltre vincolati o normalizzati per evitare che il modello riduca artificialmente la loss aumentando le norme dei vettori.
+
+Gli embedding vengono normalizzati L2 prima di ogni aggiornamento, per evitare che il modello raggiunga loss bassa semplicemente espandendo le norme dei vettori invece di apprendere una struttura geometrica significativa.
+
+\subsection{Pipeline per la link prediction}
+Nel contesto di questa tesi, TransE viene applicato al sottografo Chemical$\to$Disease con un unico tipo di relazione. La pipeline è più semplice di quella di GraphSAGE perché non richiede aggregazione di vicinato: ogni entità e ogni tipo di relazione ha il proprio embedding, e la predizione si basa esclusivamente sulla geometria dello spazio latente.
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+  box/.style={rectangle, draw, rounded corners, minimum width=3.4cm,
+              minimum height=1cm, font=\small, align=center},
+  embbox/.style={box, fill=blue!12},
+  relbox/.style={box, fill=purple!12},
+  scorebox/.style={box, fill=orange!15},
+  output/.style={box, fill=green!15},
+  arrow/.style={->, thick, >=stealth}
+]
+  % Input
+  \node[embbox] (chem_emb) at (-4, 4)  {Embedding Chemical\\{\footnotesize $\mathbf{h} \in \mathbb{R}^d$}};
+  \node[relbox] (rel_emb)  at (0, 4)   {Embedding Relazione\\{\footnotesize $\mathbf{r} \in \mathbb{R}^d$}};
+  \node[embbox] (dis_emb)  at (4, 4)   {Embedding Disease\\{\footnotesize $\mathbf{t} \in \mathbb{R}^d$}};
+
+  % Normalizzazione
+  \node[box, fill=gray!10] (norm_h) at (-4, 2)  {Normalizzazione L2\\{\footnotesize $\mathbf{h} \leftarrow \mathbf{h}/\|\mathbf{h}\|$}};
+  \node[box, fill=gray!10] (norm_r) at (0, 2)   {Normalizzazione L2\\{\footnotesize $\mathbf{r} \leftarrow \mathbf{r}/\|\mathbf{r}\|$}};
+  \node[box, fill=gray!10] (norm_t) at (4, 2)   {Normalizzazione L2\\{\footnotesize $\mathbf{t} \leftarrow \mathbf{t}/\|\mathbf{t}\|$}};
+
+  % Traduzione
+  \node[scorebox] (trans) at (-2, 0)   {Traslazione\\{\footnotesize $\mathbf{h} + \mathbf{r}$}};
+  \node[scorebox] (score) at (2, 0)    {Scoring\\{\footnotesize $\|\mathbf{h} + \mathbf{r} - \mathbf{t}\|_2$}};
+
+  % Output
+  \node[output] (sigmoid) at (2, -2)   {Sigmoid\\{\footnotesize $p \in [0,1]$}};
+
+  % Frecce
+  \draw[arrow] (chem_emb) -- (norm_h);
+  \draw[arrow] (rel_emb)  -- (norm_r);
+  \draw[arrow] (dis_emb)  -- (norm_t);
+
+  \draw[arrow] (norm_h) -- (trans);
+  \draw[arrow] (norm_r) -- (trans);
+  \draw[arrow] (trans)  -- (score);
+  \draw[arrow] (norm_t) -- (score);
+  \draw[arrow] (score)  -- (sigmoid);
+
+  % Riquadro training
+  \draw[dashed, thick, gray] (-6, 4.8) rectangle (6, 1.2);
+  \node[gray, font=\footnotesize] at (4.4, 5) {Embedding learnable};
+
+  \draw[dashed, thick, orange!70] (-6, 0.8) rectangle (6, -2.7);
+  \node[orange!90!black, font=\footnotesize] at (5.3, 1) {Inferenza};
+
+\end{tikzpicture}
+\caption{Pipeline di TransE per la link prediction}
+\label{fig:transe_pipeline}
+\end{figure}
+
+\textbf{Embedding}: ogni nodo Chemical, ogni nodo Disease e ogni tipo di relazione ha un vettore dedicato, inizializzato con distribuzione uniforme in $[-1, 1]$. Non esiste aggregazione di vicinato: ogni entità impara la propria posizione nello spazio latente indipendentemente dalla struttura locale del grafo.
+
+\textbf{Scoring e inferenza}: data una coppia, il punteggio viene calcolato come \\ $-\|\mathbf{h} + \mathbf{r} - \mathbf{t}\|_2$. La sigmoid trasforma il punteggio in una probabilità tra 0 e 1.
+
+\textbf{Training}: la margin ranking loss confronta triple positive con triple negative generate per corruzione casuale — sostituendo la testa o la coda con un'entità scelta a caso. Il margine $\gamma = 1.0$ forza una separazione minima tra lo score delle triple vere e di quelle false.
 
 \subsection{Vantaggi e limitazioni}
+TransE è computazionalmente molto efficiente: non richiede aggregazione di vicinato né propagazione di messaggi, il che lo rende il più veloce dei tre modelli analizzati, con tempi di training circa tre volte inferiori a GraphSAGE. Cattura esplicitamente la semantica delle relazioni tramite il vettore $\mathbf{r}$, il che lo rende teoricamente adatto a knowledge graph con molti tipi di relazione come PharMeBiNet.
 
-TransE è computazionalmente efficiente e cattura esplicitamente la semantica delle relazioni tramite il vettore $\mathbf{r}$, il che lo rende particolarmente adatto a knowledge graph con molti tipi di relazione come PharMeBiNet. Il suo principale limite è che è un modello \textbf{trasduttivo}: non generalizza a nodi non visti durante il training. Presenta inoltre difficoltà nel modellare relazioni simmetriche ($h \to t$ e $t \to h$ dello stesso tipo) poiché la traslazione è direzionale per definizione.
+Il suo principale limite è che è un modello \textbf{trasduttivo}: non generalizza a nodi non visti durante il training. Presenta inoltre difficoltà nel modellare relazioni simmetriche ($h \to t$ e $t \to h$ dello stesso tipo) poiché la traslazione è direzionale per definizione, e non cattura informazioni strutturali di ordine superiore come i pattern di vicinato che GraphSAGE sfrutta.
 
 
 \section{HashGNN}
+HashGNN è un algoritmo di graph embedding progettato nativamente per grafi eterogenei\cite{neo4j_hashgnn}, e successivamente integrato nella libreria Neo4j GDS. A differenza di GraphSAGE, che fonde i diversi tipi di nodo in un unico spazio omogeneo, HashGNN mantiene \textbf{spazi di rappresentazione separati} per ogni tipo di nodo, usando funzioni di hashing casuali per arricchire le feature senza aumentare il numero di parametri apprendibili.
 
-HashGNN è un algoritmo di graph embedding progettato nativamente per grafi eterogenei, proposto da Ni et al e successivamente integrato nella libreria Neo4j GDS. A differenza di GraphSAGE, che fonde i diversi tipi di nodo in un unico spazio omogeneo, HashGNN mantiene \textbf{spazi di rappresentazione separati} per ogni tipo di nodo, usando funzioni di hashing casuali per arricchire le feature senza aumentare il numero di parametri apprendibili.
+La motivazione è diretta: in un grafo eterogeneo come PharMeBiNet, un nodo Chemical e un nodo Disease rappresentano entità biologicamente incomparabili. Forzarli nello stesso spazio vettoriale fin dall'inizio, come fa GraphSAGE, equivale a proiettare su una mappa comune due lingue diverse senza traduzione. HashGNN evita questo collasso semantico mantenendo coordinate separate per ogni tipo di nodo fino al momento della predizione.
 
 \subsection{Meccanismo di funzionamento}
+L'idea centrale di HashGNN è sostituire le proiezioni lineari apprendibili con \textbf{proiezioni casuali fisse} ispirate al \textit{Locality-Sensitive Hashing} (LSH). L'LSH è una famiglia di tecniche che proiettano dati ad alta dimensionalità in spazi a bassa dimensionalità preservando le distanze: punti vicini nello spazio originale rimangono vicini dopo la proiezione con alta probabilità.
 
-L'idea centrale di HashGNN è sostituire le proiezioni lineari apprendibili con \textbf{proiezioni casuali fisse} ispirate al \textit{Locality-Sensitive Hashing} (LSH). Per ogni nodo, l'embedding viene proiettato attraverso $K$ matrici casuali fisse $\mathbf{R}_1, \dots, \mathbf{R}_K$, e i risultati vengono binarizzati tramite la funzione segno:
+Per ogni nodo, l'embedding viene proiettato attraverso $K$ matrici casuali fisse $\mathbf{R}_1, \dots, \mathbf{R}_K$, e i risultati vengono binarizzati tramite la funzione segno:
 
 \begin{equation}
 \mathbf{h}_v^{hash} = \left[\text{sign}(\mathbf{x}_v \mathbf{R}_1^\top) \,\|\, \dots \,\|\, \text{sign}(\mathbf{x}_v \mathbf{R}_K^\top)\right]
 \end{equation}
 
-Questo produce $K$ viste diverse dello stesso nodo, catturando aspetti complementari della struttura locale. Le proiezioni fisse non vengono aggiornate durante il training: solo i layer lineari successivi (\textit{projection layers}) sono apprendibili, uno per ogni tipo di nodo.
+Questo produce $K$ viste binarie diverse dello stesso nodo, ciascuna che cattura aspetti complementari della struttura locale. La binarizzazione tramite $\text{sign}$ è computazionalmente economica e produce rappresentazioni sparse, riducendo il costo delle operazioni successive.
 
-\begin{figure}[ht]
+Le proiezioni fisse non vengono aggiornate durante il training: solo i layer lineari successivi sono apprendibili, uno per ogni tipo di nodo. Questo disaccoppiamento tra la fase di hashing (fissa, non ottimizzabile) e la fase di proiezione (apprendibile) riduce il numero totale di parametri e limita il rischio di overfitting.
+
+\subsection{Pipeline per la link prediction}
+\textbf{Encoder}: gli embedding learnable di Chemical e Disease vengono processati separatamente attraverso le proiezioni hash e i layer lineari dedicati, producendo due matrici distinte $\mathbf{Z}_c$ e $\mathbf{Z}_d$. I due spazi non vengono mai fusi durante l'encoding, questa è la differenza architetturale fondamentale rispetto a GraphSAGE.
+
+\textbf{Decoder}: dati gli embedding $\mathbf{z}_{chem}$ e $\mathbf{z}_{dis}$ di una coppia di nodi, il decoder li concatena e li passa attraverso un MLP con attivazione finale sigmoid. È solo in questo punto che le due rappresentazioni si incontrano, e il MLP deve apprendere la regola di compatibilità tra i due spazi eterogenei.
+
+\textbf{Training}: identico a GraphSAGE, binary cross-entropy su link positivi e negativi generati casualmente, con \texttt{RandomLinkSplit} per il test set.
+
+
+
+\begin{figure}[ht!]
 \centering
 \begin{tikzpicture}[
-  box/.style={rectangle, draw, rounded corners, minimum width=2.8cm,
-              minimum height=0.8cm, font=\footnotesize, align=center},
+  box/.style={rectangle, draw, rounded corners, minimum width=3cm,
+              minimum height=0.9cm, font=\small, align=center},
   chembox/.style={box, fill=blue!12},
   disbox/.style={box, fill=orange!12},
   hashbox/.style={box, fill=gray!15},
   projbox/.style={box, fill=green!12},
   decbox/.style={box, fill=red!10},
-  arrow/.style={->, thick}
+  arrow/.style={->, thick, >=stealth}
 ]
-  \node[chembox] (ce)  at (-3, 4)   {Embedding\\Chemical};
-  \node[disbox]  (de)  at (3, 4)    {Embedding\\Disease};
+  % Input embedding
+  \node[chembox] (ce) at (-3.5, 5)  {Embedding Chemical\\{\footnotesize $\mathbf{x}_c \in \mathbb{R}^d$}};
+  \node[disbox]  (de) at (3.5, 5)   {Embedding Disease\\{\footnotesize $\mathbf{x}_d \in \mathbb{R}^d$}};
 
-  \node[hashbox] (ch)  at (-3, 2.2) {Hash Features\\{\tiny $K$ proiezioni casuali}};
-  \node[hashbox] (dh)  at (3, 2.2)  {Hash Features\\{\tiny $K$ proiezioni casuali}};
+  % Hash features
+  \node[hashbox] (ch) at (-3.5, 3)  {Hash Features\\{\footnotesize $K$ proiezioni casuali fisse}};
+  \node[hashbox] (dh) at (3.5, 3)   {Hash Features\\{\footnotesize $K$ proiezioni casuali fisse}};
 
-  \node[projbox] (cp)  at (-3, 0.4) {Proj. Chemical\\{\tiny Linear + ReLU}};
-  \node[projbox] (dp)  at (3, 0.4)  {Proj. Disease\\{\tiny Linear + ReLU}};
+  % Proiezioni apprendibili
+  \node[projbox] (cp) at (-3.5, 1)  {Proj. Chemical\\{\footnotesize Linear + ReLU}};
+  \node[projbox] (dp) at (3.5, 1)   {Proj. Disease\\{\footnotesize Linear + ReLU}};
 
-  \node[decbox]  (cat) at (0, -1.4) {Concatenazione\\$[\mathbf{z}_{chem} \| \mathbf{z}_{dis}]$};
-  \node[decbox]  (mlp) at (0, -3.0) {MLP Decoder\\{\tiny Linear $\to$ ReLU $\to$ Sigmoid}};
+  % Output encoder
+  \node[chembox] (zc) at (-3.5, -1) {$\mathbf{z}_{chem}$};
+  \node[disbox]  (zd) at (3.5, -1)  {$\mathbf{z}_{dis}$};
 
-  \draw[arrow] (ce)  -- (ch);
-  \draw[arrow] (de)  -- (dh);
-  \draw[arrow] (ch)  -- (cp);
-  \draw[arrow] (dh)  -- (dp);
-  \draw[arrow] (cp)  -- (cat);
-  \draw[arrow] (dp)  -- (cat);
+  % Decoder
+  \node[decbox] (cat) at (0, -3)    {Concatenazione\\{\footnotesize $[\mathbf{z}_{chem} \| \mathbf{z}_{dis}]$}};
+  \node[decbox] (mlp) at (0, -4.8)  {MLP Decoder\\{\footnotesize Linear $\to$ ReLU $\to$ Sigmoid}};
+
+  % Frecce encoder
+  \draw[arrow] (ce) -- (ch);
+  \draw[arrow] (de) -- (dh);
+  \draw[arrow] (ch) -- (cp);
+  \draw[arrow] (dh) -- (dp);
+  \draw[arrow] (cp) -- (zc);
+  \draw[arrow] (dp) -- (zd);
+
+  % Frecce verso decoder
+  \draw[arrow] (zc.south) -- ++(0,-0.4) -| (cat.north);
+  \draw[arrow] (zd.south) -- ++(0,-0.4) -| (cat.north);
   \draw[arrow] (cat) -- (mlp);
 
-  \draw[dashed, gray] (-5, 4.6) rectangle (5, -0.3);
-  \node[gray, font=\footnotesize] at (5.8, 2.2) {Encoder};
+  % Riquadri
+  \draw[dashed, thick, gray] (-5.8, 5.7) rectangle (5.8, -1.8);
+  \node[gray, font=\footnotesize] at (4.4, 6) {Encoder HashGNN};
 
-  \draw[dashed, orange!50] (-2.5, -0.9) rectangle (2.5, -3.6);
-  \node[orange!70!black, font=\footnotesize] at (3.5, -2.2) {Decoder};
+  \draw[dashed, thick, orange!70] (-5.8, -2.3) rectangle (5.8, -5.5);
+  \node[orange!90!black, font=\footnotesize] at (5.2, -2.1) {Decoder};
 
 \end{tikzpicture}
-\caption{Architettura di HashGNN per la link prediction: Chemical e Disease mantengono spazi di embedding separati fino al decoder.}
+\caption{Architettura di HashGNN: Chemical e Disease mantengono spazi di embedding separati attraverso tutto l'encoder, convergendo solo nel decoder.}
 \label{fig:hashgnn_architecture}
 \end{figure}
 
+\subsection{Confronto con GraphSAGE}
+\begin{table}[h!]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+\textbf{Caratteristica} & \textbf{GraphSAGE} & \textbf{HashGNN} \\
+\midrule
+Spazio embedding    & Unico (omogeneo)       & Separato per tipo di nodo \\
+Aggregazione        & SAGEConv (apprendibile) & Hash fisso + Linear \\
+Parametri           & Più numerosi            & Ridotti (hash fisse) \\
+Eterogeneità        & Non gestita nativamente & Gestita nativamente \\
+Convergenza         & Rapida                  & Più lenta \\
+\bottomrule
+\end{tabular}
+\caption{Confronto architetturale tra GraphSAGE e HashGNN.}
+\label{tab:sage_vs_hash}
+\end{table}
+
 \subsection{Vantaggi e limitazioni}
 
-HashGNN gestisce nativamente l'eterogeneità del grafo mantenendo proiezioni distinte per ogni tipo di nodo, il che lo rende teoricamente più adatto di GraphSAGE su dataset come PharMeBiNet. Le proiezioni fisse riducono il numero di parametri apprendibili e il rischio di overfitting. Il principale svantaggio è la \textbf{convergenza più lenta}: i layer lineari devono compensare la casualità delle proiezioni hash, richiedendo un numero maggiore di epoche per stabilizzarsi rispetto a GraphSAGE, che opera con pesi densi direttamente ottimizzabili.
+HashGNN gestisce nativamente l'eterogeneità del grafo mantenendo proiezioni distinte per ogni tipo di nodo, il che lo rende teoricamente più adatto di GraphSAGE su dataset come PharMeBiNet. Le proiezioni fisse riducono il numero di parametri apprendibili e il rischio di overfitting, e non richiedono backpropagation attraverso la fase di hashing.
+
+Il principale svantaggio è la \textbf{convergenza più lenta}: i layer lineari devono compensare la casualità e la binarizzazione delle proiezioni hash, richiedendo più epoche per stabilizzarsi rispetto a GraphSAGE. Su 200 epoche, questa convergenza più lenta si traduce in un tempo di training circa 1.4 volte superiore e, come vedremo nei risultati, in un'accuratezza finale leggermente inferiore rispetto a GraphSAGE, pur rimanendo statisticamente comparabile.
