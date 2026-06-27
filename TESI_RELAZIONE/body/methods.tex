@@ -4,18 +4,19 @@
 \label{sec:methods}
 
 \section{Il dataset: PharMeBiNet V3}
-\textbf{PharMeBiNet} (\textit{Pharmacological Medical Biochemical Network}) è un knowledge graph biomedico open-source che integra informazioni provenienti da numerose sorgenti farmacologiche, genomiche e cliniche \cite{pharmebinet_web}. Il progetto estende \textbf{Hetionet}, un database a grafo biomedico preesistente, aggiungendo dati da sorgenti quali DrugBank per i farmaci, ClinVar per le varianti genomiche, CTD per le interazioni chimico-biologiche, DisGeNET per le associazioni gene-malattia e UniProt per le sequenze proteiche \cite{pharmebinet_web}.
+\textbf{PharMeBiNet} (\textit{Pharmacological Medical Biochemical Network}) è un knowledge graph biomedico open-source \cite{konigs2022pharmebinet} che integra informazioni provenienti da numerose sorgenti farmacologiche, genomiche e cliniche. Il progetto estende \textbf{Hetionet}, un database a grafo biomedico preesistente, aggiungendo dati da sorgenti quali DrugBank per i farmaci, ClinVar per le varianti genomiche, CTD per le interazioni chimico-biologiche, DisGeNET per le associazioni gene-malattia e UniProt per le sequenze proteiche.
 
-È stata utilizzata la versione \textbf{V3} del dataset, scaricata da Zenodo e disponibile come dump Neo4j \cite{pharmebinet_zenodo}. La versione V3 contiene circa \textbf{8 milioni di nodi} distribuiti su \textbf{80 label} distinte e \textbf{53 milioni di relazioni} di \textbf{410 tipi} differenti \cite{pharmebinet_zenodo}. Le entità modellate spaziano da farmaci, geni e proteine a malattie, varianti genomiche e reazioni avverse, con relazioni che descrivono interazioni farmaco-farmaco, associazioni gene-malattia e percorsi metabolici \cite{pharmebinet_zenodo}.
+È stata utilizzata la versione \textbf{V3} del dataset, scaricata da Zenodo \cite{pharmebinet_zenodo} e disponibile come dump Neo4j. La versione V3 contiene circa \textbf{8 milioni di nodi} distribuiti su \textbf{80 label} distinte e \textbf{53 milioni di relazioni} di \textbf{410 tipi} differenti. Le entità modellate spaziano da farmaci, geni e proteine a malattie, varianti genomiche e reazioni avverse, con relazioni che descrivono interazioni farmaco-farmaco, associazioni gene-malattia e percorsi metabolici \cite{pharmebinet_zenodo}.
 
 \subsection{Analisi esplorativa del dataset}
 Prima di procedere con gli esperimenti è stata condotta un'analisi esplorativa (EDA) del grafo tramite diverse query Cypher eseguita su Neo4j Browser.
 
-\begin{verbatim}
+
+\begin{lstlisting}[language=Cypher, caption={Query EDA su PharMeBiNet}]
 CALL apoc.meta.stats()
 YIELD labels, relTypesCount, nodeCount, relCount
 RETURN labels, relTypesCount, nodeCount, relCount
-\end{verbatim}
+\end{lstlisting}
 
 I risultati confermano la forte eterogeneità del dataset. I nodi dominanti per cardinalità sono le varianti genomiche (\texttt{Variant}, \texttt{GeneVariant}, \texttt{SNV}, circa 3,8 milioni ciascuno), seguiti da modificazioni post-traduzionali (\texttt{PTS}, 782 mila), composti chimici (\texttt{Chemical}, 594 mila) e interazioni (\texttt{Interaction}, 1,1 milioni). I nodi \texttt{Disease} ammontano a 23.580 e i \texttt{Gene} a circa 193 mila.
 
@@ -23,7 +24,7 @@ L'analisi delle relazioni più dense ha evidenziato che la coppia \texttt{Chemic
 
 Una seconda query ha analizzato il grado medio e massimo dei principali tipi di nodo:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Cypher, caption={Query sul grado dei nodi principali}]
 MATCH (n)
 WHERE n:Disease OR n:Chemical OR n:Gene OR n:Protein
 WITH labels(n)[0] AS tipo, count(*) AS totale,
@@ -31,7 +32,7 @@ WITH labels(n)[0] AS tipo, count(*) AS totale,
      max(size([(n)--() | 1])) AS grado_max
 RETURN tipo, totale, round(grado_medio) AS grado_medio, grado_max
 ORDER BY grado_medio DESC
-\end{verbatim}
+\end{lstlisting}
 
 \begin{table}[ht!]
 \centering
@@ -74,20 +75,100 @@ Il cluster Neo4j Enterprise è stato distribuito su \textbf{quattro macchine vir
 \label{tab:cluster_config}
 \end{table}
 
-La topologia adottata prevede \textbf{1 primary e 3 secondary}. Il nodo primary gestisce tutte le scritture e coordina il consenso tramite il protocollo \textbf{Raft}: con questa configurazione, il quorum richiede almeno 2 nodi primary su 3, garantendo la continuità del servizio anche in caso di guasto di un nodo. I nodi secondary non partecipano al protocollo Raft e vengono usati esclusivamente per scalare le letture distribuite.
+
+
+
+
+
+
+
+
+
+
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[
+  vm/.style={rectangle, draw, rounded corners, minimum width=2.8cm,
+             minimum height=1.6cm, font=\small, align=center},
+  primary/.style={vm, fill=blue!15, draw=blue!50},
+  secondary/.style={vm, fill=orange!12, draw=orange!40},
+  arrow/.style={->, thick, >=stealth},
+  label/.style={font=\footnotesize, gray},
+  port/.style={font=\scriptsize, gray}
+]
+
+  % PRIMARY
+  \node[primary] (p) at (-1, 0) {
+    \textbf{Primary}\\
+    \footnotesize neo4j-primary\\
+    \scriptsize 10.0.0.5
+  };
+
+  % SECONDARIES
+  \node[secondary] (s1) at (5, 2) {
+    \textbf{Secondary 1}\\
+    \footnotesize neo4j-secondary-1\\
+    \scriptsize 10.0.0.6
+  };
+  \node[secondary] (s2) at (5, 0) {
+    \textbf{Secondary 2}\\
+    \footnotesize neo4j-secondary-2\\
+    \scriptsize 10.0.0.7
+  };
+  \node[secondary] (s3) at (5, -2) {
+    \textbf{Secondary 3}\\
+    \footnotesize neo4j-secondary-3\\
+    \scriptsize 10.0.0.8
+  };
+
+  % FRECCE Primary -> Secondary (replica)
+  \draw[arrow, blue!50] (p.east) -- node[above, port]{} (s1.west);
+  \draw[arrow, blue!50] (p.east) -- (s2.west);
+  \draw[arrow, blue!50] (p.east) -- node[below, port]{} (s3.west);
+
+  % CLIENT a sinistra
+  \node[vm, fill=gray!10, draw=gray!40, minimum width=2.2cm] (client)
+    at (-7, 0) {
+    \textbf{Client}\\
+    \footnotesize extractor.py
+  };
+
+  % Connessione client -> primary (scrittura)
+  \draw[arrow, gray!70] (client.east) --
+    node[above, port]{\texttt{bolt://} (1 nodo)}
+    node[below, port]{\texttt{neo4j://} (cluster)}
+    (p.west);
+
+  % Legenda
+  \node[primary, minimum width=1.2cm, minimum height=0.6cm,
+        font=\scriptsize] at (-7.5, -3.8) {};
+  \node[font=\scriptsize, anchor=west] at (-6.8, -3.8) {Primary (lettura e scrittura)};
+
+  \node[secondary, minimum width=1.2cm, minimum height=0.6cm,
+        font=\scriptsize] at (2.5, -3.8) {};
+  \node[font=\scriptsize, anchor=west] at (3.3, -3.8) {Secondary (sola lettura)};
+
+\end{tikzpicture}
+\caption{Topologia del cluster Neo4j Enterprise: 1 primary e 3 secondary distribuiti su macchine virtuali Azure. Il client si connette tramite \texttt{bolt://} per la connessione diretta o \texttt{neo4j://} per il routing distribuito.}
+\label{fig:cluster_topology}
+\end{figure}
+
+La topologia adottata prevede \textbf{1 primary e 3 secondary}. Il nodo primary gestisce tutte le scritture. In caso di guasto, 
+il cluster può eleggere un nuovo primary tra i nodi disponibili 
+tramite il protocollo \textbf{Raft}, garantendo la continuità 
+del servizio. I nodi secondary non partecipano al protocollo Raft e vengono usati esclusivamente per scalare le letture distribuite.
 
 La scelta di 4 nodi totali è motivata dall'analisi prestazionale piuttosto che dalla fault tolerance: con 4 nodi il quorum è identico a quello di 3 nodi. L'obiettivo è misurare l'impatto delle secondary sui tempi di lettura distribuita verso la pipeline ML.
 
 \subsection{Configurazione della memoria}
 Ogni container Neo4j è stato configurato con i seguenti limiti di memoria, bilanciando le esigenze del garbage collector JVM e la velocità di accesso ai dati:
 
-\begin{verbatim}
+\begin{lstlisting}[caption={Configurazione memoria Neo4j (neo4j.conf)}]
 server.memory.heap.initial_size=8G
 server.memory.heap.max_size=8G
 server.memory.pagecache.size=6G
-\end{verbatim}
-
-I limiti a livello Docker sono stati impostati a 20 GB per container, con 6 GB riservati al sistema operativo WSL2.
+\end{lstlisting}
 
 \subsection{Configurazione di rete e WSL2}
 La comunicazione tra i nodi del cluster avviene tramite tre porte distinte: la porta 6000 per le transazioni di cluster, la porta 7000 per il protocollo Raft e la porta 7687 per il protocollo Bolt. Poiché ogni nodo gira su WSL2, che ha un indirizzo IP interno diverso dall'IP della macchina Windows, è stato necessario configurare su ogni macchina un port-forwarding tramite \texttt{netsh} e uno script PowerShell automatizzato (\texttt{ponte.ps1}) che aggiorna dinamicamente i proxy all'avvio, poiché l'IP di WSL2 cambia ad ogni riavvio.
@@ -96,10 +177,10 @@ La comunicazione tra i nodi del cluster avviene tramite tre porte distinte: la p
 L'intera gestione del cluster è automatizzata tramite \textbf{Ansible}, eseguito dalla primary via SSH verso le secondary. I playbook principali sono:
 
 \begin{itemize}
-  \item \texttt{deploy.yml} — distribuisce i file di configurazione e avvia i container su tutti i nodi
-  \item \texttt{stop.yml} — ferma i container in modo ordinato
-  \item \texttt{reset.yml} — esegue un reset completo rimuovendo tutti i dati
-  \item \texttt{setup.yml} — crea la struttura di cartelle necessaria
+  \item \texttt{deploy.yml}, distribuisce i file di configurazione e avvia i container su tutti i nodi
+  \item \texttt{stop.yml}, ferma i container in modo ordinato
+  \item \texttt{reset.yml}, esegue un reset completo rimuovendo tutti i dati
+  \item \texttt{setup.yml}, crea la struttura di cartelle necessaria
 \end{itemize}
 
 Il file \texttt{.env} su ogni macchina contiene le variabili specifiche del nodo (nome, ruolo, IP) e viene generato da Ansible tramite un template Jinja2.
@@ -108,7 +189,7 @@ Il file \texttt{.env} su ogni macchina contiene le variabili specifiche del nodo
 \section{Caricamento del dataset}
 Il dump ufficiale di PharMeBiNet V3 è stato scaricato da Zenodo e copiato nella cartella \texttt{data/raw/} sulla primary. Il caricamento è avvenuto tramite un container Docker effimero della stessa immagine Neo4j, montando il volume dati e la cartella del dump:
 
-\begin{verbatim}
+\begin{lstlisting}[language=bash, caption={Caricamento del dump PharMeBiNet V3}]
 docker run --rm -it \
   -e NEO4J_ACCEPT_LICENSE_AGREEMENT=yes \
   -v $(pwd)/cluster/data:/data \
@@ -117,173 +198,138 @@ docker run --rm -it \
   neo4j-admin database load pharmebinet \
     --from-path=/backups/ \
     --overwrite-destination=true
-\end{verbatim}
+\end{lstlisting}
 
-Al termine del caricamento, il database è stato distribuito sulle secondary tramite il meccanismo di seeding nativo di Neo4j Cluster. Dal browser Neo4j sulla primary è stata eseguita la seguente query Cypher per creare il database distribuito:
+Al termine del caricamento, il database è stato distribuito sulle secondary tramite il meccanismo di seeding nativo di Neo4j Cluster.
 
-\begin{verbatim}
+\begin{lstlisting}[language=Cypher, caption={Creazione del database distribuito con seeding}]
 CREATE DATABASE pharmebinet
   TOPOLOGY 1 PRIMARY 3 SECONDARY
   OPTIONS {
     existingData: 'use',
     existingDataSeedServer: '<SERVER_ID_PRIMARY>'
   };
-\end{verbatim}
+\end{lstlisting}
 
 Il parametro \texttt{existingDataSeedServer} istruisce il cluster a replicare i dati esistenti dalla primary verso tutte le secondary. Il processo di replica di circa 50 GB ha richiesto alcuni minuti, al termine dei quali tutti e quattro i nodi risultavano \texttt{online} per il database \texttt{pharmebinet}.
 
 
 \section{Pipeline di estrazione dati}
-L'estrazione del sottografo Chemical$\to$Disease da Neo4j verso PyTorch Geometric è implementata in \texttt{src/extractor.py}. La classe \texttt{DBExtractor} si connette al cluster tramite il driver ufficiale Neo4j per Python e esegue tre query Cypher sequenziali.
+L'estrazione del sottografo Chemical$\to$Disease da Neo4j verso PyTorch Geometric \cite{fey2019fast} è implementata in \texttt{src/extractor.py}. La classe \texttt{DBExtractor} si connette al cluster tramite il driver ufficiale Neo4j per Python e esegue tre query Cypher sequenziali.
 
-\begin{verbatim}
+\begin{lstlisting}[language=Cypher, caption={Query di estrazione del sottografo Chemical→Disease}]
 MATCH (c:Chemical) RETURN DISTINCT c.identifier AS id
 
 MATCH (d:Disease) RETURN DISTINCT d.identifier AS id
 
 MATCH (c:Chemical)-[r]->(d:Disease)
 RETURN c.identifier AS src, d.identifier AS dst
-\end{verbatim}
+\end{lstlisting}
 
-Per ciascun tipo di nodo viene costruito un dizionario di mapping che traduce gli identificatori stringa (es. \texttt{DB00620}) in indici interi contigui a partire da zero. Questo passaggio è necessario perché PyTorch Geometric lavora con tensori numerici e non con identificatori testuali.
+Per ciascun tipo di nodo viene costruito un dizionario di mapping che traduce gli identificatori stringa (es. \texttt{DB00620}) in indici interi contigui a partire da zero. Questo passaggio è essenziale poiché PyTorch Geometric opera esclusivamente su tensori numerici e non su chiavi testuali, richiedendo indici posizionali precisi per la costruzione della matrice \texttt{edge\_index}.
 
 Il risultato viene incapsulato in un oggetto \texttt{HeteroData} di PyTorch Geometric:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Costruzione dell'oggetto HeteroData per PyTorch Geometric}]
 data['Chemical'].num_nodes = len(chem_mapping)
 data['Disease'].num_nodes  = len(dis_mapping)
 data['Chemical', 'relates_to', 'Disease'].edge_index = \
     torch.tensor([src_idx, dst_idx], dtype=torch.long)
-\end{verbatim}
+\end{lstlisting}
 
-L'\texttt{edge\_index} è un tensore di forma $[2, \text{num\_edges}]$ dove la prima riga contiene gli indici sorgente (Chemical) e la seconda gli indici destinatari (Disease).
-
-La connessione al cluster avviene tramite URI \texttt{neo4j://10.0.0.5:7687} per il cluster completo e \texttt{bolt://10.0.0.5:7687} per la connessione diretta alla primary, usata nel benchmark a 1 nodo.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+L'\texttt{edge\_index} è un tensore di forma $[2, \text{num\_edges}]$ dove la prima riga contiene gli indici sorgente (Chemical) e la seconda gli indici destinatari (Disease). L'adozione di questo formato a coordinate (COO) è lo standard in PyTorch Geometric per rappresentare topologie di rete sparse, garantendo un'occupazione di memoria lineare e operazioni di attraversamento estremamente efficienti.
 
 \section{Implementazione dei modelli}
-
 \subsection{GraphSAGE}
+Il modello GraphSAGE è implementato in \texttt{src/models/graphsage.py} usando i layer \texttt{SAGEConv} di PyTorch Geometric. Poiché i nodi Chemical e Disease non hanno feature numeriche nel grafo, sono identificati solo da stringhe come \texttt{DB00620} o \texttt{MONDO:0000004}, le feature iniziali sono \textbf{embedding learnable}: tabelle di vettori inizializzati casualmente e ottimizzati durante il training tramite backpropagation, una per ogni tipo di nodo. In questo modo, l'informazione semantica originariamente assente viene inferita dinamicamente: man mano che il modello minimizza la funzione di perdita, questi vettori si spostano nello spazio latente fino a codificare l'identità relazionale e le proprietà topologiche di ciascuna entità biomedica.
 
-Il modello GraphSAGE è implementato in \texttt{src/models/graphsage.py} usando i layer \texttt{SAGEConv} di PyTorch Geometric. Poiché i nodi Chemical e Disease non hanno feature numeriche nel grafo, sono identificati solo da stringhe come \texttt{DB00620} o \texttt{MONDO:0000004}, le feature iniziali sono \textbf{embedding learnable}: tabelle di vettori inizializzati casualmente e ottimizzati durante il training tramite backpropagation, una per ogni tipo di nodo.
-
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Definizione degli embedding learnable per GraphSAGE}]
 self.chem_emb = nn.Embedding(num_chemical, hidden_channels)
 self.dis_emb  = nn.Embedding(num_disease,  hidden_channels)
-\end{verbatim}
+\end{lstlisting}
 
 I due spazi di embedding vengono fusi in un unico tensore omogeneo tramite concatenazione prima di essere passati ai layer convoluzionali. Poiché gli indici dei nodi Chemical e Disease partono entrambi da zero, gli indici Disease vengono traslati di \texttt{num\_chemical} posizioni per evitare collisioni nello spazio globale:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Fusione degli spazi di embedding con offset Disease}]
 x = torch.cat([self.chem_emb.weight, self.dis_emb.weight], dim=0)
 offset = torch.zeros_like(edge_index)
 offset[1] = num_chemical
 edge_index_global = edge_index + offset
-\end{verbatim}
+\end{lstlisting}
 
-Due layer \texttt{SAGEConv} propagano l'informazione strutturale del vicinato: il primo aggrega i vicini a 1 salto, il secondo a 2 salti. Tra i due layer viene applicata un'attivazione ReLU. L'encoder produce una matrice $\mathbf{Z} \in \mathbb{R}^{(N_c + N_d) \times d}$ con gli embedding aggiornati di tutti i nodi, da cui vengono estratte le righe corrispondenti ai Chemical e alle Disease per la fase di decoding.
+Due layer \texttt{SAGEConv} propagano l'informazione strutturale del vicinato: il primo aggrega i vicini a 1 salto, il secondo a 2 salti. Tra i due layer viene applicata la ReLU. L'encoder produce una matrice con gli embedding aggiornati di tutti i nodi, da cui vengono estratte le righe corrispondenti ai Chemical e alle Disease per la fase di decoding.
 
-Il decoder è un MLP che concatena gli embedding di una coppia (Chemical, Disease) e produce uno score tra 0 e 1 tramite attivazione sigmoid. La scelta del MLP rispetto al semplice prodotto scalare è motivata dall'asimmetria della relazione: il prodotto scalare è simmetrico ($\mathbf{a} \cdot \mathbf{b} = \mathbf{b} \cdot \mathbf{a}$) e non distingue la direzione causale del legame, mentre il MLP può apprendere la regola di mappatura direzionale tra i due tipi di entità.
+Il decoder è un MLP che concatena gli embedding di una coppia (Chemical, Disease) e produce uno score tra 0 e 1 tramite attivazione sigmoid.
 
 \subsection{TransE}
 Il modello TransE è implementato in \texttt{src/models/transe.py}. A differenza di GraphSAGE, non utilizza nessuna forma di aggregazione di vicinato: mantiene tre tabelle di embedding separate, per i nodi Chemical, per i nodi Disease e per i tipi di relazione, inizializzate con distribuzione uniforme in $[-1, 1]$:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Inizializzazione degli embedding di TransE}]
 self.chem_emb = nn.Embedding(num_chemical, embedding_dim)
 self.dis_emb  = nn.Embedding(num_disease,  embedding_dim)
 self.rel_emb  = nn.Embedding(num_relations, embedding_dim)
 for emb in [self.chem_emb, self.dis_emb, self.rel_emb]:
     nn.init.uniform_(emb.weight, -1.0, 1.0)
-\end{verbatim}
+\end{lstlisting}
 
 Durante il forward pass, tutti gli embedding vengono normalizzati L2 prima del calcolo del punteggio. Questa normalizzazione è essenziale per evitare che il modello raggiunga una loss bassa semplicemente espandendo le norme dei vettori senza apprendere una struttura geometrica significativa.
 
-La funzione di scoring è condivisa tramite un metodo privato \texttt{\_score}:
-
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Funzione di scoring di TransE}]
 def _score(self, src, rel, dst):
     h = F.normalize(self.chem_emb(src), dim=-1)
     r = F.normalize(self.rel_emb(rel),  dim=-1)
     t = F.normalize(self.dis_emb(dst),  dim=-1)
     return torch.norm(h + r - t, p=2, dim=-1)
-\end{verbatim}
+\end{lstlisting}
 
 \noindent
 Il training usa una \textbf{margin ranking loss} con margine $\gamma = 1.0$, che penalizza i casi in cui il punteggio di una tripla negativa non supera quello di una tripla positiva di almeno $\gamma$:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Margin ranking loss di TransE}]
 def forward(self, src, rel, dst, src_neg, dst_neg):
     pos_score = self._score(src, rel, dst)
     neg_score = self._score(src_neg, rel, dst_neg)
     return F.relu(self.margin + pos_score - neg_score).mean()
-\end{verbatim}
+\end{lstlisting}
 
 In inferenza, il punteggio negativo viene trasformato in probabilità tramite sigmoid: distanza piccola corrisponde a tripla plausibile, quindi lo score viene negato prima di applicare la sigmoid.
-
 Poiché PharMeBiNet contiene 410 tipi di relazione ma il sottografo estratto per gli esperimenti include solo relazioni Chemical$\to$Disease, tutte le triple vengono trattate come appartenenti a un unico tipo di relazione (\texttt{num\_relations = 1}). Questo semplifica il problema ma non permette a TransE di sfruttare appieno la sua capacità di distinguere relazioni semanticamente diverse.
 
 \subsection{HashGNN}
 Il modello HashGNN è implementato in \texttt{src/models/hashgnn.py}. La differenza architetturale fondamentale rispetto a GraphSAGE è che gli embedding di Chemical e Disease non vengono mai fusi in un unico spazio omogeneo durante la fase di encoding. Ogni tipo di nodo mantiene il proprio spazio di rappresentazione dall'inizio fino all'ingresso del decoder. Le proiezioni hash sono matrici casuali fisse generate una volta sola e registrate come buffer PyTorch non aggiornabili:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Registrazione delle matrici hash fisse in HashGNN}]
 self.register_buffer('hash_weights',
     torch.randn(num_hashes, hidden_channels, hidden_channels))
-\end{verbatim}
+\end{lstlisting}
 
 L'uso di \texttt{register\_buffer} garantisce che queste matrici non partecipino all'ottimizzazione, non ricevono gradienti ma vengano correttamente salvate con il modello e spostate su GPU se necessario, esattamente come i parametri apprendibili.
 
 La funzione di hashing applica $K$ proiezioni casuali all'embedding e binarizza il risultato tramite \texttt{torch.sign}:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Funzione di hashing LSH in HashGNN}]
 def hash_features(self, x):
     return torch.cat([
         torch.sign(x @ self.hash_weights[i].T)
         for i in range(self.num_hashes)
     ], dim=-1)
-\end{verbatim}
+\end{lstlisting}
 
-Il risultato è un vettore di dimensione $K \times d$ che concatena $K$ viste binarie diverse dello stesso nodo. I layer lineari successivi — separati per Chemical e Disease — trasformano queste rappresentazioni nell'embedding finale:
+Il risultato è un vettore di dimensione $K \times d$ che concatena $K$ viste binarie diverse dello stesso nodo. I layer lineari successivi, separati per Chemical e Disease, trasformano queste rappresentazioni nell'embedding finale:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Layer lineari separati per tipo di nodo in HashGNN}]
 self.chem_proj = nn.Linear(hidden_channels * num_hashes, hidden_channels)
 self.dis_proj  = nn.Linear(hidden_channels * num_hashes, hidden_channels)
 self.chem_out  = nn.Linear(hidden_channels, out_channels)
 self.dis_out   = nn.Linear(hidden_channels, out_channels)
-\end{verbatim}
+\end{lstlisting}
 
-Il decoder è strutturalmente identico a quello di GraphSAGE — concatenazione seguita da MLP con sigmoid — ma riceve in input due embedding provenienti da spazi separati anziché da uno spazio fuso.
+Il decoder è strutturalmente identico a quello di GraphSAGE, concatenazione seguita da MLP con sigmoid, ma riceve in input due embedding provenienti da spazi separati anziché da uno spazio fuso.
 
 \subsection{Training loop}
-Il training è unificato in \texttt{src/train.py} e segue la stessa struttura per tutti e tre i modelli, garantendo un confronto equo. Prima del training, il dataset viene suddiviso tramite \texttt{RandomLinkSplit} di PyTorch Geometric:
+Il training è unificato in \texttt{src/train.py} e segue la stessa struttura per tutti e tre i modelli, garantendo un confronto equo. Prima del training, il dataset viene suddiviso tramite \texttt{RandomLinkSplit} di PyTorch Geometric \cite{fey2019fast}:
 
-\begin{verbatim}
+\begin{lstlisting}[language=Python, caption={Suddivisione training/test con RandomLinkSplit}]
 transform = T.RandomLinkSplit(
     num_val=0.0,
     num_test=0.1,
@@ -292,7 +338,7 @@ transform = T.RandomLinkSplit(
     add_negative_train_samples=False,
 )
 train_data, _, test_data = transform(data)
-\end{verbatim}
+\end{lstlisting}
 
 Il 10\% degli archi viene tenuto completamente nascosto durante il training e usato esclusivamente per la valutazione finale. I campioni negativi non vengono generati staticamente ma ricreati casualmente ad ogni epoca, il che introduce variabilità e riduce il rischio di overfitting sui negativi.
 
@@ -300,7 +346,7 @@ Per tutti e tre i modelli la procedura di training è:
 
 \begin{enumerate}
   \item Calcolo delle predizioni su link positivi (archi reali del training set).
-  \item Generazione di campioni negativi casuali — coppie (Chemical, Disease) non collegate nel grafo — in numero uguale agli archi positivi.
+  \item Generazione di campioni negativi casuali, coppie (Chemical, Disease) non collegate nel grafo, in numero uguale agli archi positivi.
   \item Calcolo della loss sui campioni positivi e negativi.
   \item Backpropagation e aggiornamento dei pesi tramite Adam optimizer.
   \item Dopo 200 epoche, valutazione sul test set con archi mai visti durante il training.
@@ -308,7 +354,7 @@ Per tutti e tre i modelli la procedura di training è:
 
 Gli iperparametri condivisi tra i tre modelli sono riportati nella tabella \ref{tab:hyperparams}.
 
-\begin{table}[h!]
+\begin{table}[ht!]
 \centering
 \small
 \begin{tabular}{ll}
@@ -363,7 +409,7 @@ La metrica principale di valutazione è l'\textbf{AUC-ROC} (\textit{Area Under t
 \label{fig:roc_example}
 \end{figure}
 
-Un valore di AUC-ROC pari a 0.5 equivale a una classificazione casuale — il modello non distingue link reali da link falsi meglio del caso. Un valore pari a 1.0 indica una separazione perfetta. L'AUC-ROC è la metrica standard per la link prediction su grafi sbilanciati perché non è influenzata dallo sbilanciamento tra classi: in questo esperimento il numero di link negativi generati casualmente è uguale al numero di link positivi reali, ma in uno scenario reale di drug repurposing i link positivi sarebbero una frazione minima del totale. 
+Un valore di AUC-ROC pari a 0.5 equivale a una classificazione casuale, il modello non distingue link reali da link falsi meglio del caso. Un valore pari a 1.0 indica una separazione perfetta. L'AUC-ROC è la metrica standard per la link prediction su grafi sbilanciati perché non è influenzata dallo sbilanciamento tra classi: in questo esperimento il numero di link negativi generati casualmente è uguale al numero di link positivi reali, ma in uno scenario reale di drug repurposing i link positivi sarebbero una frazione minima del totale. 
 
 Per ogni modello vengono riportati la media e la deviazione standard dell'AUC-ROC calcolate sulle 5 run indipendenti.
 
@@ -387,9 +433,9 @@ L'intera sequenza sperimentale è automatizzata dallo script \texttt{run\_pipeli
 
 Prima di eseguire la pipeline è necessario caricare le variabili d'ambiente dal file \texttt{.env}, in particolare la password del database:
 
-\begin{verbatim}
+\begin{lstlisting}[language=bash, caption={Esecuzione della pipeline completa}]
 export $(grep -v '^#' .env | xargs)
 ./run_pipeline.sh
-\end{verbatim}
+\end{lstlisting}
 
 Questa operazione è necessaria perché le variabili d'ambiente non vengono caricate automaticamente dalla shell all'avvio, e i script Python leggono la password tramite \texttt{os.getenv("DB\_PASSWORD")} senza default hardcoded nel codice.

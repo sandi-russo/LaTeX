@@ -5,7 +5,7 @@
 
 \section{Benchmark infrastrutturale}
 \subsection{Tempi di estrazione al variare dei nodi attivi}
-Il benchmark infrastrutturale misura il tempo necessario per estrarre l'intero sottografo Chemical$\to$Disease da Neo4j e costruire l'oggetto \texttt{HeteroData} per PyTorch Geometric, al variare del numero di nodi attivi del cluster. Ogni misurazione include le tre query Cypher sequenziali, nodi Chemical, nodi Disease, relazioni, e la costruzione del tensore \texttt{edge\_index}. I risultati sono ottenuti dall'esecuzione della pipeline completa con il cluster a regime, dopo il caricamento e la distribuzione di PharMeBiNet V3.
+Il benchmark infrastrutturale misura il tempo necessario per estrarre l'intero sottografo Chemical$\to$Disease da Neo4j e costruire l'oggetto \texttt{HeteroData} per PyTorch Geometric \cite{fey2019fast}, al variare del numero di nodi attivi del cluster. Ogni misurazione include le tre query Cypher sequenziali, nodi Chemical, nodi Disease, relazioni, e la costruzione del tensore \texttt{edge\_index}. I risultati sono ottenuti dall'esecuzione della pipeline completa con il cluster a regime, dopo il caricamento e la distribuzione di PharMeBiNet V3.
 
 \begin{table}[ht!]
 \centering
@@ -65,7 +65,7 @@ Il benchmark infrastrutturale misura il tempo necessario per estrarre l'intero s
 \end{figure}
 
 \subsection{Analisi dei risultati infrastrutturali}
-I tempi risultano sostanzialmente costanti tra le tre configurazioni, con una variazione massima di circa 1.7 secondi, risultato che potrebbe sembrare deludente, è in realtà coerente con la natura del carico di lavoro e con i principi dei sistemi distribuiti.
+I tempi risultano sostanzialmente costanti tra le tre configurazioni, con una variazione massima di circa 1.7 secondi. Questo risultato, che potrebbe sembrare deludente, è in realtà coerente con la natura del carico di lavoro e con i principi dei sistemi distribuiti.
 
 Il bottleneck non è la disponibilità di nodi computazionali, ma la \textbf{capacità di I/O della singola query sequenziale} su un dataset da circa 50 GB. Le tre query Cypher vengono eseguite una dopo l'altra: non esiste parallelismo a livello applicativo che possa sfruttare la presenza di più nodi. Il router Neo4j distribuisce le letture sulle secondary tramite la routing table, ma con una sola connessione attiva alla volta il vantaggio è marginale e viene parzialmente annullato dall'overhead di coordinazione del cluster.
 
@@ -272,7 +272,7 @@ Va notato che su questo sottografo TransE non può esprimere il suo principale v
   {HashGNN};
 \node[red!70,   font=\small, anchor=north west] at (axis cs:145.2, 0.9839) 
   {TransE};
-  
+
 \end{axis}
 \end{tikzpicture}
 \caption{Trade-off tra accuratezza (AUC-ROC) ed efficienza computazionale}

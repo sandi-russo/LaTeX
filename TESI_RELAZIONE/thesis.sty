@@ -5,6 +5,7 @@
 \usepackage{wrapfig}
 \usepackage{subfig}
 \usepackage{ifthen}
+\usepackage{color}
 \usepackage{listings}
 \usepackage{comment}
 \usepackage{tikz}
@@ -16,17 +17,33 @@
 \usepackage[utf8]{inputenc}
 \usetikzlibrary{arrows.meta, positioning}
 
-\lstset { 
-    %Formatting for code in appendix
-    basicstyle=\footnotesize,
-    literate={°}{{\"\deg}}1,
-    numbers=left,
-    stepnumber=1,
-    showstringspaces=false,
-    tabsize=1,
-    breaklines=true,
-    breakatwhitespace=false,
+\lstset{
+  basicstyle=\footnotesize\ttfamily,
+  numbers=left,
+  stepnumber=1,
+  numberstyle=\tiny\color{gray},
+  showstringspaces=false,
+  tabsize=2,
+  breaklines=true,
+  breakatwhitespace=false,
+  frame=single,
+  rulecolor=\color{gray!40},
+  backgroundcolor=\color{gray!5},
+  keywordstyle=\bfseries,
+  commentstyle=\itshape\color{gray},
+  captionpos=b,
 }
+
+\lstdefinelanguage{Cypher}{
+  keywords={MATCH, RETURN, WHERE, CREATE, WITH, CALL, YIELD,
+            LIMIT, ORDER, BY, AS, NOT, AND, OR, DISTINCT,
+            TOPOLOGY, OPTIONS, DATABASE},
+  sensitive=true,
+  morecomment=[l]{//},
+  morestring=[b]",
+  morestring=[b]',
+}
+
 \usepackage[bookmarks=true]{hyperref}
 \hypersetup{
         colorlinks=true,

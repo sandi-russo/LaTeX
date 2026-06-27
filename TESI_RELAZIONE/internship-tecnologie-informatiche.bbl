@@ -1,4 +1,9 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
+
+\bibitem{konigs2022pharmebinet}
+Cassandra K{\"o}nigs, Marcel Friedrichs, and Theresa Dietrich.
+\newblock The heterogeneous pharmacological medical biochemical network {PharMeBINet}.
+\newblock {\em Scientific Data}, 9(1):393, 2022.
 
 \bibitem{statista2024data}
 {Statista}.
@@ -16,10 +21,16 @@ Adam Fowler.
 \newblock {\em NoSQL For Dummies}.
 \newblock John Wiley \& Sons, 2015.
 
+\bibitem{neo4j_gds}
+{Neo4j Inc.}
+\newblock Neo4j graph data science library.
+\newblock \url{https://neo4j.com/docs/graph-data-science/current/}.
+\newblock Accesso: Giugno 2026.
+
 \bibitem{hamilton2017inductive}
 Will Hamilton, Zhitao Ying, and Jure Leskovec.
 \newblock Inductive representation learning on large graphs.
-\newblock In {\em Advances in neural information processing systems}, volume~30, 2017.
+\newblock In {\em Advances in Neural Information Processing Systems}, volume~30, 2017.
 
 \bibitem{bordes2013translating}
 Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran, Jason Weston, and Oksana Yakhnenko.
@@ -27,18 +38,30 @@ Antoine Bordes, Nicolas Usunier, Alberto Garcia-Duran, Jason Weston, and Oksana 
 \newblock In {\em Advances in Neural Information Processing Systems}, 2013.
 
 \bibitem{neo4j_hashgnn}
-Hashgnn.
-\newblock \url{https://neo4j.ac.cn/docs/graph-data-science/current/machine-learning/node-embeddings/hashgnn/}.
-\newblock Accessed: 2026-06-27.
+{Neo4j Inc.}
+\newblock {HashGNN} -- {Neo4j} graph data science.
+\newblock \url{https://neo4j.com/docs/graph-data-science/current/machine-learning/node-embeddings/hashgnn/}.
+\newblock Accesso: Giugno 2026.
 
-\bibitem{pharmebinet_web}
-Pharmebinet.
-\newblock \url{https://pharmebi.net/}.
-\newblock Accessed: 2026-06-27.
+\bibitem{indyk1998approximate}
+Piotr Indyk and Rajeev Motwani.
+\newblock Approximate nearest neighbors: Towards removing the curse of dimensionality.
+\newblock In {\em Proceedings of the 30th Annual ACM Symposium on Theory of Computing}, pages 604--613, 1998.
 
 \bibitem{pharmebinet_zenodo}
-Pharmebinet v3 dataset.
-\newblock \url{https://zenodo.org/}.
-\newblock Accessed: 2026-06-27.
+Cassandra K{\"o}nigs, Marcel Friedrichs, and Theresa Dietrich.
+\newblock {PharMeBINet} -- the heterogeneous pharmacological medical biochemical network.
+\newblock \url{https://doi.org/10.5281/zenodo.5816976}, 2022.
+\newblock Accesso: Giugno 2026.
+
+\bibitem{fey2019fast}
+Matthias Fey and Jan~E. Lenssen.
+\newblock Fast graph representation learning with {PyTorch Geometric}.
+\newblock In {\em ICLR Workshop on Representation Learning on Graphs and Manifolds}, 2019.
+
+\bibitem{wang2019heterogeneous}
+Xiao Wang, Houye Ji, Chuan Shi, Bai Wang, Yanfang Ye, Peng Cui, and Philip~S. Yu.
+\newblock Heterogeneous graph attention network.
+\newblock In {\em The World Wide Web Conference}, pages 2022--2032, 2019.
 
 \end{thebibliography}

@@ -56,7 +56,7 @@ In questa tesi, Neo4j Enterprise 2026.04.0 viene utilizzato come layer di storag
 
 
 \section{Graph Embeddings e Graph Neural Networks}
-I \textbf{graph embedding} sono funzioni che proiettano i nodi di un grafo in uno spazio vettoriale continuo a bassa dimensionalità, preservando proprietà strutturali e semantiche della rete originale. L'obiettivo è trasformare entità discrete — nodi identificati da un ID o da una stringa — in vettori numerici su cui applicare algoritmi di Machine Learning standard.
+I \textbf{graph embedding} sono funzioni che proiettano i nodi di un grafo in uno spazio vettoriale continuo a bassa dimensionalità, preservando proprietà strutturali e semantiche della rete originale. L'obiettivo è trasformare entità discrete, nodi identificati da un ID o da una stringa, in vettori numerici su cui applicare algoritmi di Machine Learning standard.
 
 
 \begin{figure}[ht!]
@@ -172,7 +172,7 @@ I tre algoritmi analizzati in questa tesi esplorano lo spazio delle soluzioni pr
 \section{GraphSAGE}
 GraphSAGE (\textit{Graph SAmple and aggreGatE}) è un framework per l'apprendimento di graph embedding induttivi, introdotto formalmente da Hamilton et al. nel 2017 \cite{hamilton2017inductive}. A differenza degli approcci trasduttivi classici (come DeepWalk o Node2Vec), che ottimizzano una matrice di embedding fissa esclusivamente per i nodi osservati durante la fase di training, GraphSAGE compie un cambio di paradigma: invece di memorizzare un vettore per ogni nodo, apprende una \textbf{funzione di aggregazione} topologica generalizzabile. Questo approccio permette di generare embedding \textit{on-the-fly} per nodi completamente invisibili durante l'addestramento, rendendo l'algoritmo intrinsecamente adatto a grafi dinamici, reti in continua evoluzione e dataset biomedici di grandi dimensioni.
 
-La motivazione pratica è rilevante in contesti come PharMeBiNet, dove nuove evidenze farmacologiche vengono integrate continuamente da decine di banche dati. Un metodo trasduttivo richiederebbe di riaddestrare l'intero modello ad ogni aggiornamento del grafo. GraphSAGE, al contrario, può produrre embedding per un nuovo composto chimico semplicemente osservando il suo vicinato nel grafo aggiornato, senza alcun riaddestramente. Una volta completato il training, il modello addestrato può essere inserito direttamente in una pipeline di inferenza e applicato a nodi non visti, purché questi possiedano un vettore di feature della stessa dimensione e con lo stesso significato semantico usato durante l'addestramento, requisito fondamentale, poiché le operazioni di aggregazione (media, somma) vengono eseguite tra vettori che devono essere comparabili nello stesso spazio.
+La motivazione pratica è rilevante in contesti come PharMeBiNet \cite{konigs2022pharmebinet}, dove nuove evidenze farmacologiche vengono integrate continuamente da decine di banche dati. Un metodo trasduttivo richiederebbe di riaddestrare l'intero modello ad ogni aggiornamento del grafo. GraphSAGE, al contrario, può produrre embedding per un nuovo composto chimico semplicemente osservando il suo vicinato nel grafo aggiornato, senza alcun riaddestramente. Una volta completato il training, il modello addestrato può essere inserito direttamente in una pipeline di inferenza e applicato a nodi non visti, purché questi possiedano un vettore di feature della stessa dimensione e con lo stesso significato semantico usato durante l'addestramento, requisito fondamentale, poiché le operazioni di aggregazione (media, somma) vengono eseguite tra vettori che devono essere comparabili nello stesso spazio.
 
 Un limite importante da tenere presente è che GraphSAGE \textbf{non tiene conto delle label dei nodi né dei tipi di relazione}: aggrega i vicini indiscriminatamente, trattando il grafo come se fosse omogeneo. Questo lo rende meno adatto a catturare la ricchezza semantica di grafi fortemente eterogenei come PharMeBiNet, dove 410 tipi di relazione distinti descrivono interazioni biologicamente molto diverse tra loro.
 
@@ -319,53 +319,12 @@ La pipeline si articola in tre componenti distinti.
 \subsection{Vantaggi e limitazioni}
 GraphSAGE è induttivo, scalabile e converge rapidamente. Il suo principale limite su PharMeBiNet è che tratta il grafo come omogeneo: non distingue i 410 tipi di relazione presenti nel dataset, aggregando indiscriminatamente vicini di tipo diverso. Su nodi ad alto grado come le proteine (grado medio 232), il campionamento fisso introduce rumore informativo perdendo parte del contesto biologico.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 \section{TransE}
 TransE (\textit{Translating Embeddings}) è un modello di \textit{knowledge graph embedding} proposto da Bordes et al. nel 2013 \cite{bordes2013translating}. A differenza delle GNN, che aggregano informazione strutturale dai vicini tramite meccanismi di message passing, TransE apprende embedding per entità e relazioni modellando queste ultime come \textbf{traslazioni nello spazio vettoriale}. Si tratta quindi di un approccio fondamentalmente diverso da GraphSAGE: non vi è alcuna aggregazione di vicinato. Il grafo viene rappresentato come un insieme di triple $(h, r, t)$, testa, relazione e coda, e il modello impara a posizionare le entità nello spazio latente in modo che la relazione $r$ corrisponda, idealmente, a un vettore di spostamento da $h$ a $t$.
 
 Questo paradigma lo rende particolarmente adatto a knowledge graph con molti tipi di relazione semanticamente distinti, come PharMeBiNet, dove 410 tipi di arco descrivono interazioni biologicamente molto diverse, \textit{treats}, \textit{causes}, \textit{disrupts}, \textit{associates}, ciascuna con una semantica propria che GraphSAGE ignora completamente.
 
 \subsection{Meccanismo di funzionamento}
-
 L'intuizione di TransE è geometrica: data una tripla valida $(h, r, t)$, dove $h$ è il nodo testa, $r$ la relazione e $t$ il nodo coda, il modello ottimizza gli embedding affinché $\mathbf{h} + \mathbf{r} \approx \mathbf{t}$. In altre parole, la relazione è un vettore che, sommato all'embedding della testa, deve avvicinarsi il più possibile all'embedding della coda.
 
 \begin{figure}[ht]
@@ -469,7 +428,7 @@ Nel contesto di questa tesi, TransE viene applicato al sottografo Chemical$\to$D
 
 \textbf{Scoring e inferenza}: data una coppia, il punteggio viene calcolato come \\ $-\|\mathbf{h} + \mathbf{r} - \mathbf{t}\|_2$. La sigmoid trasforma il punteggio in una probabilità tra 0 e 1.
 
-\textbf{Training}: la margin ranking loss confronta triple positive con triple negative generate per corruzione casuale — sostituendo la testa o la coda con un'entità scelta a caso. Il margine $\gamma = 1.0$ forza una separazione minima tra lo score delle triple vere e di quelle false.
+\textbf{Training}: la margin ranking loss confronta triple positive con triple negative generate per corruzione casuale, sostituendo la testa o la coda con un'entità scelta a caso. Il margine $\gamma = 1.0$ forza una separazione minima tra lo score delle triple vere e di quelle false.
 
 \subsection{Vantaggi e limitazioni}
 TransE è computazionalmente molto efficiente: non richiede aggregazione di vicinato né propagazione di messaggi, il che lo rende il più veloce dei tre modelli analizzati, con tempi di training circa tre volte inferiori a GraphSAGE. Cattura esplicitamente la semantica delle relazioni tramite il vettore $\mathbf{r}$, il che lo rende teoricamente adatto a knowledge graph con molti tipi di relazione come PharMeBiNet.
@@ -478,12 +437,12 @@ Il suo principale limite è che è un modello \textbf{trasduttivo}: non generali
 
 
 \section{HashGNN}
-HashGNN è un algoritmo di graph embedding progettato nativamente per grafi eterogenei\cite{neo4j_hashgnn}, e successivamente integrato nella libreria Neo4j GDS. A differenza di GraphSAGE, che fonde i diversi tipi di nodo in un unico spazio omogeneo, HashGNN mantiene \textbf{spazi di rappresentazione separati} per ogni tipo di nodo, usando funzioni di hashing casuali per arricchire le feature senza aumentare il numero di parametri apprendibili.
+HashGNN è un algoritmo di graph embedding progettato nativamente per grafi eterogenei \cite{neo4j_hashgnn}, e successivamente integrato nella libreria Neo4j GDS \cite{neo4j_gds}. A differenza di GraphSAGE, che fonde i diversi tipi di nodo in un unico spazio omogeneo, HashGNN mantiene \textbf{spazi di rappresentazione separati} per ogni tipo di nodo, usando funzioni di hashing casuali per arricchire le feature senza aumentare il numero di parametri apprendibili.
 
 La motivazione è diretta: in un grafo eterogeneo come PharMeBiNet, un nodo Chemical e un nodo Disease rappresentano entità biologicamente incomparabili. Forzarli nello stesso spazio vettoriale fin dall'inizio, come fa GraphSAGE, equivale a proiettare su una mappa comune due lingue diverse senza traduzione. HashGNN evita questo collasso semantico mantenendo coordinate separate per ogni tipo di nodo fino al momento della predizione.
 
 \subsection{Meccanismo di funzionamento}
-L'idea centrale di HashGNN è sostituire le proiezioni lineari apprendibili con \textbf{proiezioni casuali fisse} ispirate al \textit{Locality-Sensitive Hashing} (LSH). L'LSH è una famiglia di tecniche che proiettano dati ad alta dimensionalità in spazi a bassa dimensionalità preservando le distanze: punti vicini nello spazio originale rimangono vicini dopo la proiezione con alta probabilità.
+L'idea centrale di HashGNN è sostituire le proiezioni lineari apprendibili con \textbf{proiezioni casuali fisse} ispirate al \textit{Locality-Sensitive Hashing} (LSH) \cite{indyk1998approximate}. L'LSH è una famiglia di tecniche che proiettano dati ad alta dimensionalità in spazi a bassa dimensionalità preservando le distanze: punti vicini nello spazio originale rimangono vicini dopo la proiezione con alta probabilità.
 
 Per ogni nodo, l'embedding viene proiettato attraverso $K$ matrici casuali fisse $\mathbf{R}_1, \dots, \mathbf{R}_K$, e i risultati vengono binarizzati tramite la funzione segno:
 
@@ -562,7 +521,7 @@ Le proiezioni fisse non vengono aggiornate durante il training: solo i layer lin
 \end{figure}
 
 \subsection{Confronto con GraphSAGE}
-\begin{table}[h!]
+\begin{table}[ht!]
 \centering
 \small
 \begin{tabular}{lll}
