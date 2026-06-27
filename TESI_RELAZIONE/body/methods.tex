@@ -283,17 +283,20 @@ def _score(self, src, rel, dst):
 \end{lstlisting}
 
 \noindent
-Il training usa una \textbf{margin ranking loss} con margine $\gamma = 1.0$, che penalizza i casi in cui il punteggio di una tripla negativa non supera quello di una tripla positiva di almeno $\gamma$:
+Il training usa una \textbf{margin ranking loss} con margine $\gamma = 1.0$, che penalizza i casi in cui il punteggio di una tripla negativa non supera quello di una tripla positiva di almeno $\gamma$. Questa formulazione induce una continua dinamica di attrazione e repulsione nello spazio vettoriale: durante l'ottimizzazione, il modello minimizza la distanza geometrica delle triple reali e, simultaneamente, allontana le entità delle triple corrotte fino a garantire che la loro separazione superi la rigida soglia di sicurezza definita dal margine.
 
-\begin{lstlisting}[language=Python, caption={Margin ranking loss di TransE}]
+\begin{lstlisting}[language=Python, caption={Margin ranking loss di TransE}, label={lst:transe_loss}]
 def forward(self, src, rel, dst, src_neg, dst_neg):
     pos_score = self._score(src, rel, dst)
     neg_score = self._score(src_neg, rel, dst_neg)
     return F.relu(self.margin + pos_score - neg_score).mean()
 \end{lstlisting}
 
-In inferenza, il punteggio negativo viene trasformato in probabilità tramite sigmoid: distanza piccola corrisponde a tripla plausibile, quindi lo score viene negato prima di applicare la sigmoid.
-Poiché PharMeBiNet contiene 410 tipi di relazione ma il sottografo estratto per gli esperimenti include solo relazioni Chemical$\to$Disease, tutte le triple vengono trattate come appartenenti a un unico tipo di relazione (\texttt{num\_relations = 1}). Questo semplifica il problema ma non permette a TransE di sfruttare appieno la sua capacità di distinguere relazioni semanticamente diverse.
+In inferenza, la distanza geometrica calcolata viene mappata in uno spazio di probabilità continuo tramite una funzione sigmoidale. Poiché nel modello TransE una distanza geometrica minore indica una tripla più plausibile, lo score finale viene preventivamente invertito di segno, facendo in modo che vettori vicini si traducano in una probabilità tendente a 1.
+
+Poiché PharMeBiNet contiene 410 tipi di relazione ma il sottografo estratto per gli esperimenti include solo relazioni Chemical$\to$Disease, tutte le triple vengono trattate come appartenenti a un unico tipo di operazione (\texttt{num\_relations = 1}). 
+
+Questa configurazione semplifica notevolmente la convergenza del modello, ma impedisce a TransE di esprimere la sua capacità nativa di distinguere interazioni semanticamente diverse. Matematicamente, il vettore relazionale collassa in una singola traslazione globale per tutte le coppie del sottografo, precludendo all'algoritmo l'opportunità di mappare le sfumature della ricca eterogeneità biologica presente nel dataset completo.
 
 \subsection{HashGNN}
 Il modello HashGNN è implementato in \texttt{src/models/hashgnn.py}. La differenza architetturale fondamentale rispetto a GraphSAGE è che gli embedding di Chemical e Disease non vengono mai fusi in un unico spazio omogeneo durante la fase di encoding. Ogni tipo di nodo mantiene il proprio spazio di rappresentazione dall'inizio fino all'ingresso del decoder. Le proiezioni hash sono matrici casuali fisse generate una volta sola e registrate come buffer PyTorch non aggiornabili:

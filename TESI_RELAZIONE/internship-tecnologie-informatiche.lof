@@ -14,8 +14,8 @@
 \contentsline {figure}{\numberline {3.1}{\ignorespaces Topologia del cluster Neo4j Enterprise: 1 primary e 3 secondary distribuiti su macchine virtuali Azure. Il client si connette tramite \texttt {bolt://} per la connessione diretta o \texttt {neo4j://} per il routing distribuito.}}{25}{figure.caption.17}%
 \contentsline {figure}{\numberline {3.2}{\ignorespaces Esempio di curva ROC: la linea tratteggiata rappresenta un classificatore casuale (AUC = 0.5), la curva blu un modello con AUC $\approx $ 0.99}}{34}{figure.caption.19}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Tempi di estrazione nelle tre configurazioni del cluster}}{37}{figure.caption.21}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces AUC-ROC medio con deviazione standard per i tre modelli su 5 run indipendenti}}{39}{figure.caption.24}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Tempo medio di training per i tre modelli su 5 run indipendenti}}{40}{figure.caption.25}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Trade-off tra accuratezza (AUC-ROC) ed efficienza computazionale}}{42}{figure.caption.26}%
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Tempi di estrazione nelle tre configurazioni del cluster}}{38}{figure.caption.22}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces AUC-ROC medio con deviazione standard per i tre modelli su 5 run indipendenti}}{40}{figure.caption.25}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Tempo medio di training per i tre modelli su 5 run indipendenti}}{41}{figure.caption.26}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Trade-off tra accuratezza (AUC-ROC) ed efficienza computazionale}}{43}{figure.caption.27}%
 \addvspace {10\p@ }

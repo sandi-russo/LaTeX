@@ -23,6 +23,22 @@ Il benchmark infrastrutturale misura il tempo necessario per estrarre l'intero s
 \label{tab:benchmark_infra}
 \end{table}
 
+\begin{table}[ht!]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Configurazione} & \textbf{Tempo (s)} & \textbf{Variazione} & \textbf{Nodi attivi} \\
+\midrule
+1 nodo  & 33.8 & baseline        & 1 \\
+2 nodi  & 32.1 & $-5.0\%$        & 2 \\
+4 nodi  & 33.5 & $-0.9\%$        & 4 \\
+\bottomrule
+\end{tabular}
+\caption{Variazione percentuale dei tempi di estrazione rispetto al baseline a 1 nodo.}
+\label{tab:benchmark_delta}
+\end{table}
+
 \begin{figure}[ht!]
 \centering
 \begin{tikzpicture}
@@ -105,32 +121,20 @@ La bassa deviazione standard di tutti e tre i modelli, dell'ordine di $10^{-3}$ 
 \begin{table}[ht!]
 \centering
 \small
-\begin{tabular}{clcc}
+\begin{tabular}{ccccccc}
 \toprule
-\textbf{Run} & \textbf{Modello} & \textbf{AUC-ROC} & \textbf{Tempo (s)} \\
+& \multicolumn{2}{c}{\textbf{GraphSAGE}} & \multicolumn{2}{c}{\textbf{TransE}} & \multicolumn{2}{c}{\textbf{HashGNN}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+\textbf{Run} & \textbf{AUC-ROC} & \textbf{Tempo (s)} & \textbf{AUC-ROC} & \textbf{Tempo (s)} & \textbf{AUC-ROC} & \textbf{Tempo (s)} \\
 \midrule
-1 & GraphSAGE & 0.9929 & 471.8 \\
-1 & TransE    & 0.9839 & 150.6 \\
-1 & HashGNN   & 0.9924 & 629.7 \\
-\midrule
-2 & GraphSAGE & 0.9935 & 435.2 \\
-2 & TransE    & 0.9841 & 144.3 \\
-2 & HashGNN   & 0.9926 & 612.5 \\
-\midrule
-3 & GraphSAGE & 0.9938 & 436.5 \\
-3 & TransE    & 0.9834 & 146.5 \\
-3 & HashGNN   & 0.9923 & 623.1 \\
-\midrule
-4 & GraphSAGE & 0.9933 & 454.3 \\
-4 & TransE    & 0.9838 & 145.8 \\
-4 & HashGNN   & 0.9920 & 625.8 \\
-\midrule
-5 & GraphSAGE & 0.9934 & 445.5 \\
-5 & TransE    & 0.9841 & 143.0 \\
-5 & HashGNN   & 0.9924 & 630.1 \\
+1 & 0.9929 & 471.8 & 0.9839 & 150.6 & 0.9924 & 629.7 \\
+2 & 0.9935 & 435.2 & 0.9841 & 144.3 & 0.9926 & 612.5 \\
+3 & 0.9938 & 436.5 & 0.9834 & 146.5 & 0.9923 & 623.1 \\
+4 & 0.9933 & 454.3 & 0.9838 & 145.8 & 0.9920 & 625.8 \\
+5 & 0.9934 & 445.5 & 0.9841 & 143.0 & 0.9924 & 630.1 \\
 \bottomrule
 \end{tabular}
-\caption{Risultati dettagliati per singola run.}
+\caption{Risultati dettagliati per singola run, raggruppati per modello.}
 \label{tab:ml_results_detail}
 \end{table}
 
@@ -142,7 +146,7 @@ La bassa deviazione standard di tutti e tre i modelli, dell'ordine di $10^{-3}$ 
   ybar,
   bar width=2cm,
   width=12cm,
-  height=7cm,
+  height=8cm,
   xlabel={Modello},
   ylabel={AUC-ROC},
   symbolic x coords={GraphSAGE, HashGNN, TransE},
@@ -182,7 +186,7 @@ La bassa deviazione standard di tutti e tre i modelli, dell'ordine di $10^{-3}$ 
   width=12cm,
   height=8cm,
   xlabel={Modello},
-  ylabel={Tempo medio di training (secondi)},
+  ylabel={Tempo medio di training (s)},
   symbolic x coords={GraphSAGE, HashGNN, TransE},
   xtick=data,
   ymin=0, ymax=750,
