@@ -4,9 +4,9 @@
 \label{sec:conclusion}
 
 \section{Sintesi del lavoro}
-Questo lavoro ha affrontato congiuntamente due problematiche centrali nell'ambito della bioinformatica computazionale e dell'ingegneria dei dati: la valutazione comparativa di architetture di Graph Machine Learning applicate a un \textit{knowledge graph} biomedico di grandi dimensioni e la misurazione empirica dell'impatto della scalabilità orizzontale di un database a grafo sui tempi di alimentazione di una pipeline analitica.
+Questo lavoro ha affrontato congiuntamente due problematiche centrali nell'ambito della bioinformatica computazionale e dell'ingegneria dei dati: la valutazione comparativa di architetture di Graph Machine Learning applicate a un \textit{KG} biomedico di grandi dimensioni e la misurazione empirica dell'impatto della scalabilità orizzontale di un database a grafo sui tempi di alimentazione di una pipeline analitica.
 
-Il dataset scelto, PharMeBiNet V3, caratterizzato da oltre 8 milioni di nodi e 53 milioni di relazioni, ha costituito un banco di prova sfidante per via della sua elevata eterogeneità strutturale e semantica. Il dominio applicativo si è concentrato sulla \textit{link prediction} tra composti chimici (\textit{Chemical}) e patologie (\textit{Disease}), un task predittivo di vitale importanza nel contesto del \textit{drug repurposing} finalizzato alla scoperta di relazioni terapeutiche latenti.
+Il dataset scelto, PharMeBiNet V3, ha costituito un banco di prova sfidante per via della sua elevata eterogeneità strutturale e semantica. Il dominio applicativo si è concentrato sulla \textit{link prediction} tra composti chimici (\textit{Chemical}) e patologie (\textit{Disease}), un task predittivo di vitale importanza nel contesto del \textit{drug repurposing} finalizzato alla scoperta di relazioni terapeutiche latenti.
 
 Dal punto di vista dell'ingegneria del software, l'infrastruttura sperimentale si è basata su un cluster Neo4j Enterprise distribuito su quattro macchine virtuali cloud in topologia \textit{primary-secondary}. L'intera architettura è stata orchestrata e automatizzata tramite Ansible e container Docker, garantendo la totale riproducibilità degli esperimenti attraverso una pipeline \textit{end-to-end}.
 

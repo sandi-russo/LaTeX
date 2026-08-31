@@ -1,0 +1,222 @@
+\ProvidesPackage{stile_presentazione}
+
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage[italian]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% colori
+\definecolor{Navy}{HTML}{1A2A4A} % testo, titoli
+\definecolor{Cyan}{HTML}{00BCD4} % accenti, sottolineature
+\definecolor{Orange}{HTML}{FF6B35} % evidenze, blocchi esempio
+\definecolor{Gray}{HTML}{6B7B8D} % testo secondario, footer
+\definecolor{Cream}{HTML}{F7F3EB} % sfondo
+\definecolor{Pattern}{HTML}{2D2D3A}% pattern
+
+
+% tema e sfondo 
+\usetheme{Madrid}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+
+% elenco puntato
+\setbeamertemplate{itemize item}{\textcolor{Cyan}{\small$\bullet$}}
+\setbeamertemplate{itemize subitem}{\textcolor{Orange}{\small$\circ$}}
+
+\setbeamercolor{normal text}{fg=Navy, bg=Cream}
+\setbeamercolor{frametitle}{fg=Navy, bg=Cream}
+\setbeamercolor{title}{fg=Navy}
+\setbeamercolor{structure}{fg=Cyan}
+\setbeamercolor{palette primary}{fg=Navy, bg=Cream}
+\setbeamercolor{palette secondary}{fg=Navy, bg=Cream}
+\setbeamercolor{palette tertiary}{fg=Navy, bg=Cream}
+\setbeamercolor{palette quaternary}{fg=Navy, bg=Cream}
+\setbeamercolor{footline}{fg=Gray, bg=Cream}
+
+% highlight box
+\newcommand{\hl}[1]{%
+  \colorbox{Orange!25}{\textcolor{Navy}{#1}}%
+}
+
+% numeri grandi
+\newcommand{\kpi}[2]{%
+  \begin{center}
+    {\Large\textcolor{Cyan}{\textbf{#1}}}\\[2pt]
+    {\small\textcolor{Gray}{#2}}
+  \end{center}%
+}
+
+\setbeamertemplate{frametitle}{
+  \vskip0.8em
+  \insertframetitle
+  \vskip0.3em
+  \textcolor{Cyan!50}{\rule{\linewidth}{0.3pt}}
+}
+
+
+\setbeamertemplate{background}{
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[Cream] (current page.south west) rectangle (current page.north east);
+    \begin{scope}[opacity=0.04, Pattern]
+      \clip (current page.south west) rectangle (current page.north east);
+      \pgfmathsetseed{42}
+      \foreach \gx in {0,...,9}{
+        \foreach \gy in {0,...,6}{
+          \pgfmathsetmacro{\basex}{\gx * 1.35 + 0.3}
+          \pgfmathsetmacro{\basey}{\gy * 1.5 + 0.3}
+          \pgfmathrandominteger{\offx}{-3}{3}
+          \pgfmathrandominteger{\offy}{-3}{3}
+          \pgfmathsetmacro{\finalx}{\basex + \offx * 0.2}
+          \pgfmathsetmacro{\finaly}{\basey + \offy * 0.2}
+          \pgfmathrandominteger{\pr}{2}{4}
+          \pgfmathtruncatemacro{\idx}{\gx * 7 + \gy}
+          \coordinate (N\idx) at ([xshift=\finalx cm, yshift=\finaly cm]current page.south west);
+          \fill (N\idx) circle (\pr pt);
+        }
+      }
+      \foreach \i in {0,...,69}{
+        \pgfmathtruncatemacro{\right}{\i + 7}
+        \pgfmathtruncatemacro{\up}{\i + 1}
+        \pgfmathtruncatemacro{\diag}{\i + 8}
+        \pgfmathrandominteger{\drawup}{0}{1}
+        \pgfmathrandominteger{\drawdiag}{0}{1}
+        \ifnum\right<70
+          \draw[line width=0.3pt] (N\i) -- (N\right);
+        \fi
+        \ifnum\up<70
+          \ifnum\drawup=1
+            \draw[line width=0.3pt] (N\i) -- (N\up);
+          \fi
+        \fi
+        \ifnum\diag<70
+          \ifnum\drawdiag=1
+            \draw[line width=0.3pt] (N\i) -- (N\diag);
+          \fi
+        \fi
+      }
+    \end{scope}
+  \end{tikzpicture}%
+}
+
+
+
+
+
+\newcommand{\iniziofrontespizio}{%
+  \setbeamertemplate{footline}{%
+    \leavevmode
+    \hbox{%
+      \begin{beamercolorbox}[wd=\paperwidth, ht=2.5ex, dp=1ex, center]{footline}%
+        \usebeamerfont{footline}\textcolor{Gray}{MIFT · Corso di Laurea Triennale in Informatica L-31}%
+      \end{beamercolorbox}%
+    }%
+  }%
+  \setbeamertemplate{background}{%
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[Navy] (current page.south west) rectangle (current page.north east);
+      \begin{scope}[opacity=0.08, Cyan]
+        \pgfmathsetseed{42}
+        \foreach \gx in {0,...,9}{
+          \foreach \gy in {0,...,6}{
+            \pgfmathsetmacro{\basex}{\gx * 1.35 + 0.3}
+            \pgfmathsetmacro{\basey}{\gy * 1.5 + 0.3}
+            \pgfmathrandominteger{\offx}{-3}{3}
+            \pgfmathrandominteger{\offy}{-3}{3}
+            \pgfmathsetmacro{\finalx}{\basex + \offx * 0.2}
+            \pgfmathsetmacro{\finaly}{\basey + \offy * 0.2}
+            \pgfmathrandominteger{\pr}{2}{4}
+            \pgfmathtruncatemacro{\idx}{\gx * 7 + \gy}
+            \coordinate (N\idx) at ([xshift=\finalx cm, yshift=\finaly cm]current page.south west);
+            \fill (N\idx) circle (\pr pt);
+          }
+        }
+        \foreach \i in {0,...,69}{
+          \pgfmathtruncatemacro{\right}{\i + 7}
+          \pgfmathtruncatemacro{\up}{\i + 1}
+          \pgfmathtruncatemacro{\diag}{\i + 8}
+          \pgfmathrandominteger{\drawup}{0}{1}
+          \pgfmathrandominteger{\drawdiag}{0}{1}
+          \ifnum\right<70
+            \draw[line width=0.3pt] (N\i) -- (N\right);
+          \fi
+          \ifnum\up<70
+            \ifnum\drawup=1
+              \draw[line width=0.3pt] (N\i) -- (N\up);
+            \fi
+          \fi
+          \ifnum\diag<70
+            \ifnum\drawdiag=1
+              \draw[line width=0.3pt] (N\i) -- (N\diag);
+            \fi
+          \fi
+        }
+      \end{scope}
+    \end{tikzpicture}%
+  }%
+}
+
+\newcommand{\finefrontespizio}{%
+  \setbeamertemplate{footline}{%
+    \leavevmode
+    \hbox{%
+      \begin{beamercolorbox}[wd=.33\paperwidth, ht=2.5ex, dp=1ex, left, leftskip=4pt]{footline}%
+        \usebeamerfont{footline}\insertshortauthor%
+      \end{beamercolorbox}%
+      \begin{beamercolorbox}[wd=.34\paperwidth, ht=2.5ex, dp=1ex, center]{footline}%
+        \usebeamerfont{footline}Scienze Informatiche%
+      \end{beamercolorbox}%
+      \begin{beamercolorbox}[wd=.33\paperwidth, ht=2.5ex, dp=1ex, right, rightskip=4pt]{footline}%
+        \usebeamerfont{footline}\insertframenumber\,/\,\inserttotalframenumber%
+      \end{beamercolorbox}%
+    }%
+  }%
+  \setbeamertemplate{background}{%
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[Cream] (current page.south west) rectangle (current page.north east);
+      \begin{scope}[opacity=0.04, Pattern]
+        \pgfmathsetseed{42}
+        \foreach \gx in {0,...,9}{
+          \foreach \gy in {0,...,6}{
+            \pgfmathsetmacro{\basex}{\gx * 1.35 + 0.3}
+            \pgfmathsetmacro{\basey}{\gy * 1.5 + 0.3}
+            \pgfmathrandominteger{\offx}{-3}{3}
+            \pgfmathrandominteger{\offy}{-3}{3}
+            \pgfmathsetmacro{\finalx}{\basex + \offx * 0.2}
+            \pgfmathsetmacro{\finaly}{\basey + \offy * 0.2}
+            \pgfmathrandominteger{\pr}{2}{4}
+            \pgfmathtruncatemacro{\idx}{\gx * 7 + \gy}
+            \coordinate (N\idx) at ([xshift=\finalx cm, yshift=\finaly cm]current page.south west);
+            \fill (N\idx) circle (\pr pt);
+          }
+        }
+        \foreach \i in {0,...,69}{
+          \pgfmathtruncatemacro{\right}{\i + 7}
+          \pgfmathtruncatemacro{\up}{\i + 1}
+          \pgfmathtruncatemacro{\diag}{\i + 8}
+          \pgfmathrandominteger{\drawup}{0}{1}
+          \pgfmathrandominteger{\drawdiag}{0}{1}
+          \ifnum\right<70
+            \draw[line width=0.3pt] (N\i) -- (N\right);
+          \fi
+          \ifnum\up<70
+            \ifnum\drawup=1
+              \draw[line width=0.3pt] (N\i) -- (N\up);
+            \fi
+          \fi
+          \ifnum\diag<70
+            \ifnum\drawdiag=1
+              \draw[line width=0.3pt] (N\i) -- (N\diag);
+            \fi
+          \fi
+        }
+      \end{scope}
+    \end{tikzpicture}%
+  }%
+}

@@ -1,444 +1,219 @@
-\ifthenelse{\equal{\doclanguage}{English}}
-{\chapter{Material and Methods}}
-{\chapter{Materiali e metodi}}
-\label{sec:methods}
+\ifthenelse{\equal{\doclanguage}{Italian}}
+{\chapter{methodology}}
+{\chapter{Metodologia e Tecnologie}}
+\label{sec:methodology}
+
+La GDS offre oggi un ampio catalogo di algoritmi per la generazione di graph embedding, ciascuno fondato su architetture profondamente diverse. Questa varietà, pur costituendo una ricchezza dal punto di vista teorico, pone un problema pratico immediato a chi intende applicare la GDS a un dominio reale: la scelta dell'algoritmo non è banale, poichè ogni modello elabora le informazioni contenute nel KG attraverso le funzioni di aggregazione  e produce rappresentazioni vettoriali molto differenti. Di conseguenza, la qualità degli embedding ottenuti, e la loro utilità per un task predittivo specifico, dipende in modo diretto da questa scelta architetturale.
+
+Alla luce di queste considerazioni teoriche, il presente studio si propone di affrontare il problema della selezione algoritmica attraverso una rigorosa valutazione empirica. L'obiettivo centrale consiste nel confrontare diversi approcci di generazione di graph embedding per valutarne oggettivamente la qualità sulle strutture relazionali tipiche di un KG biomedico. Il task di \textit{link prediction} viene adottato come strumento di misurazione direttaa: la capacità di un modello di prevedere connessioni non osservate tra entità del grafo riflette direttamente quanto gli embedding prodotti abbiano saputo catturare le proprietà topologiche e semantiche della rete sottostante. In ambito farmacologico, questo corrisponde all'identificazione di relazioni terapeutiche latenti tra entità biologiche, un obiettivo con implicazioni dirette nel dominio del drug repurposing.
+
+\section{Motivazione della scelta degli algoritmi}
+La metodologia sperimentale adottata in questo studio si discosta dai tradizionali approcci che si limitano a misurare l'accuratezza predittiva. Al contrario, il presente lavoro propone un'indagine empirica strutturata su un duplice livello di analisi volto a coniugare la valutazione prestazionale dei modelli di apprendimento automatico con l'analisi degli algoritmi di generazione di graph embeddings sottostanti. 
+
+L'ipotesi fondante di questa metodologia è che, in scenari applicativi reali come il \textit{drug repurposing}, il valore di una pipeline non dipenda esclusivamente dalla sua capacità di generalizzazione statistica, ma anche dalla sua sostenibilità in scenari caratterizzati da un grande volume. Per condurre una valutazione esaustiva e tracciare un profilo completo delle soluzioni analizzate, l'indagine si sviluppa lungo tre direttrici principali:
+
+\begin{itemize}
+    \item \textbf{Valutazione Algoritmica}: analisi della qualità degli \textit{embedding} generati. Il confronto tra approcci induttivi, trasduttivi ed eterogenei ha lo scopo di determinare quale architettura modelli in modo più efficace la struttura e la semantica del grafo biomedico. Le prestazioni vengono misurate in base a tre parametri: l'accuratezza predittiva sulla \textit{link prediction} (calcolata tramite la metrica AUC-ROC), il costo computazionale (tempi di addestramento e velocità di convergenza) e la gestione nativa dell'eterogeneità dei nodi.
+    
+    \item \textbf{Valutazione Infrastrutturale}: misurazione delle prestazioni del database distribuito in fase di lettura. Poiché i dati devono essere trasferiti dal layer di \textit{storage} alla pipeline di \textit{Machine Learning}, si analizza il tempo di estrazione sequenziale del sottografo al variare del numero di nodi attivi nel cluster. L'obiettivo è quantificare l'impatto dell'\textit{overhead} di rete e verificare se la scalabilità orizzontale produca un reale aumento del \textit{throughput} o se introduca colli di bottiglia.
+    
+    \item \textbf{Validazione Statistica e Riproducibilità}: per garantire che i risultati non siano alterati dall'inizializzazione casuale dei pesi o da fluttuazioni statistiche, ogni esperimento viene eseguito su cinque \textit{run} indipendenti. 
+\end{itemize}
+
+L'integrazione di queste tre direttrici consente non solo di decretare quale algoritmo performi meglio in termini assoluti, ma di definire il miglior \textit{trade-off} tra complessità computazionale, accuratezza predittiva e agilità infrastrutturale.
+s
+La selezione di GraphSAGE, TransE e HashGNN permette di mettere a confronto tre metodi di calcolo profondamente diversi, con l'obiettivo di capire quale di queste strutture sia più efficace nel produrre embedding di alta qualità, in particolare:
+\begin{itemize}
+    \item \textbf{GraphSAGE} \cite{hamilton2017inductive} è stato scelto per valutare l'efficacia di un approccio induttivo, verificando quanto la semplice aggregazione omogenea del vicinato locale sia informativa per prevedere nuovi collegamenti;
+    \item \textbf{TransE} \cite{bordes2013translating} offre invece una prospettiva opposta e trasduttiva, permettendo di misurare quanto la modellazione puramente geometrica delle relazioni incida sull'accuratezza e fornendo un solido termine di paragone per l'efficienza computazionale;
+    \item  \textbf{HashGNN} \cite{neo4j_hashgnn}, infine, è stato inserito per colmare i limiti di GraphSAGE nella gestione dell'eterogeneità, consentendo di verificare empiricamente se mantenere spazi vettoriali separati per entità differenti produca un reale vantaggio predittivo.    
+\end{itemize}
+
+
+
+\section{Architettura dell'esperimento}
+
+A partire dal KG di riferimento, viene estratto un sottografo tematico che definisce il perimetro sperimentale, selezionando i tipi di nodo e il tipo di relazione di interesse. Su tale sottografo vengono applicati i tre algoritmi, ciascuno dei quali produce embedding vettoriali per i nodi della rete. La qualità di queste rappresentazioni latenti viene valutata tramite un \textbf{classificatore binario} addestrato sul task di \textit{link prediction}: data una coppia di nodi, il modello inferisce la probabilità che tra loro esista una connessione reale, producendo uno score $p \in [0, 1]$. 
+
+Questa formulazione permette di misurare direttamente quanto ciascun approccio riesca a catturare la struttura relazionale della rete e a generalizzare su connessioni non osservate durante il training.
+
+In parallelo, l'analisi si estende al livello infrastrutturale, misurando l'impatto della scalabilità orizzontale del sistema di storage distribuito sui tempi di estrazione dei dati verso la pipeline di apprendimento. Questa dimensione è spesso trascurata nella letteratura in favore della sola accuratezza predittiva, ma risulta critica in scenari di elaborazione reale: un overhead di comunicazione e coordinamento eccessivo tra i nodi del cluster può trasformarsi nel principale collo di bottiglia dell'intera pipeline, annullando i benefici computazionali dell'architettura distribuita. Quantificare empiricamente questo impatto, variando il numero di nodi attivi nel cluster, costituisce uno degli obiettivi originali di questo lavoro.
+
+Per assicurare l'affidabilità statistica del confronto, l'intero ciclo di esperimenti viene ripetuto su cinque esecuzioni indipendenti con inizializzazioni diverse, permettendo di distinguere risultati sistematici da fluttuazioni casuali legate all'inizializzazione dei pesi.
+
+
+% LE RISCRIVO SOTTO E I DETTAGLI LI INSERISCO NELL'IMPLEMENTAZIONE, QUI SOLO UN'INFARINATURA
+
+\begin{comment}
+\section{Strumenti e tecnologie}
+L'implementazione della pipeline sperimentale si basa su strumenti selezionati per la loro complementarità, ciascuno responsabile di una fase specifica del flusso di elaborazione.
+
+\subsection{Neo4j}
+
+Neo4j è un database a grafo \textbf{nativo}: implementa il modello Property Graph fino al livello fisico di memorizzazione, senza strati di astrazione intermedi. I dati vengono archiviati esattamente nella forma in cui vengono modellati, e l'attraversamento della rete avviene tramite puntatori fisici diretti tra nodi e archi, con un costo costante $O(1)$ per ogni passo di traversata indipendentemente dalla dimensione del database. Il linguaggio di interrogazione nativo è \textbf{Cypher}, un linguaggio dichiarativo progettato per esprimere pattern strutturali su grafi in modo intuitivo e orientato alla navigazione di nodi e relazioni. 
+
+\textbf{Neo4j Enterprise} \cite{neo4j_gds} è la versione adottata in questo lavoro, che abilita la configurazione in cluster distribuito con topologia primary-secondary, necessaria per il benchmark infrastrutturale.
+
+\subsection{Libreria Graph Data Science}
+
+La libreria \textbf{Graph Data Science} (GDS) \cite{neo4j_gds} è un'estensione di Neo4j che espone implementazioni parallele di algoritmi analitici su grafi come procedure Cypher. Il meccanismo centrale è la \textbf{graph projection}: prima dell'esecuzione di un algoritmo, il sottografo di interesse viene proiettato in una struttura in memoria separata, denominata \textit{graph catalog}, ottimizzata per il calcolo analitico. Questo separa nettamente il layer transazionale da quello analitico, permettendo l'esecuzione di algoritmi intensivi senza interferire con le operazioni correnti sul database.
+
+\begin{figure}[ht!]
+\centering
+\resizebox{0.65\textwidth}{!}{
+\begin{tikzpicture}[
+  box/.style={rectangle, draw, rounded corners, minimum height=1cm,
+              font=\footnotesize, align=center},
+  wide_box/.style={box, minimum width=10cm},
+  node_box/.style={box, minimum width=3.8cm, minimum height=1.2cm},
+  arrow/.style={->, thick, >=stealth},
+  number/.style={circle, draw, fill=white, inner sep=1.5pt,
+                 minimum size=0.45cm, font=\scriptsize\bfseries}
+]
+  \node[wide_box, fill=blue!12]  (proc)   at (0, 6) {Procedures};
+  \node[wide_box, fill=gray!10]  (neo4j)  at (0, 0) {Neo4j};
+  \node[node_box, fill=teal!15]  (impg)   at (-3, 3)
+    {In Memory\\Projected Graph};
+  \node[node_box, fill=teal!15]  (loader) at (3, 3)
+    {Graph\\Loader};
+
+  \draw[arrow] (neo4j.north -| loader.south) -- (loader.south);
+  \node[align=left, font=\scriptsize] at (4.2, 1.5)
+    {Read projected\\graph};
+  \node[number] at (2.6, 1.5) {1};
+
+  \draw[arrow] (loader.west) -- (impg.east);
+  \node[align=center, font=\scriptsize] at (0, 3.5)
+    {Load projected\\graph};
+  \node[number] at (0, 2.6) {2};
+
+  \draw[arrow] (proc.south -| impg.north) -- (impg.north);
+  \node[align=left, font=\scriptsize] at (-2.2, 4.5)
+    {Execute\\algorithm};
+  \node[number] at (-3.4, 4.5) {3};
+
+  \draw[arrow] (impg.south) -- (neo4j.north -| impg.south);
+  \node[align=right, font=\scriptsize] at (-3.6, 1.5)
+    {Store\\results};
+  \node[number] at (-2.6, 1.5) {4};
+\end{tikzpicture}
+}
+\caption{Ciclo di vita dell'esecuzione degli algoritmi tramite la libreria Neo4j GDS: il grafo viene proiettato in memoria, l'algoritmo viene eseguito sulla proiezione e i risultati vengono scritti nel database.}
+\label{fig:neo4j_gds_architecture}
+\end{figure}
+
+\subsection{PyTorch Geometric}
+\textbf{PyTorch Geometric} \cite{fey2019fast} è il framework di riferimento per l'implementazione dei tre modelli di Graph Machine Learning. Sviluppato come estensione di PyTorch, fornisce primitive efficienti per la rappresentazione di grafi eterogenei attraverso il formato \texttt{HeteroData}, layer convoluzionali dedicati (come \texttt{SAGEConv}) e utility per la suddivisione del dataset in training, validazione e test, gestendo automaticamente il campionamento dei vicini e il batching su GPU. La sua integrazione nativa con il calcolo tensoriale di PyTorch e il supporto a meccanismi di messaggio personalizzati lo rendono particolarmente adatto per sperimentare con architetture diverse su grafi di larga scala.
+
+\subsection{Docker e Docker Compose}
+\textbf{Docker e Docker Compose} sono utilizzati per la containerizzazione dell'ambiente Neo4j su ciascun nodo del cluster. Docker garantisce isolamento delle dipendenze e riproducibilità dell'ambiente di esecuzione, indipendentemente dalla configurazione del sistema operativo sottostante, mentre Docker Compose coordina la definizione e l'avvio dei servizi (Neo4j, eventuali tool di monitoring) tramite un unico file YAML. Questa strategia semplifica il deployment, facilita la gestione delle versioni del database e permette di aggiornare o riavviare i container in modo atomico, preservando al contempo i dati persistenti attraverso volumi dedicati.
+
+\subsection{Ansible}
+\textbf{Ansible} è lo strumento di automazione infrastrutturale adottato per la gestione orchestrata del cluster. Tramite playbook dichiarativi eseguiti via SSH, consente di distribuire in modo idempotente le configurazioni di sistema, installare pacchetti, avviare e fermare i container Docker, sincronizzare i file di configurazione tra i nodi e gestire l'intero ciclo di vita del cluster su tutte e quattro le macchine virtuali con un singolo comando. L'assenza di agenti e l'uso di un linguaggio YAML leggibile rendono Ansible particolarmente efficace per garantire riproducibilità e coerenza tra gli ambienti di sviluppo e produzione.
+
+\subsection{Microsoft Azure}
+\textbf{Microsoft Azure} è la piattaforma cloud su cui sono distribuite le quattro macchine virtuali che costituiscono il cluster. Ciascuna istanza è equipaggiata con Windows 10, WSL2 con Ubuntu 22.04 LTS, 8 core virtuali e 32 GB di RAM, configurate all'interno di una stessa rete virtuale per garantire bassa latenza e comunicazione efficiente tra i nodi. La scelta di Azure ha consentito di sfruttare la scalabilità elastica, il bilanciamento del carico e la possibilità di replicare l'infrastruttura in diverse regioni per futuri esperimenti di disaster recovery, fornendo al contempo un ambiente controllato e facilmente accessibile per l'esecuzione degli esperimenti distribuiti.
+
 
 \section{Il dataset: PharMeBiNet V3}
-\textbf{PharMeBiNet} (\textit{Pharmacological Medical Biochemical Network}) è un knowledge graph biomedico open-source \cite{konigs2022pharmebinet} che integra informazioni provenienti da numerose sorgenti farmacologiche, genomiche e cliniche. Il progetto estende \textbf{Hetionet}, un database a grafo biomedico preesistente, aggiungendo dati da sorgenti quali DrugBank per i farmaci, ClinVar per le varianti genomiche, CTD per le interazioni chimico-biologiche, DisGeNET per le associazioni gene-malattia e UniProt per le sequenze proteiche.
+\textbf{PharMeBiNet} (\textit{Pharmacological Medical Biochemical Network}) è un knowledge graph biomedico open-source \cite{konigs2022pharmebinet} che integra, in un'unica struttura a grafo eterogeneo, informazioni provenienti da oltre quaranta sorgenti farmacologiche, genomiche e cliniche. Il progetto nasce come estensione di \textbf{Hetionet}, un database a grafo biomedico
+preesistente, e lo arricchisce con dati provenienti da sorgenti specializzate: DrugBank per i composti farmacologici, ClinVar per le varianti genomiche, CTD per le interazioni chimico-biologiche, DisGeNET per le associazioni gene-malattia e UniProt per le sequenze proteiche, tra le altre.
 
-È stata utilizzata la versione \textbf{V3} del dataset, scaricata da Zenodo \cite{pharmebinet_zenodo} e disponibile come dump Neo4j. La versione V3 contiene circa \textbf{8 milioni di nodi} distribuiti su \textbf{80 label} distinte e \textbf{53 milioni di relazioni} di \textbf{410 tipi} differenti. Le entità modellate spaziano da farmaci, geni e proteine a malattie, varianti genomiche e reazioni avverse, con relazioni che descrivono interazioni farmaco-farmaco, associazioni gene-malattia e percorsi metabolici \cite{pharmebinet_zenodo}.
+La versione \textbf{V3} \cite{pharmebinet_zenodo}, scaricata da Zenodo e disponibile come dump Neo4j, è quella adottata in questo lavoro. Si tratta di una rete di circa \textbf{8 milioni di nodi} distribuiti su \textbf{80 label} distinte e \textbf{53 milioni di relazioni} di \textbf{410 tipi} differenti (Fig. \ref{fig:kg_schema}). Le entità modellate spaziano da farmaci, geni e proteine a malattie, varianti genomiche e reazioni avverse, con relazioni che descrivono interazioni farmaco-farmaco, associazioni gene-malattia e percorsi metabolici. La scelta di PharMeBiNet V3 come banco di prova è motivata da tre ragioni convergenti. In primo luogo, la sua scala: con oltre 60 milioni di elementi, rappresenta uno dei KG biomedici più grandi disponibili pubblicamente, ponendo sfide reali sia agli algoritmi di apprendimento che all'infrastruttura di storage. 
+
+In secondo luogo, la sua eterogeneità strutturale e semantica: la coesistenza di 80 tipi di nodo con caratteristiche biologiche profondamente diverse rende questo dataset un caso di studio ideale per confrontare approcci omogenei e eterogenei di generazione di embedding. In terzo luogo, la sua rilevanza applicativa: il grafo integra esattamente il tipo di conoscenza necessaria per il drug repurposing, rendendo il task di link prediction un obiettivo biologicamente motivato e non solo un esercizio algoritmico.
+
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.75\linewidth]{figures/kg_schema.png}
+    \caption{Schema del KG PharMeBiNet \cite{konig}.}
+    \label{fig:kg_schema}
+\end{figure}
+
 
 \subsection{Analisi esplorativa del dataset}
-Prima di procedere con gli esperimenti è stata condotta un'analisi esplorativa (EDA) del grafo tramite diverse query Cypher eseguita su Neo4j Browser.
+Prima di procedere con la sperimentazione, il grafo è stato sottoposto a un'analisi esplorativa sistematica volta a caratterizzarne la struttura topologica e a identificare il sottografo tematico più adatto al task di link prediction. L'analisi ha rivelato una forte eterogeneità nella distribuzione dei nodi e delle relazioni: le entità più numerose sono le varianti genomiche, seguite dai composti chimici e dalle malattie, mentre la distribuzione dei gradi risulta fortemente asimmetrica, con alcuni nodi che raggiungono decine di migliaia di connessioni.
+Questa caratteristica ha implicazioni dirette sulla scelta degli algoritmi: modelli che aggregano indiscriminatamente l'intero vicinato risultano computazionalmente intrattabili su nodi ad alto grado, rendendo necessario un meccanismo di campionamento, come quello adottato da GraphSAGE, oppure un approccio che non richieda aggregazione di vicinato, come TransE. I
+risultati dettagliati dell'analisi esplorativa, comprensivi delle query Cypher e delle distribuzioni statistiche, sono riportati nel capitolo dei risultati.
+\end{comment}
 
+\section{Strumenti e tecnologie}
+L'implementazione della pipeline sperimentale si basa su un insieme di strumenti complementari, ciascuno selezionato per soddisfare requisiti specifici del flusso di elaborazione.
 
-\begin{lstlisting}[language=Cypher, caption={Query EDA su PharMeBiNet}]
-CALL apoc.meta.stats()
-YIELD labels, relTypesCount, nodeCount, relCount
-RETURN labels, relTypesCount, nodeCount, relCount
-\end{lstlisting}
+\subsection{Neo4j Enterprise}
+Neo4j è il Graph DBMS adottato per la gestione del Knowledge Graph PharMeBiNet. La sua architettura nativa a Property Graph garantisce attraversamenti in tempo costante $O(1)$ per ogni passo di traversata, indipendentemente dalla dimensione complessiva del database. La versione Enterprise è stata scelta per la sua capacità di operare in configurazione cluster con topologia primary-secondary, che consente di valutare l'impatto della scalabilità orizzontale sulle prestazioni di lettura. 
 
-I risultati confermano la forte eterogeneità del dataset. I nodi dominanti per cardinalità sono le varianti genomiche (\texttt{Variant}, \texttt{GeneVariant}, \texttt{SNV}, circa 3,8 milioni ciascuno), seguiti da modificazioni post-traduzionali (\texttt{PTS}, 782 mila), composti chimici (\texttt{Chemical}, 594 mila) e interazioni (\texttt{Interaction}, 1,1 milioni). I nodi \texttt{Disease} ammontano a 23.580 e i \texttt{Gene} a circa 193 mila.
+Il linguaggio Cypher, nativamente orientato all'attraversamento di percorsi su grafi, permette di esprimere in modo intuitivo le query di estrazione dei sottografi.
 
-L'analisi delle relazioni più dense ha evidenziato che la coppia \texttt{Chemical}$\to$\texttt{Chemical} RESEMBLES domina il grafo con 31 milioni di archi, circa il 58\% del totale, seguita da \texttt{Gene}$\to$\texttt{GeneVariant} con 6 milioni. Per il task di link prediction, la coppia \texttt{Chemical}$\to$\texttt{Disease} è stata selezionata per la sua rilevanza biologica nel contesto del drug repurposing e per la disponibilità di dati sufficienti: 123.361 relazioni tra 594.343 nodi Chemical e 23.580 nodi Disease.
-
-Una seconda query ha analizzato il grado medio e massimo dei principali tipi di nodo:
-
-\begin{lstlisting}[language=Cypher, caption={Query sul grado dei nodi principali}]
-MATCH (n)
-WHERE n:Disease OR n:Chemical OR n:Gene OR n:Protein
-WITH labels(n)[0] AS tipo, count(*) AS totale,
-     avg(size([(n)--() | 1])) AS grado_medio,
-     max(size([(n)--() | 1])) AS grado_max
-RETURN tipo, totale, round(grado_medio) AS grado_medio, grado_max
-ORDER BY grado_medio DESC
-\end{lstlisting}
-
-\begin{table}[ht!]
-\centering
-\small
-\begin{tabular}{lrrr}
-\toprule
-\textbf{Tipo} & \textbf{Totale nodi} & \textbf{Grado medio} & \textbf{Grado massimo} \\
-\midrule
-Protein  &  20.420 & 232 & 46.069 \\
-Chemical & 594.306 & 112 & 25.034 \\
-Disease  &  23.580 &  47 & 30.419 \\
-Gene     & 193.613 &  46 & 36.892 \\
-\bottomrule
-\end{tabular}
-\caption{Grado medio e massimo dei principali tipi di nodo in PharMeBiNet V3.}
-\label{tab:node_degrees}
-\end{table}
-
-I gradi massimi sono molto elevati: un singolo nodo Protein arriva a oltre 46.000 connessioni. Questo ha implicazioni dirette sulla scelta degli algoritmi: GraphSAGE, che campiona un numero fisso di vicini, introduce rumore informativo su nodi ad alto grado, mentre HashGNN, che mantiene proiezioni separate per tipo di nodo, è teoricamente più adatto a gestire questa eterogeneità.
-
-
-\section{Infrastruttura del cluster Neo4j}
-\subsection{Architettura generale}
-Il cluster Neo4j Enterprise è stato distribuito su \textbf{quattro macchine virtuali Azure}, ciascuna equipaggiata con Windows 10, WSL2 con Ubuntu 22.04 LTS, 8 core e 32 GB di RAM. Neo4j gira all'interno di container Docker su WSL2, con un'unica immagine \texttt{docker-compose.yml} distribuita su tutti i nodi tramite Ansible.
-
-\begin{table}[ht!]
-\centering
-\small
-\begin{tabular}{lll}
-\toprule
-\textbf{IP} & \textbf{Nome} & \textbf{Ruolo} \\
-\midrule
-10.0.0.5 & neo4j-primary    & Primary (lettura e scrittura) \\
-10.0.0.6 & neo4j-secondary-1 & Secondary (sola lettura) \\
-10.0.0.7 & neo4j-secondary-2 & Secondary (sola lettura) \\
-10.0.0.8 & neo4j-secondary-3 & Secondary (sola lettura) \\
-\bottomrule
-\end{tabular}
-\caption{Configurazione del cluster Neo4j Enterprise.}
-\label{tab:cluster_config}
-\end{table}
-
-
-
-
-
-
-
-
-
-
-
+\subsection{Libreria Graph Data Science}
+La libreria GDS estende Neo4j con implementazioni parallele di algoritmi analitici su grafi, esposti come procedure Cypher. Il suo meccanismo centrale è la \textbf{graph projection}: prima dell'esecuzione di un algoritmo, il sottografo di interesse viene proiettato in una struttura in memoria separata, denominata \textit{graph catalog}, ottimizzata per il calcolo analitico. Questa proiezione crea una snapshot isolata del grafo, consentendo l'esecuzione di algoritmi intensivi in parallelo senza lock sul database transazionale. Il graph catalog supporta operazioni di filtro e trasformazione delle proprietà dei nodi e degli archi direttamente in fase di caricamento, riducendo il pre-processing necessario nella pipeline di machine learning. Questo separa nettamente il layer transazionale da quello analitico, permettendo l'esecuzione di algoritmi intensivi senza interferire con le operazioni correnti sul database e garantendo al contempo che le proiezioni possano essere riutilizzate per molteplici algoritmi senza ripetere il caricamento.
 
 \begin{figure}[ht!]
 \centering
+\resizebox{0.65\textwidth}{!}{
 \begin{tikzpicture}[
-  vm/.style={rectangle, draw, rounded corners, minimum width=2.8cm,
-             minimum height=1.6cm, font=\small, align=center},
-  primary/.style={vm, fill=blue!15, draw=blue!50},
-  secondary/.style={vm, fill=orange!12, draw=orange!40},
+  box/.style={rectangle, draw, rounded corners, minimum height=1cm,
+              font=\footnotesize, align=center},
+  wide_box/.style={box, minimum width=10cm},
+  node_box/.style={box, minimum width=3.8cm, minimum height=1.2cm},
   arrow/.style={->, thick, >=stealth},
-  label/.style={font=\footnotesize, gray},
-  port/.style={font=\scriptsize, gray}
+  number/.style={circle, draw, fill=white, inner sep=1.5pt,
+                 minimum size=0.45cm, font=\scriptsize\bfseries}
 ]
+  \node[wide_box, fill=blue!12]  (proc)   at (0, 6) {Procedures};
+  \node[wide_box, fill=gray!10]  (neo4j)  at (0, 0) {Neo4j};
+  \node[node_box, fill=teal!15]  (impg)   at (-3, 3)
+    {In Memory\\Projected Graph};
+  \node[node_box, fill=teal!15]  (loader) at (3, 3)
+    {Graph\\Loader};
 
-  % PRIMARY
-  \node[primary] (p) at (-1, 0) {
-    \textbf{Primary}\\
-    \footnotesize neo4j-primary\\
-    \scriptsize 10.0.0.5
-  };
+  \draw[arrow] (neo4j.north -| loader.south) -- (loader.south);
+  \node[align=left, font=\scriptsize] at (4.2, 1.5)
+    {Read projected\\graph};
+  \node[number] at (2.6, 1.5) {1};
 
-  % SECONDARIES
-  \node[secondary] (s1) at (5, 2) {
-    \textbf{Secondary 1}\\
-    \footnotesize neo4j-secondary-1\\
-    \scriptsize 10.0.0.6
-  };
-  \node[secondary] (s2) at (5, 0) {
-    \textbf{Secondary 2}\\
-    \footnotesize neo4j-secondary-2\\
-    \scriptsize 10.0.0.7
-  };
-  \node[secondary] (s3) at (5, -2) {
-    \textbf{Secondary 3}\\
-    \footnotesize neo4j-secondary-3\\
-    \scriptsize 10.0.0.8
-  };
+  \draw[arrow] (loader.west) -- (impg.east);
+  \node[align=center, font=\scriptsize] at (0, 3.5)
+    {Load projected\\graph};
+  \node[number] at (0, 2.6) {2};
 
-  % FRECCE Primary -> Secondary (replica)
-  \draw[arrow, blue!50] (p.east) -- node[above, port]{} (s1.west);
-  \draw[arrow, blue!50] (p.east) -- (s2.west);
-  \draw[arrow, blue!50] (p.east) -- node[below, port]{} (s3.west);
+  \draw[arrow] (proc.south -| impg.north) -- (impg.north);
+  \node[align=left, font=\scriptsize] at (-2.2, 4.5)
+    {Execute\\algorithm};
+  \node[number] at (-3.4, 4.5) {3};
 
-  % CLIENT a sinistra
-  \node[vm, fill=gray!10, draw=gray!40, minimum width=2.2cm] (client)
-    at (-7, 0) {
-    \textbf{Client}\\
-    \footnotesize extractor.py
-  };
-
-  % Connessione client -> primary (scrittura)
-  \draw[arrow, gray!70] (client.east) --
-    node[above, port]{\texttt{bolt://} (1 nodo)}
-    node[below, port]{\texttt{neo4j://} (cluster)}
-    (p.west);
-
-  % Legenda
-  \node[primary, minimum width=1.2cm, minimum height=0.6cm,
-        font=\scriptsize] at (-7.5, -3.8) {};
-  \node[font=\scriptsize, anchor=west] at (-6.8, -3.8) {Primary (lettura e scrittura)};
-
-  \node[secondary, minimum width=1.2cm, minimum height=0.6cm,
-        font=\scriptsize] at (2.5, -3.8) {};
-  \node[font=\scriptsize, anchor=west] at (3.3, -3.8) {Secondary (sola lettura)};
-
+  \draw[arrow] (impg.south) -- (neo4j.north -| impg.south);
+  \node[align=right, font=\scriptsize] at (-3.6, 1.5)
+    {Store\\results};
+  \node[number] at (-2.6, 1.5) {4};
 \end{tikzpicture}
-\caption{Topologia del cluster Neo4j Enterprise: 1 primary e 3 secondary distribuiti su macchine virtuali Azure. Il client si connette tramite \texttt{bolt://} per la connessione diretta o \texttt{neo4j://} per il routing distribuito.}
-\label{fig:cluster_topology}
+}
+\caption{Ciclo di vita dell'esecuzione degli algoritmi tramite la libreria Neo4j GDS: il grafo viene proiettato in memoria, l'algoritmo viene eseguito sulla proiezione e i risultati vengono scritti nel database.}
+\label{fig:neo4j_gds_architecture}
 \end{figure}
 
-La topologia adottata prevede \textbf{1 primary e 3 secondary}. Il nodo primary gestisce tutte le scritture. In caso di guasto, 
-il cluster può eleggere un nuovo primary tra i nodi disponibili 
-tramite il protocollo \textbf{Raft}, garantendo la continuità 
-del servizio. I nodi secondary non partecipano al protocollo Raft e vengono usati esclusivamente per scalare le letture distribuite.
+\subsection{PyTorch Geometric}
+PyTorch Geometric \cite{fey2019fast} è il framework di riferimento per l'implementazione dei tre modelli di Graph Machine Learning. Sviluppato come estensione di PyTorch, fornisce primitive efficienti per la rappresentazione di grafi eterogenei attraverso il formato \texttt{HeteroData}, layer convoluzionali dedicati (come \texttt{SAGEConv}) e utility per la suddivisione del dataset in training, validazione e test. Il supporto nativo al calcolo tensoriale su GPU e la possibilità di definire meccanismi di message passing personalizzati lo rendono particolarmente adatto per sperimentare con architetture diverse su grafi di larga scala.
 
-La scelta di 4 nodi totali è motivata dall'analisi prestazionale piuttosto che dalla fault tolerance: con 4 nodi il quorum è identico a quello di 3 nodi. L'obiettivo è misurare l'impatto delle secondary sui tempi di lettura distribuita verso la pipeline ML.
+\subsection{Containerizzazione e automazione infrastrutturale}
+L'ambiente Neo4j su ciascun nodo del cluster è containerizzato tramite \textbf{Docker}, garantendo isolamento delle dipendenze e riproducibilità dell'esecuzione indipendentemente dal sistema operativo sottostante. \textbf{Docker Compose} coordina la definizione e l'avvio dei servizi tramite un unico file YAML, semplificando il deployment e la gestione delle versioni del database.
 
-\subsection{Configurazione della memoria}
-Ogni container Neo4j è stato configurato con i seguenti limiti di memoria, bilanciando le esigenze del garbage collector JVM e la velocità di accesso ai dati:
+La gestione orchestrata del cluster è affidata ad \textbf{Ansible}, che tramite playbook dichiarativi eseguiti via SSH consente di distribuire configurazioni, avviare e fermare i container, sincronizzare file tra i nodi ed eseguire il benchmark nelle diverse configurazioni con un singolo comando. L'assenza di agenti e l'uso di un linguaggio YAML leggibile garantiscono riproducibilità e coerenza tra gli ambienti.
 
-\begin{lstlisting}[caption={Configurazione memoria Neo4j (neo4j.conf)}]
-server.memory.heap.initial_size=8G
-server.memory.heap.max_size=8G
-server.memory.pagecache.size=6G
-\end{lstlisting}
+Le quattro macchine virtuali che costituiscono il cluster sono ospitate su \textbf{Microsoft Azure}, ciascuna con 8 core virtuali e 32 GB di RAM, all'interno di una stessa rete virtuale per garantire bassa latenza nelle comunicazioni intra-cluster. La scelta di Azure consente di sfruttare la scalabilità elastica e la possibilità di replicare l'infrastruttura in diverse regioni per futuri esperimenti.
 
-\subsection{Configurazione di rete e WSL2}
-La comunicazione tra i nodi del cluster avviene tramite tre porte distinte: la porta 6000 per le transazioni di cluster, la porta 7000 per il protocollo Raft e la porta 7687 per il protocollo Bolt. Poiché ogni nodo gira su WSL2, che ha un indirizzo IP interno diverso dall'IP della macchina Windows, è stato necessario configurare su ogni macchina un port-forwarding tramite \texttt{netsh} e uno script PowerShell automatizzato (\texttt{ponte.ps1}) che aggiorna dinamicamente i proxy all'avvio, poiché l'IP di WSL2 cambia ad ogni riavvio.
+I dettagli implementativi della configurazione, inclusi i comandi di deployment, le impostazioni di memoria e la gestione degli indirizzi IP su WSL2, sono riportati nel capitolo di Implementazione (Sezione \ref{sec:implementation}).
 
-\subsection{Automazione con Ansible}
-L'intera gestione del cluster è automatizzata tramite \textbf{Ansible}, eseguito dalla primary via SSH verso le secondary. I playbook principali sono:
+\section{Il dataset: PharMeBiNet V3}
 
-\begin{itemize}
-  \item \texttt{deploy.yml}, distribuisce i file di configurazione e avvia i container su tutti i nodi
-  \item \texttt{stop.yml}, ferma i container in modo ordinato
-  \item \texttt{reset.yml}, esegue un reset completo rimuovendo tutti i dati
-  \item \texttt{setup.yml}, crea la struttura di cartelle necessaria
-\end{itemize}
+\textbf{PharMeBiNet} (\textit{Pharmacological Medical Biochemical Network}) è un knowledge graph biomedico open-source \cite{konigs2022pharmebinet} che integra informazioni provenienti da oltre quaranta sorgenti farmacologiche, genomiche e cliniche, tra cui DrugBank, ClinVar, CTD, DisGeNET e UniProt. Il progetto nasce come estensione di Hetionet e ne estende la copertura semantica con ulteriori tipi di entità e relazioni.
 
-Il file \texttt{.env} su ogni macchina contiene le variabili specifiche del nodo (nome, ruolo, IP) e viene generato da Ansible tramite un template Jinja2.
-
-
-\section{Caricamento del dataset}
-Il dump ufficiale di PharMeBiNet V3 è stato scaricato da Zenodo e copiato nella cartella \texttt{data/raw/} sulla primary. Il caricamento è avvenuto tramite un container Docker effimero della stessa immagine Neo4j, montando il volume dati e la cartella del dump:
-
-\begin{lstlisting}[language=bash, caption={Caricamento del dump PharMeBiNet V3}]
-docker run --rm -it \
-  -e NEO4J_ACCEPT_LICENSE_AGREEMENT=yes \
-  -v $(pwd)/cluster/data:/data \
-  -v $(pwd)/data/raw:/backups \
-  neo4j:2026.04.0-enterprise \
-  neo4j-admin database load pharmebinet \
-    --from-path=/backups/ \
-    --overwrite-destination=true
-\end{lstlisting}
-
-Al termine del caricamento, il database è stato distribuito sulle secondary tramite il meccanismo di seeding nativo di Neo4j Cluster.
-
-\begin{lstlisting}[language=Cypher, caption={Creazione del database distribuito con seeding}]
-CREATE DATABASE pharmebinet
-  TOPOLOGY 1 PRIMARY 3 SECONDARY
-  OPTIONS {
-    existingData: 'use',
-    existingDataSeedServer: '<SERVER_ID_PRIMARY>'
-  };
-\end{lstlisting}
-
-Il parametro \texttt{existingDataSeedServer} istruisce il cluster a replicare i dati esistenti dalla primary verso tutte le secondary. Il processo di replica di circa 50 GB ha richiesto alcuni minuti, al termine dei quali tutti e quattro i nodi risultavano \texttt{online} per il database \texttt{pharmebinet}.
-
-
-\section{Pipeline di estrazione dati}
-L'estrazione del sottografo Chemical$\to$Disease da Neo4j verso PyTorch Geometric \cite{fey2019fast} è implementata in \texttt{src/extractor.py}. La classe \texttt{DBExtractor} si connette al cluster tramite il driver ufficiale Neo4j per Python e esegue tre query Cypher sequenziali.
-
-\begin{lstlisting}[language=Cypher, caption={Query di estrazione del sottografo Chemical→Disease}]
-MATCH (c:Chemical) RETURN DISTINCT c.identifier AS id
-
-MATCH (d:Disease) RETURN DISTINCT d.identifier AS id
-
-MATCH (c:Chemical)-[r]->(d:Disease)
-RETURN c.identifier AS src, d.identifier AS dst
-\end{lstlisting}
-
-Per ciascun tipo di nodo viene costruito un dizionario di mapping che traduce gli identificatori stringa (es. \texttt{DB00620}) in indici interi contigui a partire da zero. Questo passaggio è essenziale poiché PyTorch Geometric opera esclusivamente su tensori numerici e non su chiavi testuali, richiedendo indici posizionali precisi per la costruzione della matrice \texttt{edge\_index}.
-
-Il risultato viene incapsulato in un oggetto \texttt{HeteroData} di PyTorch Geometric:
-
-\begin{lstlisting}[language=Python, caption={Costruzione dell'oggetto HeteroData per PyTorch Geometric}]
-data['Chemical'].num_nodes = len(chem_mapping)
-data['Disease'].num_nodes  = len(dis_mapping)
-data['Chemical', 'relates_to', 'Disease'].edge_index = \
-    torch.tensor([src_idx, dst_idx], dtype=torch.long)
-\end{lstlisting}
-
-L'\texttt{edge\_index} è un tensore di forma $[2, \text{num\_edges}]$ dove la prima riga contiene gli indici sorgente (Chemical) e la seconda gli indici destinatari (Disease). L'adozione di questo formato a coordinate (COO) è lo standard in PyTorch Geometric per rappresentare topologie di rete sparse, garantendo un'occupazione di memoria lineare e operazioni di attraversamento estremamente efficienti.
-
-\section{Implementazione dei modelli}
-\subsection{GraphSAGE}
-Il modello GraphSAGE è implementato in \texttt{src/models/graphsage.py} usando i layer \texttt{SAGEConv} di PyTorch Geometric. Poiché i nodi Chemical e Disease non hanno feature numeriche nel grafo, sono identificati solo da stringhe come \texttt{DB00620} o \texttt{MONDO:0000004}, le feature iniziali sono \textbf{embedding learnable}: tabelle di vettori inizializzati casualmente e ottimizzati durante il training tramite backpropagation, una per ogni tipo di nodo. In questo modo, l'informazione semantica originariamente assente viene inferita dinamicamente: man mano che il modello minimizza la funzione di perdita, questi vettori si spostano nello spazio latente fino a codificare l'identità relazionale e le proprietà topologiche di ciascuna entità biomedica.
-
-\begin{lstlisting}[language=Python, caption={Definizione degli embedding learnable per GraphSAGE}]
-self.chem_emb = nn.Embedding(num_chemical, hidden_channels)
-self.dis_emb  = nn.Embedding(num_disease,  hidden_channels)
-\end{lstlisting}
-
-I due spazi di embedding vengono fusi in un unico tensore omogeneo tramite concatenazione prima di essere passati ai layer convoluzionali. Poiché gli indici dei nodi Chemical e Disease partono entrambi da zero, gli indici Disease vengono traslati di \texttt{num\_chemical} posizioni per evitare collisioni nello spazio globale:
-
-\begin{lstlisting}[language=Python, caption={Fusione degli spazi di embedding con offset Disease}]
-x = torch.cat([self.chem_emb.weight, self.dis_emb.weight], dim=0)
-offset = torch.zeros_like(edge_index)
-offset[1] = num_chemical
-edge_index_global = edge_index + offset
-\end{lstlisting}
-
-Due layer \texttt{SAGEConv} propagano l'informazione strutturale del vicinato: il primo aggrega i vicini a 1 salto, il secondo a 2 salti. Tra i due layer viene applicata la ReLU. L'encoder produce una matrice con gli embedding aggiornati di tutti i nodi, da cui vengono estratte le righe corrispondenti ai Chemical e alle Disease per la fase di decoding.
-
-Il decoder è un MLP che concatena gli embedding di una coppia (Chemical, Disease) e produce uno score tra 0 e 1 tramite attivazione sigmoid.
-
-\subsection{TransE}
-Il modello TransE è implementato in \texttt{src/models/transe.py}. A differenza di GraphSAGE, non utilizza nessuna forma di aggregazione di vicinato: mantiene tre tabelle di embedding separate, per i nodi Chemical, per i nodi Disease e per i tipi di relazione, inizializzate con distribuzione uniforme in $[-1, 1]$:
-
-\begin{lstlisting}[language=Python, caption={Inizializzazione degli embedding di TransE}]
-self.chem_emb = nn.Embedding(num_chemical, embedding_dim)
-self.dis_emb  = nn.Embedding(num_disease,  embedding_dim)
-self.rel_emb  = nn.Embedding(num_relations, embedding_dim)
-for emb in [self.chem_emb, self.dis_emb, self.rel_emb]:
-    nn.init.uniform_(emb.weight, -1.0, 1.0)
-\end{lstlisting}
-
-Durante il forward pass, tutti gli embedding vengono normalizzati L2 prima del calcolo del punteggio. Questa normalizzazione è essenziale per evitare che il modello raggiunga una loss bassa semplicemente espandendo le norme dei vettori senza apprendere una struttura geometrica significativa.
-
-\begin{lstlisting}[language=Python, caption={Funzione di scoring di TransE}]
-def _score(self, src, rel, dst):
-    h = F.normalize(self.chem_emb(src), dim=-1)
-    r = F.normalize(self.rel_emb(rel),  dim=-1)
-    t = F.normalize(self.dis_emb(dst),  dim=-1)
-    return torch.norm(h + r - t, p=2, dim=-1)
-\end{lstlisting}
-
-\noindent
-Il training usa una \textbf{margin ranking loss} con margine $\gamma = 1.0$, che penalizza i casi in cui il punteggio di una tripla negativa non supera quello di una tripla positiva di almeno $\gamma$. Questa formulazione induce una continua dinamica di attrazione e repulsione nello spazio vettoriale: durante l'ottimizzazione, il modello minimizza la distanza geometrica delle triple reali e, simultaneamente, allontana le entità delle triple corrotte fino a garantire che la loro separazione superi la rigida soglia di sicurezza definita dal margine.
-
-\begin{lstlisting}[language=Python, caption={Margin ranking loss di TransE}, label={lst:transe_loss}]
-def forward(self, src, rel, dst, src_neg, dst_neg):
-    pos_score = self._score(src, rel, dst)
-    neg_score = self._score(src_neg, rel, dst_neg)
-    return F.relu(self.margin + pos_score - neg_score).mean()
-\end{lstlisting}
-
-In inferenza, la distanza geometrica calcolata viene mappata in uno spazio di probabilità continuo tramite una funzione sigmoidale. Poiché nel modello TransE una distanza geometrica minore indica una tripla più plausibile, lo score finale viene preventivamente invertito di segno, facendo in modo che vettori vicini si traducano in una probabilità tendente a 1.
-
-Poiché PharMeBiNet contiene 410 tipi di relazione ma il sottografo estratto per gli esperimenti include solo relazioni Chemical$\to$Disease, tutte le triple vengono trattate come appartenenti a un unico tipo di operazione (\texttt{num\_relations = 1}). 
-
-Questa configurazione semplifica notevolmente la convergenza del modello, ma impedisce a TransE di esprimere la sua capacità nativa di distinguere interazioni semanticamente diverse. Matematicamente, il vettore relazionale collassa in una singola traslazione globale per tutte le coppie del sottografo, precludendo all'algoritmo l'opportunità di mappare le sfumature della ricca eterogeneità biologica presente nel dataset completo.
-
-\subsection{HashGNN}
-Il modello HashGNN è implementato in \texttt{src/models/hashgnn.py}. La differenza architetturale fondamentale rispetto a GraphSAGE è che gli embedding di Chemical e Disease non vengono mai fusi in un unico spazio omogeneo durante la fase di encoding. Ogni tipo di nodo mantiene il proprio spazio di rappresentazione dall'inizio fino all'ingresso del decoder. Le proiezioni hash sono matrici casuali fisse generate una volta sola e registrate come buffer PyTorch non aggiornabili:
-
-\begin{lstlisting}[language=Python, caption={Registrazione delle matrici hash fisse in HashGNN}]
-self.register_buffer('hash_weights',
-    torch.randn(num_hashes, hidden_channels, hidden_channels))
-\end{lstlisting}
-
-L'uso di \texttt{register\_buffer} garantisce che queste matrici non partecipino all'ottimizzazione, non ricevono gradienti ma vengano correttamente salvate con il modello e spostate su GPU se necessario, esattamente come i parametri apprendibili.
-
-La funzione di hashing applica $K$ proiezioni casuali all'embedding e binarizza il risultato tramite \texttt{torch.sign}:
-
-\begin{lstlisting}[language=Python, caption={Funzione di hashing LSH in HashGNN}]
-def hash_features(self, x):
-    return torch.cat([
-        torch.sign(x @ self.hash_weights[i].T)
-        for i in range(self.num_hashes)
-    ], dim=-1)
-\end{lstlisting}
-
-Il risultato è un vettore di dimensione $K \times d$ che concatena $K$ viste binarie diverse dello stesso nodo. I layer lineari successivi, separati per Chemical e Disease, trasformano queste rappresentazioni nell'embedding finale:
-
-\begin{lstlisting}[language=Python, caption={Layer lineari separati per tipo di nodo in HashGNN}]
-self.chem_proj = nn.Linear(hidden_channels * num_hashes, hidden_channels)
-self.dis_proj  = nn.Linear(hidden_channels * num_hashes, hidden_channels)
-self.chem_out  = nn.Linear(hidden_channels, out_channels)
-self.dis_out   = nn.Linear(hidden_channels, out_channels)
-\end{lstlisting}
-
-Il decoder è strutturalmente identico a quello di GraphSAGE, concatenazione seguita da MLP con sigmoid, ma riceve in input due embedding provenienti da spazi separati anziché da uno spazio fuso.
-
-\subsection{Training loop}
-Il training è unificato in \texttt{src/train.py} e segue la stessa struttura per tutti e tre i modelli, garantendo un confronto equo. Prima del training, il dataset viene suddiviso tramite \texttt{RandomLinkSplit} di PyTorch Geometric \cite{fey2019fast}:
-
-\begin{lstlisting}[language=Python, caption={Suddivisione training/test con RandomLinkSplit}]
-transform = T.RandomLinkSplit(
-    num_val=0.0,
-    num_test=0.1,
-    is_undirected=False,
-    edge_types=[('Chemical', 'relates_to', 'Disease')],
-    add_negative_train_samples=False,
-)
-train_data, _, test_data = transform(data)
-\end{lstlisting}
-
-Il 10\% degli archi viene tenuto completamente nascosto durante il training e usato esclusivamente per la valutazione finale. I campioni negativi non vengono generati staticamente ma ricreati casualmente ad ogni epoca, il che introduce variabilità e riduce il rischio di overfitting sui negativi.
-
-Per tutti e tre i modelli la procedura di training è:
-
-\begin{enumerate}
-  \item Calcolo delle predizioni su link positivi (archi reali del training set).
-  \item Generazione di campioni negativi casuali, coppie (Chemical, Disease) non collegate nel grafo, in numero uguale agli archi positivi.
-  \item Calcolo della loss sui campioni positivi e negativi.
-  \item Backpropagation e aggiornamento dei pesi tramite Adam optimizer.
-  \item Dopo 200 epoche, valutazione sul test set con archi mai visti durante il training.
-\end{enumerate}
-
-Gli iperparametri condivisi tra i tre modelli sono riportati nella tabella \ref{tab:hyperparams}.
-
-\begin{table}[ht!]
-\centering
-\small
-\begin{tabular}{ll}
-\toprule
-\textbf{Iperparametro} & \textbf{Valore} \\
-\midrule
-Epoche             & 200 \\
-Learning rate      & $10^{-3}$ \\
-Optimizer          & Adam \\
-Hidden channels    & 64 \\
-Output channels    & 32 \\
-Test split         & 10\% \\
-Run indipendenti   & 5 \\
-Seed iniziale      & 42 \\
-\bottomrule
-\end{tabular}
-\caption{Iperparametri condivisi tra i tre modelli.}
-\label{tab:hyperparams}
-\end{table}
-
-Per garantire la riproducibilità statistica, ogni esperimento è stato ripetuto \textbf{5 volte} con seed diverso (\texttt{42 + i} con $i \in \{0, 1, 2, 3, 4\}$), variando sia l'inizializzazione dei pesi che la generazione dei campioni negativi ad ogni run. Questo permette di stimare la varianza dei risultati e distinguere differenze sistematiche tra i modelli da fluttuazioni casuali legate all'inizializzazione.
-
-
-\section{Protocollo di valutazione}
-\subsection{Metrica principale: AUC-ROC}
-La metrica principale di valutazione è l'\textbf{AUC-ROC} (\textit{Area Under the Receiver Operating Characteristic Curve}), calcolata sugli archi del test set tramite \texttt{roc\_auc\_score} di scikit-learn. La curva ROC rappresenta il trade-off tra il tasso di veri positivi (TPR) e il tasso di falsi positivi (FPR) al variare della soglia di classificazione. L'area sotto questa curva sintetizza la capacità discriminativa del modello in un singolo valore scalare, indipendente dalla soglia scelta.
+La versione \textbf{V3} \cite{pharmebinet_zenodo} è quella adottata in questo lavoro. Come illustrato in Figura \ref{fig:kg_schema}, il grafo modella un'ampia varietà di entità biologiche come: farmaci, geni, proteine, malattie, varianti genomiche e reazioni avverse e le relazioni che le interconnettono, quali interazioni farmaco-farmaco, associazioni gene-malattia e percorsi metabolici.
 
 \begin{figure}[ht!]
-\centering
-\begin{tikzpicture}
-\begin{axis}[
-  width=8cm, height=7cm,
-  xlabel={Tasso di falsi positivi (FPR)},
-  ylabel={Tasso di veri positivi (TPR)},
-  xmin=0, xmax=1, ymin=0, ymax=1,
-  xtick={0,0.2,0.4,0.6,0.8,1.0},
-  ytick={0,0.2,0.4,0.6,0.8,1.0},
-  grid=both,
-  grid style={line width=0.2pt, draw=gray!30},
-]
-\addplot[dashed, gray, thick] coordinates {(0,0) (1,1)};
-\node[gray, font=\footnotesize] at (axis cs:0.7,0.55) {Random (0.5)};
-
-\addplot[blue, thick, smooth] coordinates {
-  (0,0) (0.02,0.55) (0.05,0.75) (0.1,0.88)
-  (0.2,0.95) (0.4,0.98) (0.7,0.99) (1.0,1.0)
-};
-\node[blue, font=\footnotesize] at (axis cs:0.35,0.72) {Modello (AUC $\approx$ 0.99)};
-\end{axis}
-\end{tikzpicture}
-\caption{Esempio di curva ROC: la linea tratteggiata rappresenta un classificatore casuale (AUC = 0.5), la curva blu un modello con AUC $\approx$ 0.99}
-\label{fig:roc_example}
+    \centering
+    \includegraphics[width=0.80\linewidth]{figures/kg_schema.png}
+    \caption{Schema del KG PharMeBiNet \cite{konig}.}
+    \label{fig:kg_schema}
 \end{figure}
-
-Un valore di AUC-ROC pari a 0.5 equivale a una classificazione casuale, il modello non distingue link reali da link falsi meglio del caso. Un valore pari a 1.0 indica una separazione perfetta. L'AUC-ROC è la metrica standard per la link prediction su grafi sbilanciati perché non è influenzata dallo sbilanciamento tra classi: in questo esperimento il numero di link negativi generati casualmente è uguale al numero di link positivi reali, ma in uno scenario reale di drug repurposing i link positivi sarebbero una frazione minima del totale. 
-
-Per ogni modello vengono riportati la media e la deviazione standard dell'AUC-ROC calcolate sulle 5 run indipendenti.
-
-\subsection{Benchmark di scalabilità}
-
-Il benchmark infrastrutturale misura il tempo totale necessario per estrarre l'intero sottografo Chemical$\to$Disease da Neo4j e costruire l'oggetto \texttt{HeteroData} per PyTorch Geometric, al variare del numero di nodi attivi del cluster. Le tre configurazioni testate sono:
-
-\begin{itemize}
-  \item \textbf{1 nodo}: connessione diretta alla primary tramite protocollo Bolt \\ (\texttt{bolt://10.0.0.5:7687}), che bypassa completamente il routing del cluster.
-  \item \textbf{2 nodi}: cluster con primary e secondary-1 attivi, connessione tramite protocollo di routing Neo4j (\texttt{neo4j://10.0.0.5:7687}).
-  \item \textbf{4 nodi}: cluster completo con tutti e quattro i nodi attivi, stessa connessione di routing.
-\end{itemize}
-
-La differenza tra i protocolli \texttt{bolt://} e \texttt{neo4j://} è sostanziale: il primo stabilisce una connessione diretta a un singolo nodo senza overhead di routing, il secondo attiva il meccanismo di routing table di Neo4j che distribuisce le letture sui nodi disponibili. Questo permette di isolare il contributo del routing distribuito rispetto alla connessione diretta.
-
-Per le configurazioni a 2 nodi, le secondary 2 e 3 (IP 10.0.0.7 e 10.0.0.8) vengono spente tramite Ansible prima della misurazione e riaccese al termine, attendendo 30 secondi per permettere al cluster di riorganizzare la routing table. Il tempo misurato include le tre query Cypher sequenziali e la costruzione del tensore \texttt{edge\_index}, escludendo il tempo di connessione iniziale e il training dei modelli.
-
-\subsection{Pipeline automatizzata}
-
-L'intera sequenza sperimentale è automatizzata dallo script \texttt{run\_pipeline.sh}, che esegue in sequenza il benchmark infrastrutturale nelle tre configurazioni e il training dei tre modelli per 5 run indipendenti. I risultati vengono salvati in \texttt{results/benchmark.csv} e \texttt{results/model\_results\_final.csv}, e i grafici vengono generati tramite \texttt{src/plot\_results.py}.
-
-Prima di eseguire la pipeline è necessario caricare le variabili d'ambiente dal file \texttt{.env}, in particolare la password del database:
-
-\begin{lstlisting}[language=bash, caption={Esecuzione della pipeline completa}]
-export $(grep -v '^#' .env | xargs)
-./run_pipeline.sh
-\end{lstlisting}
-
-Questa operazione è necessaria perché le variabili d'ambiente non vengono caricate automaticamente dalla shell all'avvio, e i script Python leggono la password tramite \texttt{os.getenv("DB\_PASSWORD")} senza default hardcoded nel codice.

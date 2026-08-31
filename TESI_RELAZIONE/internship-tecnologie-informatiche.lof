@@ -2,20 +2,20 @@
 \babel@toc {italian}{}\relax 
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces Esempio di Property Graph con nodi etichettati e proprietà}}{6}{figure.caption.6}%
-\contentsline {figure}{\numberline {2.2}{\ignorespaces Meccanismo di funzionamento della libreria GDS in Neo4j.}}{8}{figure.caption.7}%
-\contentsline {figure}{\numberline {2.3}{\ignorespaces Architettura end-to-end: dal Knowledge Graph eterogeneo (nodi Chemical e Disease) all'estrazione degli embedding nello spazio latente, fino al task di Link Prediction tramite rete neurale (MLP).}}{8}{figure.caption.8}%
-\contentsline {figure}{\numberline {2.4}{\ignorespaces Il meccanismo di aggregazione di GraphSAGE: i vicini campionati vengono aggregati e combinati con la rappresentazione del nodo target.}}{13}{figure.caption.9}%
-\contentsline {figure}{\numberline {2.5}{\ignorespaces Pipeline architetturale di GraphSAGE: estrazione vettoriale ed inferenza della probabilità di link.}}{14}{figure.caption.10}%
-\contentsline {figure}{\numberline {2.6}{\ignorespaces L'intuizione geometrica di TransE: la relazione $\mathbf {r}$ è un vettore di traslazione da $\mathbf {h}$ a $\mathbf {t}$ nello spazio degli embedding.}}{16}{figure.caption.11}%
-\contentsline {figure}{\numberline {2.7}{\ignorespaces Pipeline di TransE per la link prediction}}{17}{figure.caption.12}%
-\contentsline {figure}{\numberline {2.8}{\ignorespaces Architettura di HashGNN: Chemical e Disease mantengono spazi di embedding separati attraverso tutto l'encoder, convergendo solo nel decoder.}}{20}{figure.caption.13}%
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Esempio di Property Graph con nodi etichettati, tipi di relazione e proprietà associate}}{8}{figure.caption.6}%
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Processo di generazione di GEs.}}{10}{figure.caption.7}%
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Il meccanismo di aggregazione di GraphSAGE}}{14}{figure.caption.8}%
+\contentsline {figure}{\numberline {2.4}{\ignorespaces L'intuizione geometrica di TransE: la relazione $\mathit {r}$ è un vettore di traslazione da $\mathit {h}$ a $\mathit {t}$ nello spazio degli embedding.}}{16}{figure.caption.9}%
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Pipeline architetturale di GraphSAGE}}{18}{figure.caption.10}%
+\contentsline {figure}{\numberline {2.6}{\ignorespaces Pipeline di TransE per la link prediction.}}{19}{figure.caption.11}%
+\contentsline {figure}{\numberline {2.7}{\ignorespaces Architettura di HashGNN}}{20}{figure.caption.12}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {3.1}{\ignorespaces Topologia del cluster Neo4j Enterprise: 1 primary e 3 secondary distribuiti su macchine virtuali Azure. Il client si connette tramite \texttt {bolt://} per la connessione diretta o \texttt {neo4j://} per il routing distribuito.}}{25}{figure.caption.17}%
-\contentsline {figure}{\numberline {3.2}{\ignorespaces Esempio di curva ROC: la linea tratteggiata rappresenta un classificatore casuale (AUC = 0.5), la curva blu un modello con AUC $\approx $ 0.99}}{34}{figure.caption.19}%
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Ciclo di vita dell'esecuzione degli algoritmi tramite la libreria Neo4j GDS: il grafo viene proiettato in memoria, l'algoritmo viene eseguito sulla proiezione e i risultati vengono scritti nel database.}}{25}{figure.caption.13}%
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Schema del KG PharMeBiNet \cite {konig}.}}{27}{figure.caption.14}%
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {4.1}{\ignorespaces Tempi di estrazione nelle tre configurazioni del cluster}}{38}{figure.caption.22}%
-\contentsline {figure}{\numberline {4.2}{\ignorespaces AUC-ROC medio con deviazione standard per i tre modelli su 5 run indipendenti}}{40}{figure.caption.25}%
-\contentsline {figure}{\numberline {4.3}{\ignorespaces Tempo medio di training per i tre modelli su 5 run indipendenti}}{41}{figure.caption.26}%
-\contentsline {figure}{\numberline {4.4}{\ignorespaces Trade-off tra accuratezza (AUC-ROC) ed efficienza computazionale}}{43}{figure.caption.27}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Tempi di estrazione nelle tre configurazioni del cluster. La linea tratteggiata evidenzia il baseline a 1 nodo.}}{42}{figure.caption.19}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces AUC-ROC medio con deviazione standard per i tre modelli su 5 run indipendenti. L'asse Y parte da 0.975 per rendere visibili le differenze tra i modelli.}}{44}{figure.caption.22}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Tempo medio di training per i tre modelli su 5 run indipendenti}}{45}{figure.caption.23}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces Trade-off tra accuratezza ed efficienza computazionale per i tre modelli.}}{49}{figure.caption.24}%
 \addvspace {10\p@ }
